@@ -2435,4 +2435,1423 @@ auto&& b = getWidget().name;  // Clean and clear
 auto&& b = std::move(getWidget()).name;  // Redundant std::move
 ```
 
-**Great catch! Always use the simpler version when it produces the same result.**
+
+# Pointer-to-Member Operator (`.*`) Explained
+
+This is one of the more obscure C++ features! Let me break it down step by step.
+
+## What Are Pointers-to-Members?
+
+A **pointer-to-member** is a special kind of pointer that points to a member of a class, not to a specific object.
+
+```cpp
+struct Data {
+    int value;
+    double other;
+};
+
+// Regular pointer - points to a specific int in memory
+int* regular_ptr = /* some address */;
+
+// Pointer-to-member - points to "the value member of ANY Data object"
+int Data::*member_ptr = &Data::value;
+//  ^^^^       ^
+//  type     syntax
+```
+
+## The Syntax Breakdown
+
+```cpp
+int Data::*ptr = &Data::value;
+//  └─┬─┘  └┬┘   └────┬──────┘
+//    │     │          └─ Address of the member (not a regular address!)
+//    │     └─ Pointer-to-member variable name
+//    └─ "Pointer to int member of Data class"
+```
+
+This says: "`ptr` is a pointer to an `int` member of the `Data` class"
+
+## How to Use Pointer-to-Member: `.*` and `->*` Operators
+
+```cpp
+#include <iostream>
+
+struct Data {
+    int value;
+    double other;
+};
+
+int main() {
+    // Create a pointer-to-member
+    int Data::*ptr = &Data::value;
+
+    // Create some Data objects
+    Data d1{42};
+    Data d2{99};
+
+    // Use .* operator: object.*pointer_to_member
+    std::cout << "d1.*ptr = " << d1.*ptr << '\n';  // 42
+    std::cout << "d2.*ptr = " << d2.*ptr << '\n';  // 99
+
+    // Modify through pointer-to-member
+    d1.*ptr = 100;
+    std::cout << "d1.*ptr after modification = " << d1.*ptr << '\n';  // 100
+
+    // With pointers to objects, use ->*
+    Data* p = &d1;
+    std::cout << "p->*ptr = " << p->*ptr << '\n';  // 100
+}
+```
+
+**Output:**
+```
+d1.*ptr = 42
+d2.*ptr = 99
+d1.*ptr after modification = 100
+p->*ptr = 100
+```
+
+## Visual Representation
+
+```
+Pointer-to-member concept:
+
+    int Data::*ptr = &Data::value;
+
+    This doesn't point to memory yet!
+    It's a "template" for accessing a member.
+
+    ┌─────────────┐
+    │   Data      │
+    │ ┌─────────┐ │
+    │ │ value   │ │ ← ptr "knows" about this offset
+    │ └─────────┘ │
+    │ ┌─────────┐ │
+    │ │ other   │ │
+    │ └─────────┘ │
+    └─────────────┘
+
+When you use d1.*ptr:
+
+    Data d1{42};        ┌─────────────┐
+                        │   d1        │
+    d1.*ptr            │ ┌─────────┐ │
+     └─┬─┘             │ │ value=42│ │ ← Access this
+       └───────────────→│ └─────────┘ │
+                        │ ┌─────────┐ │
+                        │ │ other   │ │
+                        │ └─────────┘ │
+                        └─────────────┘
+```
+
+## Now Let's Understand Your Example
+
+```cpp
+struct Data {
+    int value;
+};
+
+Data getData() {
+    return Data{42};
+}
+
+int Data::*ptr = &Data::value;  // Pointer-to-member
+
+auto&& x = getData().*ptr;  // xvalue
+```
+
+### Step-by-Step Execution
+
+```cpp
+// Step 1: Create pointer-to-member
+int Data::*ptr = &Data::value;
+// ptr is NOT a memory address
+// It's an "offset descriptor" or "member selector"
+
+// Step 2: Call getData()
+getData()  // Returns prvalue (temporary Data object)
+           // Data{42} exists temporarily
+
+// Step 3: Apply .* operator
+getData().*ptr
+// Meaning: "Access the member that ptr points to,
+//           in the temporary Data object"
+// Result: Access to the 'value' member of the temporary
+// This produces an XVALUE (int&&)
+
+// Step 4: Bind to reference
+auto&& x = getData().*ptr;
+// x is now an rvalue reference (int&&) to the value member
+// The temporary Data's lifetime is EXTENDED
+```
+
+## Complete Working Example
+
+```cpp
+#include <iostream>
+
+struct Data {
+    int value;
+    double other;
+
+    Data(int v) : value(v), other(0.0) {
+        std::cout << "Data constructed with value=" << value << '\n';
+    }
+
+    ~Data() {
+        std::cout << "Data destroyed\n";
+    }
+};
+
+Data getData() {
+    std::cout << "getData() called\n";
+    return Data{42};
+}
+
+int main() {
+    std::cout << "=== Creating pointer-to-member ===\n";
+    int Data::*ptr = &Data::value;
+
+    std::cout << "\n=== Using .* with temporary ===\n";
+    auto&& x = getData().*ptr;
+
+    std::cout << "x = " << x << '\n';
+    std::cout << "Address of x: " << &x << '\n';
+
+    // Can modify through x
+    x = 100;
+    std::cout << "x after modification = " << x << '\n';
+
+    std::cout << "\n=== End of scope ===\n";
+    // Temporary Data object destroyed here
+}
+```
+
+**Output:**
+```
+=== Creating pointer-to-member ===
+
+=== Using .* with temporary ===
+getData() called
+Data constructed with value=42
+x = 42
+Address of x: 0x7ffc8b2a1234
+x after modification = 100
+
+=== End of scope ===
+Data destroyed
+```
+
+## Why Is `getData().*ptr` an xvalue?
+
+According to C++ rules:
+
+> The result of the `.*` operator is:
+> - An **lvalue** if the left operand is an lvalue
+> - An **xvalue** if the left operand is an rvalue
+
+```cpp
+Data d{42};
+int Data::*ptr = &Data::value;
+
+// Left operand is lvalue → result is lvalue
+auto& a = d.*ptr;  // OK: lvalue reference
+
+// Left operand is rvalue (prvalue) → result is xvalue
+auto&& b = getData().*ptr;  // OK: rvalue reference to xvalue
+
+// This is similar to regular member access:
+auto& c = d.value;          // lvalue
+auto&& e = getData().value;  // xvalue
+```
+
+## Comparison: `.member` vs `.*ptr`
+
+```cpp
+#include <iostream>
+#include <type_traits>
+
+struct Data {
+    int value;
+};
+
+Data getData() { return Data{42}; }
+
+template<typename T>
+void checkCategory(T&& val, const char* desc) {
+    std::cout << desc << ": ";
+    if constexpr (std::is_lvalue_reference_v<T>) {
+        std::cout << "lvalue\n";
+    } else {
+        std::cout << "xvalue (rvalue ref)\n";
+    }
+}
+
+int main() {
+    int Data::*ptr = &Data::value;
+
+    // Both produce xvalues when used on rvalue objects
+    checkCategory(getData().value, "getData().value");
+    checkCategory(getData().*ptr, "getData().*ptr");
+
+    // Both produce lvalues when used on lvalue objects
+    Data d{42};
+    checkCategory(d.value, "d.value");
+    checkCategory(d.*ptr, "d.*ptr");
+}
+```
+
+**Output:**
+```
+getData().value: xvalue (rvalue ref)
+getData().*ptr: xvalue (rvalue ref)
+d.value: lvalue
+d.*ptr: lvalue
+```
+
+## Practical Use Cases for Pointer-to-Member
+
+### 1. Generic Member Access
+
+```cpp
+#include <iostream>
+
+struct Person {
+    std::string name;
+    int age;
+    double salary;
+};
+
+template<typename T>
+void printMember(const Person& p, T Person::*member, const char* label) {
+    std::cout << label << ": " << p.*member << '\n';
+}
+
+int main() {
+    Person p{"Alice", 30, 75000.0};
+
+    printMember(p, &Person::name, "Name");
+    printMember(p, &Person::age, "Age");
+    printMember(p, &Person::salary, "Salary");
+}
+```
+
+### 2. Table-Driven Iteration
+
+```cpp
+#include <iostream>
+#include <vector>
+
+struct Stats {
+    int wins;
+    int losses;
+    int ties;
+};
+
+int main() {
+    Stats s{10, 5, 2};
+
+    // Array of pointers-to-members
+    int Stats::* fields[] = {
+        &Stats::wins,
+        &Stats::losses,
+        &Stats::ties
+    };
+
+    const char* labels[] = {"Wins", "Losses", "Ties"};
+
+    for (int i = 0; i < 3; ++i) {
+        std::cout << labels[i] << ": " << s.*fields[i] << '\n';
+    }
+}
+```
+
+**Output:**
+```
+Wins: 10
+Losses: 5
+Ties: 2
+```
+
+### 3. Sorting by Different Members
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+struct Product {
+    std::string name;
+    double price;
+    int stock;
+};
+
+template<typename T>
+void sortBy(std::vector<Product>& products, T Product::*member) {
+    std::sort(products.begin(), products.end(),
+        [member](const Product& a, const Product& b) {
+            return a.*member < b.*member;
+        });
+}
+
+int main() {
+    std::vector<Product> products = {
+        {"Apple", 1.50, 100},
+        {"Banana", 0.80, 150},
+        {"Cherry", 3.00, 50}
+    };
+
+    sortBy(products, &Product::price);  // Sort by price
+
+    for (const auto& p : products) {
+        std::cout << p.name << ": $" << p.price << '\n';
+    }
+}
+```
+
+**Output:**
+```
+Banana: $0.8
+Apple: $1.5
+Cherry: $3
+```
+
+## Summary
+
+```cpp
+struct Data {
+    int value;
+};
+
+Data getData() { return Data{42}; }
+
+int Data::*ptr = &Data::value;  // Pointer-to-member variable
+
+auto&& x = getData().*ptr;  // xvalue
+//         └────┬───┘  └┬┘
+//           prvalue    Applies pointer-to-member
+//                      Result: xvalue (int&&)
+```
+
+**Key Points:**
+
+1. **`int Data::*ptr`** = pointer to an `int` member of `Data` class
+2. **`&Data::value`** = "address" of the member (not a real memory address)
+3. **`obj.*ptr`** = access the member that `ptr` points to in `obj`
+4. **`getData().*ptr`** = access member in temporary object → produces **xvalue**
+5. The xvalue has identity (refers to actual member) and can be moved from
+
+The `.*` operator follows the same rules as regular member access (`.`):
+- **lvalue `.*` ptr** → lvalue
+- **rvalue `.*` ptr** → xvalue
+
+# Complete List of lvalue Expressions in C++
+
+An **lvalue** is an expression that has identity (occupies a specific memory location) and cannot be moved from. Here's the exhaustive list:
+
+## 1. Variable Names
+
+```cpp
+int x = 5;
+std::string str = "hello";
+std::vector<int> vec{1, 2, 3};
+
+x;      // lvalue
+str;    // lvalue
+vec;    // lvalue
+
+// Even if const
+const int y = 10;
+y;      // lvalue (const lvalue)
+
+// References are lvalues
+int& ref = x;
+ref;    // lvalue
+
+const int& cref = y;
+cref;   // lvalue
+```
+
+## 2. Function Calls Returning Lvalue References
+
+```cpp
+int global = 42;
+
+int& getRef() {
+    return global;
+}
+
+const std::string& getName() {
+    static std::string name = "Alice";
+    return name;
+}
+
+getRef();       // lvalue
+getName();      // lvalue (const lvalue)
+
+// Built-in example:
+std::string str = "test";
+str.front();    // lvalue (returns char&)
+str.back();     // lvalue (returns char&)
+```
+
+## 3. Dereferencing Pointers
+
+```cpp
+int x = 10;
+int* ptr = &x;
+
+*ptr;           // lvalue
+*(&x);          // lvalue
+
+// Even with expressions
+*(ptr + 1);     // lvalue (if valid)
+
+// Pointer-to-pointer
+int** pp = &ptr;
+**pp;           // lvalue
+```
+
+## 4. Array Subscript Operator `[]`
+
+```cpp
+int arr[5] = {1, 2, 3, 4, 5};
+arr[0];         // lvalue
+arr[2];         // lvalue
+
+std::vector<int> vec{10, 20, 30};
+vec[0];         // lvalue
+vec[1];         // lvalue
+
+std::string str = "hello";
+str[0];         // lvalue (can modify: str[0] = 'H')
+
+// Multi-dimensional
+int matrix[3][3];
+matrix[1][2];   // lvalue
+```
+
+## 5. Member Access on Lvalue (`.` operator)
+
+```cpp
+struct Point {
+    int x;
+    int y;
+};
+
+Point p{10, 20};
+p.x;            // lvalue
+p.y;            // lvalue
+
+// Nested members
+struct Line {
+    Point start;
+    Point end;
+};
+
+Line line{{0,0}, {10,10}};
+line.start;     // lvalue
+line.start.x;   // lvalue
+line.end.y;     // lvalue
+```
+
+## 6. Member Access Through Pointer (`->` operator)
+
+```cpp
+struct Data {
+    int value;
+    std::string name;
+};
+
+Data d{42, "test"};
+Data* ptr = &d;
+
+ptr->value;     // lvalue
+ptr->name;      // lvalue
+
+// With smart pointers
+std::unique_ptr<Data> uptr = std::make_unique<Data>(99, "smart");
+uptr->value;    // lvalue
+```
+
+## 7. String Literals (Special Case)
+
+```cpp
+"hello";        // lvalue of type const char[6]
+"world";        // lvalue of type const char[6]
+
+// Can take address
+const char* p = "string";  // OK
+
+// Note: Non-string literals are prvalues
+42;             // prvalue, not lvalue
+3.14;           // prvalue, not lvalue
+true;           // prvalue, not lvalue
+```
+
+## 8. Pre-increment and Pre-decrement
+
+```cpp
+int x = 5;
+
+++x;            // lvalue (returns reference to x)
+--x;            // lvalue (returns reference to x)
+
+// Can be used on left side of assignment
+++x = 10;       // OK: ++x is lvalue
+--x = 5;        // OK: --x is lvalue
+
+// Contrast with post-increment (prvalue):
+// x++;         // prvalue, not lvalue
+// x++ = 10;    // ERROR
+```
+
+## 9. Assignment and Compound Assignment Operators
+
+```cpp
+int x = 5;
+int y = 10;
+
+(x = 20);       // lvalue (returns reference to x)
+(y += 5);       // lvalue (returns reference to y)
+(x *= 2);       // lvalue
+(y -= 3);       // lvalue
+(x /= 2);       // lvalue
+(x %= 3);       // lvalue
+(x &= 1);       // lvalue
+(x |= 2);       // lvalue
+(x ^= 4);       // lvalue
+(x <<= 1);      // lvalue
+(x >>= 1);      // lvalue
+
+// Can chain assignments
+(x = y = 100);  // Both assignments return lvalues
+```
+
+## 10. Comma Operator (with lvalue as right operand)
+
+```cpp
+int x = 5;
+int y = 10;
+
+(x++, y);       // lvalue (right operand is lvalue)
+(42, x);        // lvalue (right operand is lvalue)
+(foo(), bar()); // lvalue if bar() returns lvalue reference
+
+// The comma operator returns its right operand
+int& ref = (x, y);  // OK: binds to y
+```
+
+## 11. Ternary Operator (when both operands are lvalues)
+
+```cpp
+int x = 5;
+int y = 10;
+bool flag = true;
+
+(flag ? x : y);         // lvalue (both operands are lvalues)
+
+// Can assign to it
+(flag ? x : y) = 100;   // OK: assigns to x (since flag is true)
+
+// Can take reference
+int& ref = (flag ? x : y);  // OK
+
+// Note: If operands have different categories, result varies
+// (flag ? x : 42);     // prvalue (42 is prvalue)
+```
+
+## 12. Built-in Indirection Through Pointer-to-Member (`.*` and `->*`)
+
+```cpp
+struct Data {
+    int value;
+    std::string name;
+};
+
+Data d{42, "test"};
+int Data::*ptrValue = &Data::value;
+std::string Data::*ptrName = &Data::name;
+
+d.*ptrValue;    // lvalue (lvalue .* pointer-to-member)
+d.*ptrName;     // lvalue
+
+Data* ptr = &d;
+ptr->*ptrValue; // lvalue (lvalue ->* pointer-to-member)
+ptr->*ptrName;  // lvalue
+```
+
+## 13. Cast to Lvalue Reference
+
+```cpp
+int x = 5;
+
+static_cast<int&>(x);           // lvalue
+static_cast<const int&>(x);     // lvalue (const)
+
+// C-style cast
+(int&)x;                        // lvalue
+
+// Even casting prvalue creates lvalue reference
+static_cast<int&>(42);          // lvalue (dangerous!)
+```
+
+## 14. Parenthesized Lvalue Expression
+
+```cpp
+int x = 5;
+
+(x);            // lvalue
+((x));          // lvalue
+(((x)));        // lvalue
+
+// Parentheses preserve value category
+int& ref = (x); // OK
+```
+
+## 15. Built-in Array-to-Pointer Decay Prevention
+
+```cpp
+int arr[5] = {1, 2, 3, 4, 5};
+
+arr;            // lvalue (array name)
+
+// Note: When used, it decays to pointer, but the name itself is lvalue
+int (*ptr)[5] = &arr;  // Taking address of array (lvalue)
+```
+
+## 16. Lambda Capture by Reference
+
+```cpp
+int x = 10;
+
+auto lambda = [&x]() -> int& {
+    return x;  // Returns lvalue reference
+};
+
+lambda();       // lvalue (function returns lvalue reference)
+```
+
+## 17. Bit-fields (lvalue but with restrictions)
+
+```cpp
+struct Flags {
+    unsigned int flag1 : 1;
+    unsigned int flag2 : 1;
+    unsigned int value : 6;
+};
+
+Flags f{1, 0, 42};
+
+f.flag1;        // lvalue (bit-field)
+f.value;        // lvalue (bit-field)
+
+// Can assign
+f.flag1 = 0;    // OK
+
+// Cannot take address (restriction)
+// auto* p = &f.flag1;  // ERROR: cannot take address of bit-field
+```
+
+## 18. `this` Pointer Dereference in Member Functions
+
+```cpp
+struct MyClass {
+    int value;
+
+    void foo() {
+        (*this);        // lvalue (the object itself)
+        this->value;    // lvalue
+
+        // Can return reference to self
+        MyClass& getSelf() {
+            return *this;  // lvalue
+        }
+    }
+};
+```
+
+## 19. Static Data Members
+
+```cpp
+struct MyClass {
+    static int count;
+    static std::string name;
+};
+
+int MyClass::count = 0;
+std::string MyClass::name = "Class";
+
+MyClass::count;     // lvalue
+MyClass::name;      // lvalue
+
+// Even through object
+MyClass obj;
+obj.count;          // lvalue (same as MyClass::count)
+```
+
+## 20. Enum Values (if explicitly declared as lvalue)
+
+```cpp
+enum Color { RED, GREEN, BLUE };
+
+// Enum values themselves are prvalues, but if stored:
+Color c = RED;
+c;              // lvalue (variable)
+
+// Direct enum value:
+RED;            // prvalue, not lvalue
+```
+
+## Complete Example Demonstrating All Categories
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+struct Point {
+    int x, y;
+    static int count;
+};
+
+int Point::count = 0;
+
+int& getRef() {
+    static int val = 42;
+    return val;
+}
+
+int main() {
+    // 1. Variables
+    int x = 5;
+    std::string str = "hello";
+
+    // 2. Function returning reference
+    int& ref = getRef();
+
+    // 3. Dereferencing
+    int* ptr = &x;
+    int& deref = *ptr;
+
+    // 4. Array subscript
+    int arr[3] = {1, 2, 3};
+    int& elem = arr[0];
+
+    std::vector<int> vec{10, 20};
+    int& vecElem = vec[0];
+
+    // 5. Member access on lvalue
+    Point p{10, 20};
+    int& px = p.x;
+
+    // 6. Member access through pointer
+    Point* pptr = &p;
+    int& py = pptr->y;
+
+    // 7. String literal
+    const char* lit = "literal";  // "literal" is lvalue
+
+    // 8. Pre-increment
+    int& preInc = ++x;
+
+    // 9. Assignment
+    int& assign = (x = 100);
+
+    // 10. Comma operator
+    int y = 5;
+    int& comma = (x, y);
+
+    // 11. Ternary with lvalues
+    bool flag = true;
+    int& ternary = (flag ? x : y);
+
+    // 12. Pointer-to-member
+    int Point::*pmem = &Point::x;
+    int& memAccess = p.*pmem;
+
+    // 13. Cast to reference
+    int& cast = static_cast<int&>(x);
+
+    // 14. Parenthesized
+    int& paren = (x);
+
+    // 15. Static member
+    int& staticMem = Point::count;
+
+    std::cout << "All are lvalues and can be bound to references!\n";
+}
+```
+
+## Quick Reference Table
+
+| Expression Type | Example | lvalue? |
+|----------------|---------|---------|
+| Variable name | `x` | ✓ Yes |
+| Function returning `T&` | `getRef()` | ✓ Yes |
+| Dereference | `*ptr` | ✓ Yes |
+| Array subscript | `arr[i]` | ✓ Yes |
+| Member of lvalue | `obj.member` | ✓ Yes |
+| Pointer member access | `ptr->member` | ✓ Yes |
+| String literal | `"hello"` | ✓ Yes |
+| Pre-increment | `++x` | ✓ Yes |
+| Assignment | `x = 5` | ✓ Yes |
+| Comma (right is lvalue) | `(a, b)` | ✓ Yes |
+| Ternary (both lvalues) | `flag ? x : y` | ✓ Yes |
+| lvalue `.*` ptr-to-mem | `obj.*ptr` | ✓ Yes |
+| Cast to `T&` | `static_cast<T&>(x)` | ✓ Yes |
+| Post-increment | `x++` | ✗ No (prvalue) |
+| Literals (non-string) | `42`, `3.14` | ✗ No (prvalue) |
+| Temporary object | `Type{}` | ✗ No (prvalue) |
+| `std::move(x)` | `std::move(x)` | ✗ No (xvalue) |
+
+## Key Characteristics of lvalues
+
+An expression is an **lvalue** if:
+1. ✓ Has identity (occupies memory location)
+2. ✓ Can take its address with `&`
+3. ✓ Can bind to lvalue reference (`T&`)
+4. ✓ Can appear on the left side of assignment (usually)
+5. ✗ Cannot be moved from (not an rvalue)
+
+This is the complete, exhaustive list of lvalue expressions in C++!
+
+# Complete List of rvalue Expressions in C++
+
+An **rvalue** is an expression that can be moved from. Remember: **rvalue = xvalue OR prvalue**
+
+So this list includes both xvalues and prvalues.
+
+## Category 1: prvalues (Pure rvalues - no identity)
+
+### 1.1 Literals (except string literals)
+
+```cpp
+// Numeric literals
+42;                 // prvalue (int)
+3.14;               // prvalue (double)
+3.14f;              // prvalue (float)
+100L;               // prvalue (long)
+100ULL;             // prvalue (unsigned long long)
+
+// Character literals
+'a';                // prvalue (char)
+L'x';               // prvalue (wchar_t)
+u8'y';              // prvalue (char8_t)
+
+// Boolean literals
+true;               // prvalue (bool)
+false;              // prvalue (bool)
+
+// Pointer literals
+nullptr;            // prvalue (nullptr_t)
+
+// String literals are NOT prvalues - they're lvalues!
+// "hello";         // lvalue (const char[6])
+```
+
+### 1.2 Arithmetic and Logical Operations
+
+```cpp
+int x = 5;
+int y = 10;
+
+// Arithmetic operators
+x + y;              // prvalue
+x - y;              // prvalue
+x * y;              // prvalue
+x / y;              // prvalue
+x % y;              // prvalue
+
+// Unary arithmetic
++x;                 // prvalue
+-x;                 // prvalue
+
+// Logical operators
+x && y;             // prvalue (bool)
+x || y;             // prvalue (bool)
+!x;                 // prvalue (bool)
+
+// Bitwise operators
+x & y;              // prvalue
+x | y;              // prvalue
+x ^ y;              // prvalue
+~x;                 // prvalue
+x << 2;             // prvalue
+x >> 2;             // prvalue
+```
+
+### 1.3 Comparison Operations
+
+```cpp
+int x = 5;
+int y = 10;
+
+x == y;             // prvalue (bool)
+x != y;             // prvalue (bool)
+x < y;              // prvalue (bool)
+x > y;              // prvalue (bool)
+x <= y;             // prvalue (bool)
+x >= y;             // prvalue (bool)
+```
+
+### 1.4 Post-increment and Post-decrement
+
+```cpp
+int x = 5;
+
+x++;                // prvalue (returns copy of old value)
+x--;                // prvalue (returns copy of old value)
+
+// Contrast with pre-increment (lvalue):
+// ++x;             // lvalue (returns reference)
+```
+
+### 1.5 Address-of Operator
+
+```cpp
+int x = 5;
+int* ptr = &x;
+
+&x;                 // prvalue (int*)
+&ptr;               // prvalue (int**)
+
+int arr[5];
+&arr;               // prvalue (int(*)[5])
+
+void func() {}
+&func;              // prvalue (void(*)())
+```
+
+### 1.6 Temporary Objects (Explicit Construction)
+
+```cpp
+std::string();              // prvalue
+std::string("hello");       // prvalue
+std::vector<int>();         // prvalue
+std::vector<int>{1, 2, 3};  // prvalue
+
+struct Point { int x, y; };
+Point{10, 20};              // prvalue
+Point();                    // prvalue
+
+// Class type temporaries
+Widget();                   // prvalue
+Widget{42, "test"};         // prvalue
+```
+
+### 1.7 Function Calls Returning by Value
+
+```cpp
+int getValue() { return 42; }
+std::string getString() { return "hello"; }
+Widget getWidget() { return Widget{1, "test"}; }
+
+getValue();         // prvalue (int)
+getString();        // prvalue (std::string)
+getWidget();        // prvalue (Widget)
+
+// Even built-in operators returning by value
+int arr[5];
+sizeof(arr);        // prvalue (size_t)
+```
+
+### 1.8 Lambda Expressions
+
+```cpp
+// Lambda expression itself is prvalue
+[](int x) { return x * 2; };        // prvalue (closure type)
+[x = 5]() { return x; };            // prvalue
+[&](int a, int b) { return a + b; }; // prvalue
+
+// Assigned to variable becomes lvalue
+auto lambda = [](int x) { return x * 2; }; // lambda is now lvalue
+```
+
+### 1.9 `this` Pointer
+
+```cpp
+struct MyClass {
+    void foo() {
+        this;       // prvalue (MyClass*)
+        // Note: *this is lvalue
+    }
+};
+```
+
+### 1.10 Type Conversions and Casts (to non-reference)
+
+```cpp
+int x = 5;
+
+(double)x;                      // prvalue (double)
+static_cast<double>(x);         // prvalue (double)
+reinterpret_cast<long>(x);      // prvalue (long)
+const_cast<int>(x);             // prvalue (int)
+
+// C++ functional cast
+double(x);                      // prvalue (double)
+int(3.14);                      // prvalue (int)
+```
+
+### 1.11 Member Access on rvalue Object (non-reference member)
+
+```cpp
+struct Widget {
+    int value;
+    std::string name;
+};
+
+Widget getWidget() { return Widget{42, "test"}; }
+
+getWidget().value;      // xvalue (covered below, but it's an rvalue!)
+getWidget().name;       // xvalue (covered below, but it's an rvalue!)
+Widget{1, "x"}.value;   // xvalue
+```
+
+### 1.12 Ternary Operator (when operands are prvalues)
+
+```cpp
+int x = 5;
+int y = 10;
+bool flag = true;
+
+flag ? 42 : 99;             // prvalue
+flag ? 3.14 : 2.71;         // prvalue
+flag ? std::string("a") : std::string("b");  // prvalue
+```
+
+### 1.13 `sizeof`, `alignof`, `typeid`
+
+```cpp
+int x = 5;
+
+sizeof(x);              // prvalue (size_t)
+sizeof(int);            // prvalue (size_t)
+alignof(double);        // prvalue (size_t)
+typeid(x);              // lvalue (exception to the rule!)
+```
+
+### 1.14 `new` Expression
+
+```cpp
+new int;                // prvalue (int*)
+new int(42);            // prvalue (int*)
+new int[5];             // prvalue (int*)
+new std::string("hi");  // prvalue (std::string*)
+new Widget{1, "test"};  // prvalue (Widget*)
+```
+
+### 1.15 Comma Operator (when right operand is prvalue)
+
+```cpp
+int x = 5;
+
+(x++, 42);              // prvalue (right operand is prvalue)
+(foo(), 3.14);          // prvalue
+```
+
+### 1.16 Enumerator Values
+
+```cpp
+enum Color { RED, GREEN, BLUE };
+
+RED;                    // prvalue (Color)
+GREEN;                  // prvalue (Color)
+BLUE;                   // prvalue (Color)
+```
+
+## Category 2: xvalues (Expiring values - has identity, can be moved)
+
+### 2.1 `std::move`
+
+```cpp
+int x = 5;
+std::string str = "hello";
+std::vector<int> vec{1, 2, 3};
+
+std::move(x);           // xvalue (int&&)
+std::move(str);         // xvalue (std::string&&)
+std::move(vec);         // xvalue (std::vector<int>&&)
+
+// Works on any expression
+std::move(arr[0]);      // xvalue
+std::move(obj.member);  // xvalue
+```
+
+### 2.2 `std::forward` (when forwarding rvalue)
+
+```cpp
+template<typename T>
+void wrapper(T&& arg) {
+    std::forward<T>(arg);  // xvalue when T is rvalue reference type
+}
+
+std::string s = "test";
+wrapper(std::move(s));  // std::forward produces xvalue here
+```
+
+### 2.3 Cast to Rvalue Reference
+
+```cpp
+int x = 5;
+std::string str = "hello";
+
+static_cast<int&&>(x);              // xvalue
+static_cast<std::string&&>(str);    // xvalue
+(std::string&&)str;                 // xvalue (C-style)
+```
+
+### 2.4 Function Call Returning Rvalue Reference
+
+```cpp
+int x = 5;
+
+int&& getRvalueRef() {
+    static int val = 42;
+    return std::move(val);
+}
+
+getRvalueRef();         // xvalue (int&&)
+
+// Temporary materialization
+std::string&& getStringRef() {
+    static std::string s = "test";
+    return std::move(s);
+}
+
+getStringRef();         // xvalue (std::string&&)
+```
+
+### 2.5 Array Subscript on Array rvalue
+
+```cpp
+using IntArray = int[5];
+
+IntArray&& getArray() {
+    static int arr[5] = {1, 2, 3, 4, 5};
+    return std::move(arr);
+}
+
+getArray()[0];          // xvalue
+getArray()[2];          // xvalue
+
+// Or with temporary
+IntArray{1, 2, 3, 4, 5}[0];  // xvalue (if supported)
+```
+
+### 2.6 Member Access on rvalue Object
+
+```cpp
+struct Widget {
+    int value;
+    std::string name;
+};
+
+Widget getWidget() { return Widget{42, "test"}; }
+
+// prvalue.member → xvalue
+getWidget().value;              // xvalue (int&&)
+getWidget().name;               // xvalue (std::string&&)
+Widget{1, "x"}.value;           // xvalue
+
+// xvalue.member → xvalue
+std::move(getWidget()).value;   // xvalue
+```
+
+### 2.7 Pointer-to-Member on rvalue Object (`.*` with rvalue)
+
+```cpp
+struct Data {
+    int value;
+    std::string name;
+};
+
+Data getData() { return Data{42, "test"}; }
+
+int Data::*ptrValue = &Data::value;
+std::string Data::*ptrName = &Data::name;
+
+getData().*ptrValue;            // xvalue
+getData().*ptrName;             // xvalue
+std::move(getData()).*ptrValue; // xvalue
+```
+
+### 2.8 Ternary Operator with xvalue Operands
+
+```cpp
+std::string a = "first";
+std::string b = "second";
+bool flag = true;
+
+// Both operands xvalue → result is xvalue
+flag ? std::move(a) : std::move(b);  // xvalue
+
+// Mixed: at least one xvalue, result depends on rules
+flag ? std::move(a) : b;             // Can be xvalue or other
+```
+
+### 2.9 Comma Operator (when right operand is xvalue)
+
+```cpp
+int x = 5;
+std::string str = "hello";
+
+(x++, std::move(str));          // xvalue (right operand is xvalue)
+(foo(), std::move(x));          // xvalue
+```
+
+### 2.10 Subscript on String/Vector rvalue
+
+```cpp
+std::string getString() { return "hello"; }
+std::vector<int> getVector() { return {1, 2, 3}; }
+
+getString()[0];         // xvalue (char&&)
+getVector()[1];         // xvalue (int&&)
+
+// Explicit temporary
+std::string("test")[0]; // xvalue
+```
+
+## Complete Demonstration
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+#include <type_traits>
+
+struct Widget {
+    int value;
+    std::string name;
+};
+
+Widget getWidget() { return Widget{42, "test"}; }
+
+int getValue() { return 42; }
+
+int&& getRvalueRef() {
+    static int val = 99;
+    return std::move(val);
+}
+
+template<typename T>
+void checkRvalue(T&& val, const char* expr) {
+    std::cout << expr << ": ";
+    if constexpr (std::is_lvalue_reference_v<T>) {
+        std::cout << "lvalue (NOT rvalue)\n";
+    } else {
+        std::cout << "rvalue ✓\n";
+    }
+}
+
+int main() {
+    int x = 5;
+    std::string str = "hello";
+    int arr[3] = {1, 2, 3};
+    Widget w{10, "local"};
+
+    std::cout << "=== PRVALUES ===\n";
+    checkRvalue(42, "42");
+    checkRvalue(3.14, "3.14");
+    checkRvalue(true, "true");
+    checkRvalue(nullptr, "nullptr");
+    checkRvalue(x + 5, "x + 5");
+    checkRvalue(x * 2, "x * 2");
+    checkRvalue(x == 5, "x == 5");
+    checkRvalue(x++, "x++");
+    checkRvalue(&x, "&x");
+    checkRvalue(Widget{1, "temp"}, "Widget{1, \"temp\"}");
+    checkRvalue(getValue(), "getValue()");
+    checkRvalue(std::string("temp"), "std::string(\"temp\")");
+    checkRvalue([](){ return 1; }, "lambda");
+
+    std::cout << "\n=== XVALUES ===\n";
+    checkRvalue(std::move(x), "std::move(x)");
+    checkRvalue(std::move(str), "std::move(str)");
+    checkRvalue(std::move(w), "std::move(w)");
+    checkRvalue(static_cast<int&&>(x), "static_cast<int&&>(x)");
+    checkRvalue(getRvalueRef(), "getRvalueRef()");
+    checkRvalue(getWidget().value, "getWidget().value");
+    checkRvalue(getWidget().name, "getWidget().name");
+    checkRvalue(std::move(w).name, "std::move(w).name");
+
+    std::cout << "\n=== NOT RVALUES (lvalues) ===\n";
+    checkRvalue(x, "x");
+    checkRvalue(str, "str");
+    checkRvalue(arr[0], "arr[0]");
+    checkRvalue(++x, "++x");
+    checkRvalue(w.value, "w.value");
+    checkRvalue(*(&x), "*(&x)");
+}
+```
+
+**Output:**
+```
+=== PRVALUES ===
+42: rvalue ✓
+3.14: rvalue ✓
+true: rvalue ✓
+nullptr: rvalue ✓
+x + 5: rvalue ✓
+x * 2: rvalue ✓
+x == 5: rvalue ✓
+x++: rvalue ✓
+&x: rvalue ✓
+Widget{1, "temp"}: rvalue ✓
+getValue(): rvalue ✓
+std::string("temp"): rvalue ✓
+lambda: rvalue ✓
+
+=== XVALUES ===
+std::move(x): rvalue ✓
+std::move(str): rvalue ✓
+std::move(w): rvalue ✓
+static_cast<int&&>(x): rvalue ✓
+getRvalueRef(): rvalue ✓
+getWidget().value: rvalue ✓
+getWidget().name: rvalue ✓
+std::move(w).name: rvalue ✓
+
+=== NOT RVALUES (lvalues) ===
+x: lvalue (NOT rvalue)
+str: lvalue (NOT rvalue)
+arr[0]: lvalue (NOT rvalue)
+++x: lvalue (NOT rvalue)
+w.value: lvalue (NOT rvalue)
+*(&x): lvalue (NOT rvalue)
+```
+
+## Summary Table
+
+| Expression Type | Example | rvalue? | Subcategory |
+|----------------|---------|---------|-------------|
+| Literals (non-string) | `42`, `3.14`, `true` | ✓ Yes | prvalue |
+| String literals | `"hello"` | ✗ No | lvalue |
+| Arithmetic ops | `x + y`, `x * 2` | ✓ Yes | prvalue |
+| Comparison ops | `x == y`, `x < y` | ✓ Yes | prvalue |
+| Post-increment | `x++` | ✓ Yes | prvalue |
+| Pre-increment | `++x` | ✗ No | lvalue |
+| Address-of | `&x` | ✓ Yes | prvalue |
+| Temporary objects | `Widget{}` | ✓ Yes | prvalue |
+| Function return by value | `getValue()` | ✓ Yes | prvalue |
+| Lambda expressions | `[](){}` | ✓ Yes | prvalue |
+| `std::move` | `std::move(x)` | ✓ Yes | xvalue |
+| Cast to `T&&` | `static_cast<T&&>(x)` | ✓ Yes | xvalue |
+| Function return `T&&` | `getRvalueRef()` | ✓ Yes | xvalue |
+| Member of rvalue | `getWidget().member` | ✓ Yes | xvalue |
+| Variable names | `x`, `str` | ✗ No | lvalue |
+| Array subscript (lvalue) | `arr[0]` | ✗ No | lvalue |
+| Member of lvalue | `obj.member` | ✗ No | lvalue |
+
+## Key Characteristics of rvalues
+
+An expression is an **rvalue** if:
+1. ✓ Can bind to rvalue reference (`T&&`)
+2. ✓ Can bind to const lvalue reference (`const T&`)
+3. ✗ Cannot bind to lvalue reference (`T&`)
+4. ✓ Can be moved from
+5. ✓ May or may not have identity (prvalue: no, xvalue: yes)
+
+This is the complete list of rvalue expressions in C++!
