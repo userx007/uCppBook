@@ -1,5 +1,3 @@
- // c++ -std=c++20 17a_iterators.cpp 
-
 #include <iostream>
 #include <vector>
 #include <list>
@@ -21,7 +19,8 @@ void print_iterator_category() {
         std::cout << "Forward Iterator\n";
     } else if constexpr (std::input_iterator<Iterator>) {
         std::cout << "Input Iterator\n";
-    } else if constexpr (std::output_iterator<Iterator, typename std::iterator_traits<Iterator>::value_type>) {
+    } else if constexpr (std::output_iterator<Iterator, int>) {
+        // Use a dummy type (int) to detect output iterators like ostream_iterator
         std::cout << "Output Iterator\n";
     } else {
         std::cout << "Unknown Iterator Type\n";
