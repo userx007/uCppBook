@@ -1,41 +1,3 @@
-# C++ initialization methods
-
-## Key Topics Covered:
-
-**1. Copy Initialization** (`T obj = value;`)
-- Uses assignment-like syntax
-- May involve implicit conversions
-- Cannot use explicit constructors
-
-**2. Direct Initialization** (`T obj(args);`)
-- Directly calls constructors
-- Works with explicit constructors
-- Traditional parentheses syntax
-
-**3. List Initialization** (`T obj{args};`)
-- Brace initialization introduced in C++11
-- Prevents dangerous narrowing conversions
-- Safer and more modern
-
-**4. Uniform Initialization**
-- Consistent brace syntax `{}` for all types
-- Solves the "most vexing parse" problem
-- Preferred in modern C++
-
-**5. Aggregate Initialization**
-- For simple structs/classes without constructors
-- Direct member initialization
-- Supports nested structures
-
-## Key Differences:
-
-The code demonstrates important distinctions like:
-- `std::vector<int> v(10)` creates 10 elements
-- `std::vector<int> v{10}` creates 1 element with value 10
-- Uniform initialization prevents narrowing: `int x{3.14}` won't compile
-- Direct initialization allows explicit constructors where copy init doesn't
-
-```cpp
 /*
  * C++ INITIALIZATION METHODS - COMPREHENSIVE GUIDE
  * ================================================
@@ -332,4 +294,3 @@ int main() {
     
     return 0;
 }
-```
