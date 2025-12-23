@@ -1,70 +1,3 @@
-# std::span - A Comprehensive Guide
-
-`std::span` is a C++20 feature that provides a lightweight, non-owning view over a contiguous sequence of objects. It's essentially a safer and more expressive alternative to passing raw pointers with size information.
-
-## Key Characteristics
-
-- **Non-owning**: Doesn't manage memory, just refers to existing data
-- **Contiguous memory**: Works with arrays, vectors, and other contiguous containers
-- **Bounds-aware**: Knows its size, preventing many common errors
-- **Zero-overhead**: No runtime cost compared to pointer arithmetic
-- **Can have static or dynamic extent**: Size can be known at compile-time or runtime
-
-Let me provide comprehensive examples covering all major use cases:## Detailed Explanation
-
-### What is std::span?
-
-`std::span` is a template class that represents a view over a contiguous sequence of objects. Think of it as a "reference" to an array that knows its own size. It consists of just two pieces of information: a pointer to the first element and the number of elements.
-
-### Why Use std::span?
-
-**Problems it solves:**
-1. **Pointer decay**: When arrays decay to pointers, size information is lost
-2. **Interface bloat**: Need separate overloads for different container types
-3. **Unsafe buffer access**: Easy to read/write beyond array bounds
-4. **C-style API limitations**: `(pointer, size)` pairs are error-prone
-
-### Key Use Cases in Detail
-
-**1. Function Parameters**
-Instead of multiple overloads for `vector<T>`, `array<T,N>`, `T*`, you write one function accepting `span<T>`. This provides a uniform interface without templates.
-
-**2. Zero-copy Views**
-Creating subviews (first N elements, last N elements, middle section) without copying data. Perfect for processing chunks of large datasets.
-
-**3. API Boundaries**
-When interfacing with C libraries or when you need to pass contiguous data without exposing implementation details of your container.
-
-**4. Const Correctness**
-`span<const T>` ensures read-only access while `span<T>` allows modification. The type system enforces this at compile time.
-
-**5. Algorithm Compatibility**
-Works seamlessly with STL algorithms via `begin()` and `end()` iterators.
-
-### Static vs Dynamic Extent
-
-```cpp
-std::span<int, 5>    // Static: size known at compile time
-std::span<int>       // Dynamic: size known at runtime (default)
-```
-
-Static extent enables compiler optimizations and compile-time size checks but is less flexible.
-
-### Important Safety Notes
-
-- **Lifetime management**: `std::span` doesn't own data. Ensure the underlying data outlives the span
-- **No bounds checking**: `operator[]` doesn't check bounds (use manual checks)
-- **Contiguous memory only**: Won't work with `std::list`, `std::deque`, etc.
-
-### Common Pitfalls
-
-1. **Dangling spans**: Returning span to local variable
-2. **Temporary lifetime**: Creating span from temporary object
-3. **Implicit conversions**: Be careful with narrowing conversions
-
-The code artifact I've created shows 13 different use cases with complete, runnable examples. Each demonstrates best practices for real-world scenarios!
-
-```cpp
 #include <span>
 #include <vector>
 #include <array>
@@ -375,4 +308,3 @@ void createReadOnlyView() {
     std::span<const int> readOnly = data;
     // readOnly[0] = 5; // ERROR: cannot modify through const span
 }
-```
