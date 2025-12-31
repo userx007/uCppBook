@@ -1,5 +1,5 @@
 
-# **50 Most Important Topics for a C++ Expert**
+# **The Most Important Topics for a C++ Expert**
 
 ### **Core Language Mastery**
 
@@ -100,7 +100,7 @@
 [67. **Function arguments**](docs/Topics/67_Function_arguments.md)<br>
 [68. **Template Details**](docs/Topics/68_Template_Details.md)<br>
 [69. **Template Overloading vs. Template Specialization**](docs/Topics/69_Template_Overloading_vs_Template_Specialization.md)<br>
-
+[70. **Casting operators**](docs/Topics/70_Casting_operators.md)<br>
 
 
 
