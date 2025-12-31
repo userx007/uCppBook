@@ -7,70 +7,70 @@
 2_Object_lifetimes.md
 3_Copy_elision.md
 4_Move_Semantics_Perfect_Forwarding.md
-5_ RAII_and_Deterministic_Destruction.md
+5_RAII_and_Deterministic_Destruction.md
 6_Operator_overloading_best_practices_and_pitfalls.md
 7_templates.md
 7a_Template_Details.md
 7b_Template_Overloading_vs_Template_Specialization.md
 8_Template_Specialization.md
-9_C++ template metaprogramming patterns.md
+9_C++_template_metaprogramming_patterns.md
 
-10_Understanding C++20 concepts and requires clauses.md
-11_Constexpr functions variables C++11-20 evolution.md
-12_Inline functions ODR and linkage in C++.md
-13_Memory alignment and padding in C++.md
-14_C++ type deduction with auto and decltype.md
-15_Understanding the C++ standard object model.md
-16_C++ containers and data structures.md
-17_Iterators and iterator categories.md
-18_Allocator model and custom allocators.md
-19_Algorithms library and execution policies C++17.md
-20_Smart pointers unique_ptr shared_ptr weak_ptr.md
+10_Understanding_C++20_concepts_and_requires_clauses.md
+11_Constexpr_functions_variables_C++11_20_evolution.md
+12_Inline_functions_ODR_and_linkage_in_C++.md
+13_Memory_alignment_and_padding_in_C++.md
+14_C++_type_deduction_with_auto_and_decltype.md
+15_Understanding_the_C++_standard_object_model.md
+16_C++_containers_and_data_structures.md
+17_Iterators_and_iterator_categories.md
+18_Allocator_model_and_custom_allocators.md
+19_Algorithms_library_and_execution_policies_C++17.md
+20_Smart_pointers_unique_ptr_shared_ptr_weak_ptr.md
 
-21_Function objects lambdas and closures.md
-22_string and string_view.md
+21_Function_objects_lambdas_and_closures.md
+22_string_and_string_view.md
 23_std_optional_variant_any.md
 24_Ranges_C++20_views_adaptors_pipelines.md
-25_Chrono library and time utilities.md
-26_Stack vs heap vs static storage.md
-27_Low-level memory manipulation memcpy placement new.md
-28_Memory ownership models.md
-29_Cache-aware programming.md
+25_Chrono_library_and_time_utilities.md
+26_Stack_vs_heap_vs_static_storage.md
+27_Low_level_memory_manipulation_memcpy_placement_new.md
+28_Memory_ownership_models.md
+29_Cache_aware_programming.md
 
 30_Inlining.md
-31_Move vs copy performance characteristics.md
-32_Avoiding undefined behavior and understanding UB traps.md
-33_Small object optimization EBO Empty Base Optimization.md
-34_Custom memory pools arenas.md
-35_Threads and thread lifecycle.md
-36_Mutexes locks and lock-free programming.md
-37_Atomics and memory ordering.md
-38_Condition variables and synchronization primitives.md
-39_Futures promises async.md
+31_Move_vs_copy_performance_characteristics.md
+32_Avoiding_undefined_behavior_and_understanding_UB_traps.md
+33_Small_object_optimization_EBO_Empty_Base_Optimization.md
+34_Custom_memory_pools_arenas.md
+35_Threads_and_thread_lifecycle.md
+36_Mutexes_locks_and_lock_free_programming.md
+37_Atomics_and_memory_ordering.md
+38_Condition_variables_and_synchronization_primitives.md
+39_Futures_promises_async.md
 
-40_C++20  Coroutines.md
-41_Parallel STL.md
-42_CRTP Curiously Recurring Template Pattern.md
-43_Expression templates.md
-44_Type traits and meta-programming.md
-45_Compile time programming TMP and C++20 constexpr consteval.md
-46_Policy based design and mixins.md
-47_Type Casting.md
-48_Modules in C++20.md
-49_Structured bindings in C++17.md
+40_C++20_Coroutines.md
+41_Parallel_STL.md
+42_CRTP_Curiously_Recurring_Template_Pattern.md
+43_Expression_templates.md
+44_Type_traits_and_meta_programming.md
+45_Compile_time_programming_TMP_and_C++20_constexpr_consteval.md
+46_Policy_based_design_and_mixins.md
+47_Type_Casting.md
+48_Modules_in_C++20.md
+49_Structured_bindings_in_C++17.md
 
-50_std_span C++20 non-owning views of contiguous sequences.md
-51_Three way comparison spaceship operator in c++20.md
-52_Designated initializers C++20.md
-53_Virtual functions vtables and dynamic dispatch.md
-54 - Multiple inheritance virtual inheritance and diamond problem.md
-55_Pimpl idiom.md
-56_Abstract classes and interface design.md
-57_Exception safety guarantees basic strong nothrow.md
-58_Initialization uniform aggregate list direct copy.md
-59_ADL Argument Dependent Lookup and name lookup rules.md
+50_std_span_C++20_non_owning_views_of_contiguous_sequences.md
+51_Three_way_comparison_spaceship_operator_in_c++20.md
+52_Designated_initializers_C++20.md
+53_Virtual_functions_vtables_and_dynamic_dispatch.md
+54___Multiple_inheritance_virtual_inheritance_and_diamond_problem.md
+55_Pimpl_idiom.md
+56_Abstract_classes_and_interface_design.md
+57_Exception_safety_guarantees_basic_strong_nothrow.md
+58_Initialization_uniform_aggregate_list_direct_copy.md
+59_ADL_Argument_Dependent_Lookup_and_name_lookup_rules.md
 
-60_Static initialization order fiasco.md
-61_Attributes nodiscard likely and others.md
-62_Static Polymorphism in C++.md
+60_Static_initialization_order_fiasco.md
+61_Attributes_nodiscard_likely_and_others.md
+62_Static_Polymorphism_in_C++.md
 62a_CRTP.md
