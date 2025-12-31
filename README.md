@@ -4,7 +4,6 @@
 ### **Core Language Mastery**
 
 [1. **Value categories** (lvalues, rvalues, xvalues, glvalues, prvalues)](docs/Topics/1_Value_Categories.md)<br>
-
 [2. **Object lifetime & storage duration**](docs/Topics/2_Object_lifetimes.md)<br>
 [3. **Copy elision & return value optimization (RVO)**](docs/Topics/3_Copy_elision.md)<br>
 [4. **Move semantics** & **perfect forwarding**](docs/Topics/4_Move_Semantics_Perfect_Forwarding.md)<br>
@@ -20,7 +19,6 @@
 [14. **Type deduction** (`auto`, `decltype`, CTAD)](docs/Topics/14_C++_type_deduction_with_auto_and_decltype.md)<br>
 [15. **Understanding the standard object model**](docs/Topics/15_Understanding_the_C++_standard_object_model.md)<br>
 
----
 
 ### **STL & Standard Library**
 
@@ -35,7 +33,6 @@
 [24. **Ranges (C++20)** — views, adaptors, pipelines](docs/Topics/24_Ranges_C++20_views_adaptors_pipelines.md)<br>
 [25. **Chrono library** and time utilities](docs/Topics/25_Chrono_library_and_time_utilities.md)<br>
 
----
 
 ### **Memory & Performance**
 
@@ -49,29 +46,26 @@
 [33. **Small object optimization, EBO (Empty Base Optimization)**](docs/Topics/33_Small_object_optimization_EBO_Empty_Base_Optimization.md)<br>
 [34. **Custom memory pools / arenas**](docs/Topics/34_Custom_memory_pools_arenas.md)<br>
 
----
 
 ### **Concurrency & Parallelism**
 
-[35. **Threads & thread lifecycle**](docs/Topics/)<br>
-[36. **Mutexes, locks, and lock-free programming**](docs/Topics/)<br>
-[37. **Atomics & memory ordering**](docs/Topics/)<br>
-[38. **Condition variables & synchronization primitives**](docs/Topics/)<br>
-[39. **Futures, promises, async**](docs/Topics/)<br>
-[40. **C++20 Coroutines**](docs/Topics/)<br>
-[41. **Parallel STL**](docs/Topics/)<br>
+[35. **Threads & thread lifecycle**](docs/Topics/35_Threads_and_thread_lifecycle.md)<br>
+[36. **Mutexes, locks, and lock-free programming**](docs/Topics/36_Mutexes_locks_and_lock_free_programming)<br>
+[37. **Atomics & memory ordering**](docs/Topics/37_Atomics_and_memory_ordering.md)<br>
+[38. **Condition variables & synchronization primitives**](docs/Topics/38_Condition_variables_and_synchronization_primitives.md)<br>
+[39. **Futures, promises, async**](docs/Topics/39_Futures_promises_async)<br>
+[40. **C++20 Coroutines**](docs/Topics/40_C++20_Coroutines.md)<br>
+[41. **Parallel STL**](docs/Topics/41_Parallel_STL.md)<br>
 
----
 
 ### **Advanced Language Features**
 
-[42. **CRTP (Curiously Recurring Template Pattern)**](docs/Topics/)<br>
-[43. **Expression templates**](docs/Topics/)<br>
-[44. **Type traits & meta-programming**](docs/Topics/)<br>
-[45. **Compile-time programming (TMP & C++20 constexpr + consteval)**](docs/Topics/)<br>
-[46. **Policy-based design & mixins**](docs/Topics/)<br>
+[42. **CRTP (Curiously Recurring Template Pattern)**](docs/Topics/42_CRTP_Curiously_Recurring_Template_Pattern.md)<br>
+[43. **Expression templates**](docs/Topics/43_Expression_templates.md)<br>
+[44. **Type traits & meta-programming**](docs/Topics/44_Type_traits_and_meta_programming.md)<br>
+[45. **Compile-time programming (TMP & C++20 constexpr + consteval)**](docs/Topics/45_Compile_time_programming_TMP_and_C++20_constexpr_consteval.md)<br>
+[46. **Policy-based design & mixins**](docs/Topics/46_Policy_based_design_and_mixins.md)<br>
 
----
 
 ### **Build Systems & Tooling**
 
@@ -79,5 +73,37 @@
 [48. **CMake** and modern C++ project organization](docs/Topics/)<br>
 [49. **Static analysis & sanitizers** (ASan, UBSan, TSan)](docs/Topics/)<br>
 [50. **Debugging tools** (gdb, lldb, valgrind, perf)](docs/Topics/)<br>
+
+
+### **Miscelaneous**
+
+[47. **Type Casting**](docs/Topics/47_Type_Casting.md)<br>
+[48. **Modules in C++20**](docs/Topics/48_Modules_in_C++20.md)<br>
+[49. **Structured bindings in C++17**](docs/Topics/49_Structured_bindings_in_C++17.md)<br>
+[50. **st::span C++20 non owning views of contiguous sequences**](docs/Topics/50_std_span_C++20_non_owning_views_of_contiguous_sequences.md)<br>
+[51. **Three way comparison spaceship operator in C++20**](docs/Topics/51_Three_way_comparison_spaceship_operator_in_c++20.md)<br>
+[52. **Designated initializers C++20**](docs/Topics/52_Designated_initializers_C++20.md)<br>
+[53. **Virtual functions vtables and dynamic dispatch**](docs/Topics/53_Virtual_functions_vtables_and_dynamic_dispatch.md)<br>
+[54. **Multiple inheritance virtual inheritance and diamond problem**](docs/Topics/54_Multiple_inheritance_virtual_inheritance_and_diamond_problem.md)<br>
+[55. **Pimpl idiom**](docs/Topics/55_Pimpl_idiom.md)<br>
+[56. **Abstract classes_and_interface_design**](docs/Topics/56_Abstract_classes_and_interface_design.md)<br>
+[57. **Exception safety guarantees basic strong nothrow**](docs/Topics/57_Exception_safety_guarantees_basic_strong_nothrow.md)<br>
+[58. **Initialization uniform aggregate list direct copy**](docs/Topics/58_Initialization_uniform_aggregate_list_direct_copy.md)<br>
+[59. **ADL Argument Dependent Lookup and name lookup rules**](docs/Topics/59_ADL_Argument_Dependent_Lookup_and_name_lookup_rules.md)<br>
+[60. **Static initialization order fiasco**](docs/Topics/60_Static_initialization_order_fiasco.md)<br>
+[61. **Attributes nodiscard likely and_others**](docs/Topics/61_Attributes_nodiscard_likely_and_others.md)<br>
+[62. **Static polymorphism in C++**](docs/Topics/62_Static_Polymorphism_in_C++.md)<br>
+[63. **Curiously Recurring Template Pattern (CRTP)**](docs/Topics/63_CRTP.md)<br>
+[64. **Expressions statements declarations**](docs/Topics/64_Expressions_statements_declarations.md)<br>
+[65. **Reference binding rules**](docs/Topics/65_Reference_binding_rules.md)<br>
+[66. **Exclusive List Expression Cathegories**](docs/Topics/66_Exclusive_List_Expression_Cathegories.md)<br>
+[67. **Function arguments**](docs/Topics/67_Function_arguments.md)<br>
+[68. **Template Details**](docs/Topics/68_Template_Details.md)<br>
+[69. **Template Overloading vs. Template Specialization**](docs/Topics/69_Template_Overloading_vs_Template_Specialization.md)<br>
+
+
+
+
+
 
 
