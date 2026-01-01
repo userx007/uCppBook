@@ -3,16 +3,16 @@
 
 ### **Core Language Mastery**
 
-[1. **Value categories** (lvalues, rvalues, xvalues, glvalues, prvalues)](docs/Topics/1_Value_Categories.md)<br>
-[2. **Object lifetime & storage duration**](docs/Topics/2_Object_lifetimes.md)<br>
-[3. **Copy elision & return value optimization (RVO)**](docs/Topics/3_Copy_elision.md)<br>
-[4. **Move semantics** & **perfect forwarding**](docs/Topics/4_Move_Semantics_Perfect_Forwarding.md)<br>
-[5. **RAII** and deterministic destruction](docs/Topics/5_RAII_and_Deterministic_Destruction.md)<br>
-[6. **Operator overloading** (best practices & pitfalls)](docs/Topics/6_Operator_overloading_best_practices_and_pitfalls)<br>
-[7. **Templates** (function, class, variable templates)](docs/Topics/7_templates)<br>
-[8. **Template specialization & partial specialization**](docs/Topics/8_Template_Specialization)<br>
-[9. **SFINAE**, tag dispatch, enable_if patterns](docs/Topics/_template_metaprogramming_patterns)<br>
-[10. **Concepts & requires-clauses (C++20)**](docs/Topics/10_Understanding_C++20_concepts_and_requires_clauses)<br>
+[1. **Value categories** (lvalues, rvalues, xvalues, glvalues, prvalues)](docs/Topics/01_Value_Categories.md)<br>
+[2. **Object lifetime & storage duration**](docs/Topics/02_Object_lifetimes.md)<br>
+[3. **Copy elision & return value optimization (RVO)**](docs/Topics/03_Copy_elision.md)<br>
+[4. **Move semantics** & **perfect forwarding**](docs/Topics/04_Move_Semantics_Perfect_Forwarding.md)<br>
+[5. **RAII** and deterministic destruction](docs/Topics/05_RAII_and_Deterministic_Destruction.md)<br>
+[6. **Operator overloading** (best practices & pitfalls)](docs/Topics/06_Operator_overloading_best_practices_and_pitfalls)<br>
+[7. **Templates** (function, class, variable templates)](docs/Topics/07_templates)<br>
+[8. **Template specialization & partial specialization**](docs/Topics/08_Template_Specialization)<br>
+[9. **SFINAE**, tag dispatch, enable_if patterns](docs/Topics/09_C++_template_metaprogramming_patterns.md)<br>
+[10. **Concepts & requires-clauses (C++20)**](docs/Topics/10_Understanding_C++20_concepts_and_requires_clauses.md)<br>
 [11. **Constexpr functions/variables** (C++11-20 evolution)](docs/Topics/11_Constexpr_functions_variables_C++11_20_evolution.md)<br>
 [12. **Inline functions, ODR & linkage**](docs/Topics/12_Inline_functions_ODR_and_linkage_in_C++.md)<br>
 [13. **Memory alignment & padding**](docs/Topics/13_Memory_alignment_and_padding_in_C++.md)<br>
@@ -50,10 +50,10 @@
 ### **Concurrency & Parallelism**
 
 [35. **Threads & thread lifecycle**](docs/Topics/35_Threads_and_thread_lifecycle.md)<br>
-[36. **Mutexes, locks, and lock-free programming**](docs/Topics/36_Mutexes_locks_and_lock_free_programming)<br>
+[36. **Mutexes, locks, and lock-free programming**](docs/Topics/36_Mutexes_locks_and_lock_free_programming.md)<br>
 [37. **Atomics & memory ordering**](docs/Topics/37_Atomics_and_memory_ordering.md)<br>
 [38. **Condition variables & synchronization primitives**](docs/Topics/38_Condition_variables_and_synchronization_primitives.md)<br>
-[39. **Futures, promises, async**](docs/Topics/39_Futures_promises_async)<br>
+[39. **Futures, promises, async**](docs/Topics/39_Futures_promises_async.md)<br>
 [40. **C++20 Coroutines**](docs/Topics/40_C++20_Coroutines.md)<br>
 [41. **Parallel STL**](docs/Topics/41_Parallel_STL.md)<br>
 
