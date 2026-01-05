@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ concurrency mechanisms covering mutexes, locks, and lock-free programming with practical examples.I've created a comprehensive guide covering mutexes, locks, and lock-free programming in C++. Here's what's included:
+# Guide on C++ concurrency mechanisms covering mutexes, locks, and lock-free programming
 
 **Key Topics Covered:**
 

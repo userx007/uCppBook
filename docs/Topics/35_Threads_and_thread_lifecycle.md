@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ threads and their lifecycle with detailed examples.I've created a comprehensive guide covering C++ threads and their lifecycle. Here are the key points:
+# Guide on C++ threads and their lifecycle
 
 **Thread Lifecycle Stages:**
 - Created → Runnable → Running → Blocked/Waiting → Terminated

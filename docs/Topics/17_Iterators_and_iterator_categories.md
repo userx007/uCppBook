@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ iterators and iterator categories with detailed examples.I've created a comprehensive guide covering C++ iterators and iterator categories. Here's what's included:
+# Guide on C++ iterators and iterator categories 
 
 ## Key Sections:
 

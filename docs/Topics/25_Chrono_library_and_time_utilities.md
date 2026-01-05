@@ -148,7 +148,7 @@ The chrono library interoperates with C-style time functions through conversion 
 
 The chrono library represents a significant improvement over traditional time handling in C++, providing type safety, dimensional analysis through templates, and clear semantics for different kinds of time measurements. Its design prevents common errors like accidentally mixing different time units and makes code that manipulates time more expressive and maintainable.
 
-I'll create a comprehensive C++ program demonstrating all the major use cases of the chrono library.I've created a comprehensive C++ program that demonstrates all major use cases of the chrono library. Here's what it covers:
+# C++ program demonstrating all the major use cases of the chrono library
 
 ## Features Demonstrated:
 

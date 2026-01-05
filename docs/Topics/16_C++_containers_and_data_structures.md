@@ -1,4 +1,4 @@
-I'll create a comprehensive guide to C++ containers with detailed explanations and practical examples.I've created a comprehensive guide covering all major C++ containers with working examples. Here's an overview of what's included:
+# Guide to C++ containers
 
 ## Container Categories:
 

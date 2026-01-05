@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on Parallel STL for you with detailed explanations and practical examples.I've created a comprehensive guide to Parallel STL in C++ with practical examples covering all major aspects. Here's a summary of what's included:
+# Guide on Parallel STL
 
 ## Key Topics Covered:
 

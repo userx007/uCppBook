@@ -36,8 +36,6 @@ The type system treats all of these consistently through the lens of function ob
 
 Understanding the connection between these concepts helps clarify why lambdas behave as they do, particularly around capture semantics and lifetime management. It also reveals that the apparently different constructs are really variations on the same fundamental theme: creating objects that bundle together code to execute with the state that code needs to operate on.
 
-I'll provide a comprehensive set of examples covering function objects, lambdas, and closures. This will be substantial code, so I'll create an artifact with well-commented examples.I've created a comprehensive set of examples that cover all aspects of function objects, lambdas, and closures. Here's what each section demonstrates:
-
 ## Key Examples Included:
 
 **1. Basic Function Objects**

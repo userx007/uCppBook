@@ -343,4 +343,3 @@ if constexpr (std::integral<T>) {
 3. **Concept vs. requires-expression**: Concepts are named and reusable, requires-expressions are inline checks
 4. **Compound requirement syntax**: Remember the `->` for return type constraints
 
-This covers the essential aspects of C++20 concepts and requires-clauses. Would you like me to dive deeper into any specific area, or would you like to see more practical examples?

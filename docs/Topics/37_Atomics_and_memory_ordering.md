@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ atomics and memory ordering with practical examples.I've created a comprehensive guide on C++ atomics and memory ordering. The guide covers:
+# Guide on C++ atomics and memory ordering 
 
 **Key Topics:**
 - What atomics are and why they're needed for thread-safe programming

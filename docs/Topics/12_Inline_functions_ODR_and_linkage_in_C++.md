@@ -213,5 +213,3 @@ class Calculator {
     }
 };
 ```
-
-Would you like me to dive deeper into any particular aspect, or work through some specific examples?

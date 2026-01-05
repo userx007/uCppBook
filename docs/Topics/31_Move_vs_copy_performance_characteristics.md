@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on move vs copy performance characteristics in C++ with detailed examples and benchmarks!I've created a comprehensive guide on move vs copy performance characteristics in C++! Here's what the code demonstrates:
+# Guide on move vs copy performance characteristics in C++ 
 
 ## Key Concepts Covered:
 

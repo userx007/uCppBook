@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ futures, promises, and async with practical examples.I've created a comprehensive guide to C++ futures, promises, and async with 8 practical examples. Here's what's covered:
+# Guide on C++ futures, promises, and async
 
 **Core Concepts:**
 - **`std::future<T>`** - A placeholder for a value that will be computed asynchronously

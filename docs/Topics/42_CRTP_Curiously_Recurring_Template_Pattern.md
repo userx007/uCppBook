@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on CRTP with detailed examples and explanations.I've created a comprehensive guide on **CRTP (Curiously Recurring Template Pattern)** with 7 practical examples covering different use cases.
+# Guide on CRTP (Curiously Recurring Template Pattern)
 
 ## What is CRTP?
 

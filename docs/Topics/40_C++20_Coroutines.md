@@ -1,4 +1,4 @@
-I'll create a comprehensive guide to C++20 Coroutines with practical examples.I've created a comprehensive guide to C++20 Coroutines with five practical examples. Here's what's covered:
+# Guide to C++20 Coroutines
 
 ## Key Concepts Demonstrated:
 

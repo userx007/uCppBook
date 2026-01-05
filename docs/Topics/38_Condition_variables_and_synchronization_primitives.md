@@ -1,4 +1,4 @@
-I'll create a comprehensive guide on C++ condition variables and synchronization primitives with practical examples.I've created a comprehensive guide on C++ condition variables and synchronization primitives. The document covers:
+# Guide on C++ condition variables and synchronization primitives
 
 **Key Topics:**
 - **Core Primitives**: Mutexes, lock guards (`lock_guard`, `unique_lock`, `scoped_lock`)
