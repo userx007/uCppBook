@@ -101,6 +101,9 @@
 [68. **Template Details**](docs/Topics/68_Template_Details.md)<br>
 [69. **Template Overloading vs. Template Specialization**](docs/Topics/69_Template_Overloading_vs_Template_Specialization.md)<br>
 [70. **Casting operators**](docs/Topics/70_Casting_operators.md)<br>
+[71. **Feature list C++20 (main topics)**](docs/Topics/71_C++20_new_features.md)<br>
+[72. **Feature list C++23 (main topics)**](docs/Topics/72_C++23_new_features.md)<br>
+
 
 
 
