@@ -105,6 +105,7 @@
 [72. **Feature list C++23 (main topics)**](docs/Topics/72_C++23_new_features.md)<br>
 [73. **C++ View Types Comparison**](docs/Topics/73_C++_View_Types_Comparison.md)<br>
 [74. **C++ Lambdas**](docs/Topics/74_Lambdas.md)<br>
+[75. **C++ std::function**](docs/Topics/75_std_function.md)<br>
 
 ---
 
