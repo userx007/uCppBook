@@ -106,6 +106,7 @@
 [73. **C++ View Types Comparison**](docs/Topics/73_C++_View_Types_Comparison.md)<br>
 [74. **C++ Lambdas**](docs/Topics/74_Lambdas.md)<br>
 [75. **C++ std::function**](docs/Topics/75_std_function.md)<br>
+[76. **C++ std::transform**](docs/Topics/76_std_transform.md)<br>
 
 ---
 

@@ -453,3 +453,423 @@ int main() {
     return 0;
 }
 ```
+---
+
+# std::vector
+
+## Construction and Initialization
+
+```cpp
+#include <vector>
+
+// Empty vector
+std::vector<int> v1;
+
+// Vector with size
+std::vector<int> v2(5);  // 5 elements, default-initialized to 0
+
+// Vector with size and value
+std::vector<int> v3(5, 10);  // {10, 10, 10, 10, 10}
+
+// Initializer list
+std::vector<int> v4 = {1, 2, 3, 4, 5};
+
+// Copy constructor
+std::vector<int> v5(v4);
+
+// Range constructor
+std::vector<int> v6(v4.begin(), v4.end());
+```
+
+## Capacity Methods
+
+```cpp
+std::vector<int> v = {1, 2, 3};
+
+v.size();      // Returns 3 (number of elements)
+v.capacity();  // Returns capacity (may be >= size)
+v.empty();     // Returns false
+v.max_size();  // Returns maximum possible size
+
+v.reserve(100);  // Reserves space for 100 elements
+v.shrink_to_fit();  // Reduces capacity to fit size
+```
+
+## Element Access
+
+```cpp
+std::vector<int> v = {10, 20, 30, 40, 50};
+
+v[2];        // Returns 30 (no bounds checking)
+v.at(2);     // Returns 30 (with bounds checking, throws if out of range)
+v.front();   // Returns 10 (first element)
+v.back();    // Returns 50 (last element)
+v.data();    // Returns pointer to underlying array
+```
+
+## Modifiers - Adding Elements
+
+```cpp
+std::vector<int> v = {1, 2, 3};
+
+v.push_back(4);  // Adds 4 to end: {1, 2, 3, 4}
+v.emplace_back(5);  // Constructs 5 in-place at end: {1, 2, 3, 4, 5}
+
+v.insert(v.begin() + 1, 99);  // Insert 99 at position 1: {1, 99, 2, 3, 4, 5}
+v.insert(v.end(), 3, 7);  // Insert three 7s at end: {1, 99, 2, 3, 4, 5, 7, 7, 7}
+
+std::vector<int> extra = {100, 200};
+v.insert(v.begin(), extra.begin(), extra.end());  // Insert range at beginning
+```
+
+## Modifiers - Removing Elements
+
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5};
+
+v.pop_back();  // Removes last element: {1, 2, 3, 4}
+v.erase(v.begin() + 1);  // Removes element at index 1: {1, 3, 4}
+v.erase(v.begin(), v.begin() + 2);  // Removes range: {4}
+
+v.clear();  // Removes all elements (size becomes 0)
+```
+
+## Resizing
+
+```cpp
+std::vector<int> v = {1, 2, 3};
+
+v.resize(5);  // Increases size to 5: {1, 2, 3, 0, 0}
+v.resize(7, 99);  // Increases size to 7, filling with 99: {1, 2, 3, 0, 0, 99, 99}
+v.resize(2);  // Decreases size to 2: {1, 2}
+```
+
+## Other Useful Methods
+
+```cpp
+std::vector<int> v1 = {1, 2, 3};
+std::vector<int> v2 = {4, 5, 6};
+
+v1.swap(v2);  // Swaps contents: v1 = {4, 5, 6}, v2 = {1, 2, 3}
+
+v1.assign(3, 10);  // Replaces content: {10, 10, 10}
+v1.assign({7, 8, 9});  // Replaces with initializer list: {7, 8, 9}
+```
+
+## Iterators
+
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5};
+
+// Forward iteration
+for (auto it = v.begin(); it != v.end(); ++it) {
+    std::cout << *it << " ";
+}
+
+// Reverse iteration
+for (auto it = v.rbegin(); it != v.rend(); ++it) {
+    std::cout << *it << " ";
+}
+
+// Const iterators
+auto cit = v.cbegin();  // const iterator
+auto crit = v.crbegin();  // const reverse iterator
+```
+
+## Practical Example: Complete Program
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    // Create and populate vector
+    std::vector<int> numbers = {5, 2, 8, 1, 9};
+    
+    // Add elements
+    numbers.push_back(3);
+    numbers.emplace_back(7);
+    
+    // Access elements
+    std::cout << "First: " << numbers.front() << "\n";
+    std::cout << "Last: " << numbers.back() << "\n";
+    std::cout << "Size: " << numbers.size() << "\n";
+    
+    // Sort the vector
+    std::sort(numbers.begin(), numbers.end());
+    
+    // Iterate and print
+    std::cout << "Sorted: ";
+    for (int n : numbers) {
+        std::cout << n << " ";
+    }
+    std::cout << "\n";
+    
+    // Remove specific element
+    numbers.erase(std::remove(numbers.begin(), numbers.end(), 5), numbers.end());
+    
+    // Check if empty
+    if (!numbers.empty()) {
+        std::cout << "Vector still has " << numbers.size() << " elements\n";
+    }
+    
+    return 0;
+}
+```
+
+The key differences to remember:
+- `push_back()` vs `emplace_back()`: emplace constructs in-place (more efficient for complex types)
+- `[]` vs `at()`: at() provides bounds checking
+- `size()` vs `capacity()`: size is actual elements, capacity is allocated space
+- `erase()` vs `clear()`: erase removes specific elements, clear removes all
+
+---
+
+# C++ std::vector<T>::erase() - All Forms
+
+The `erase()` method has **two overloads** for removing elements from a vector:
+
+## 1. Single Element Erase
+
+```cpp
+iterator erase(const_iterator pos);
+```
+
+Removes the element at position `pos`.
+
+**Parameters:**
+- `pos` - iterator to the element to remove
+
+**Return value:**
+- Iterator following the last removed element (or `end()` if the last element was removed)
+
+**Example:**
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> v = {10, 20, 30, 40, 50};
+    
+    // Erase element at index 2 (value 30)
+    auto it = v.erase(v.begin() + 2);
+    
+    // v is now: {10, 20, 40, 50}
+    std::cout << "After erase, next element: " << *it << "\n";  // 40
+    
+    // Erase the first element
+    v.erase(v.begin());
+    // v is now: {20, 40, 50}
+    
+    // Erase the last element
+    v.erase(v.end() - 1);
+    // v is now: {20, 40}
+    
+    for (int val : v) {
+        std::cout << val << " ";
+    }
+    
+    return 0;
+}
+```
+
+## 2. Range Erase
+
+```cpp
+iterator erase(const_iterator first, const_iterator last);
+```
+
+Removes elements in the range `[first, last)` (first is inclusive, last is exclusive).
+
+**Parameters:**
+- `first` - iterator to the beginning of the range
+- `last` - iterator to the end of the range (not included)
+
+**Return value:**
+- Iterator following the last removed element
+
+**Example:**
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    // Erase elements from index 2 to 5 (removes 3, 4, 5)
+    auto it = v.erase(v.begin() + 2, v.begin() + 5);
+    
+    // v is now: {1, 2, 6, 7, 8, 9, 10}
+    std::cout << "After erase, next element: " << *it << "\n";  // 6
+    
+    // Erase first 2 elements
+    v.erase(v.begin(), v.begin() + 2);
+    // v is now: {6, 7, 8, 9, 10}
+    
+    // Erase last 2 elements
+    v.erase(v.end() - 2, v.end());
+    // v is now: {6, 7, 8}
+    
+    // Erase all elements
+    v.erase(v.begin(), v.end());  // Same as v.clear()
+    // v is now: {}
+    
+    std::cout << "Size: " << v.size() << "\n";  // 0
+    
+    return 0;
+}
+```
+
+## Important Characteristics
+
+### Iterator Invalidation
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5};
+
+auto it = v.begin() + 2;  // Points to 3
+v.erase(v.begin());       // Erase first element
+
+// it is now INVALID! Don't use it.
+// Always use the returned iterator:
+auto valid_it = v.erase(v.begin());
+```
+
+### Complexity
+- **Single element erase:** Linear in the distance to the end - O(n)
+- **Range erase:** Linear in the distance to the end plus the number of elements erased - O(n)
+
+### Safe Iteration While Erasing
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+// WRONG: Iterator invalidation
+for (auto it = v.begin(); it != v.end(); ++it) {
+    if (*it % 2 == 0) {
+        v.erase(it);  // Invalidates iterator!
+    }
+}
+
+// CORRECT: Use returned iterator
+for (auto it = v.begin(); it != v.end(); ) {
+    if (*it % 2 == 0) {
+        it = v.erase(it);  // Update iterator
+    } else {
+        ++it;
+    }
+}
+```
+
+## Common Patterns
+
+### Remove-Erase Idiom
+To remove all elements with a specific value:
+
+```cpp
+#include <algorithm>
+
+std::vector<int> v = {1, 2, 3, 2, 4, 2, 5};
+
+// Remove all occurrences of 2
+v.erase(std::remove(v.begin(), v.end(), 2), v.end());
+// v is now: {1, 3, 4, 5}
+```
+
+### Remove-Erase-If Idiom
+To remove elements based on a condition:
+
+```cpp
+#include <algorithm>
+
+std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+// Remove all even numbers
+v.erase(std::remove_if(v.begin(), v.end(), 
+    [](int x) { return x % 2 == 0; }), v.end());
+// v is now: {1, 3, 5, 7, 9}
+```
+
+### Conditional Erase in Loop
+```cpp
+std::vector<std::string> words = {"apple", "banana", "apricot", "cherry", "avocado"};
+
+// Remove all words starting with 'a'
+for (auto it = words.begin(); it != words.end(); ) {
+    if ((*it)[0] == 'a') {
+        it = words.erase(it);
+    } else {
+        ++it;
+    }
+}
+// words is now: {"banana", "cherry"}
+```
+
+### Erase Multiple Ranges
+```cpp
+std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+// Erase elements 2-3 and 6-7
+v.erase(v.begin() + 6, v.begin() + 8);  // Erase 7, 8
+// v is now: {1, 2, 3, 4, 5, 6, 9, 10}
+
+v.erase(v.begin() + 2, v.begin() + 4);  // Erase 3, 4
+// v is now: {1, 2, 5, 6, 9, 10}
+```
+
+## Complete Example Program
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+void print(const std::vector<int>& v, const std::string& label) {
+    std::cout << label << ": ";
+    for (int x : v) std::cout << x << " ";
+    std::cout << "\n";
+}
+
+int main() {
+    std::vector<int> v1 = {1, 2, 3, 4, 5};
+    print(v1, "Original");
+    
+    // Single element erase
+    v1.erase(v1.begin() + 2);
+    print(v1, "After erasing index 2");
+    
+    std::vector<int> v2 = {1, 2, 3, 4, 5, 6, 7, 8};
+    print(v2, "\nOriginal v2");
+    
+    // Range erase
+    v2.erase(v2.begin() + 2, v2.begin() + 5);
+    print(v2, "After erasing range [2, 5)");
+    
+    // Remove-erase idiom
+    std::vector<int> v3 = {1, 2, 3, 2, 4, 2, 5};
+    print(v3, "\nOriginal v3");
+    v3.erase(std::remove(v3.begin(), v3.end(), 2), v3.end());
+    print(v3, "After removing all 2s");
+    
+    // Conditional erase
+    std::vector<int> v4 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    print(v4, "\nOriginal v4");
+    for (auto it = v4.begin(); it != v4.end(); ) {
+        if (*it % 2 == 0) {
+            it = v4.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    print(v4, "After removing evens");
+    
+    return 0;
+}
+```
+
+**Key Takeaways:**
+1. Always use the returned iterator from `erase()`
+2. `erase()` invalidates iterators at or after the erase point
+3. For multiple removals, prefer the remove-erase idiom for efficiency
+4. Range erase uses half-open intervals: `[first, last)`
