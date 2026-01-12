@@ -1,6 +1,6 @@
-Done! I've updated the script to start counting from 100 instead of 01. The files will now be numbered from `100_Thread_Basics_And_Lifecycle.md` through `149_Testing_Concurrent_Code.md`.
+Create a detailed description of this C++ topic with relevant code examples and a summary:
 
-Here's the updated markdown list for your README as well:
+
 
 # C++ Concurrency: 50 Essential Topics for Senior Engineers
 
