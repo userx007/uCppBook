@@ -1,7 +1,7 @@
 
-# **The Most Important Topics for a C++ Expert**
+# **C++ Essential Topics**
 
-### **Core Language Mastery**
+## **Core Language Mastery**
 
 [1. **Value categories** (lvalues, rvalues, xvalues, glvalues, prvalues)](docs/Topics/01_Value_Categories.md)<br>
 [2. **Object lifetime & storage duration**](docs/Topics/02_Object_lifetimes.md)<br>
@@ -20,7 +20,7 @@
 [15. **Understanding the standard object model**](docs/Topics/15_Understanding_the_C++_standard_object_model.md)<br>
 
 
-### **STL & Standard Library**
+## **STL & Standard Library**
 
 [16. **Containers** (vectors, maps, lists, unordered maps, variants, etc.)](docs/Topics/16_C++_containers_and_data_structures.md)<br>
 [17. **Iterators & iterator categories**](docs/Topics/17_Iterators_and_iterator_categories.md)<br>
@@ -34,7 +34,7 @@
 [25. **Chrono library** and time utilities](docs/Topics/25_Chrono_library_and_time_utilities.md)<br>
 
 
-### **Memory & Performance**
+## **Memory & Performance**
 
 [26. **Stack vs heap vs static storage**](docs/Topics/26_Stack_vs_heap_vs_static_storage.md)<br>
 [27. **Low-level memory manipulation** (`memcpy`, placement new)](docs/Topics/27_Low_level_memory_manipulation_memcpy_placement_new.md)<br>
@@ -47,7 +47,7 @@
 [34. **Custom memory pools / arenas**](docs/Topics/34_Custom_memory_pools_arenas.md)<br>
 
 
-### **Concurrency & Parallelism**
+## **Concurrency & Parallelism**
 
 [35. **Threads & thread lifecycle**](docs/Topics/35_Threads_and_thread_lifecycle.md)<br>
 [36. **Mutexes, locks, and lock-free programming**](docs/Topics/36_Mutexes_locks_and_lock_free_programming.md)<br>
@@ -58,7 +58,7 @@
 [41. **Parallel STL**](docs/Topics/41_Parallel_STL.md)<br>
 
 
-### **Advanced Language Features**
+## **Advanced Language Features**
 
 [42. **CRTP (Curiously Recurring Template Pattern)**](docs/Topics/42_CRTP_Curiously_Recurring_Template_Pattern.md)<br>
 [43. **Expression templates**](docs/Topics/43_Expression_templates.md)<br>
@@ -67,7 +67,7 @@
 [46. **Policy-based design & mixins**](docs/Topics/46_Policy_based_design_and_mixins.md)<br>
 
 
-### **Build Systems & Tooling**
+## **Build Systems & Tooling**
 
 [47. **Compiler flags (GCC/Clang/MSVC)** and ABI considerations](docs/Topics/)<br>
 [48. **CMake** and modern C++ project organization](docs/Topics/)<br>
@@ -75,7 +75,7 @@
 [50. **Debugging tools** (gdb, lldb, valgrind, perf)](docs/Topics/)<br>
 
 
-### **Miscelaneous**
+## **Miscelaneous**
 
 [47. **Type Casting**](docs/Topics/47_Type_Casting.md)<br>
 [48. **Modules in C++20**](docs/Topics/48_Modules_in_C++20.md)<br>
@@ -104,9 +104,96 @@
 [71. **Feature list C++20 (main topics)**](docs/Topics/71_C++20_new_features.md)<br>
 [72. **Feature list C++23 (main topics)**](docs/Topics/72_C++23_new_features.md)<br>
 
+---
+
+# C++ Concurrency Essential Topics
 
 
+## Fundamentals
+
+[100. **Thread Basics and Lifecycle**](docs/Concurrency/100_Thread_Basics_And_Lifecycle.md)<br>
+[101. **Thread Management and RAII**](docs/Concurrency/101_Thread_Management_And_RAII.md)<br>
+[102. **Passing Arguments to Threads**](docs/Concurrency/102_Passing_Arguments_To_Threads.md)<br>
+[103. **Thread Identification and Hardware**](docs/Concurrency/103_Thread_Identification_And_Hardware.md)<br>
 
 
+## Synchronization Primitives
+
+[104. **Mutex Fundamentals**](docs/Concurrency/104_Mutex_Fundamentals.md)<br>
+[105. **Lock Guards and Unique Locks**](docs/Concurrency/105_Lock_Guards_And_Unique_Locks.md)<br>
+[106. **Shared Mutex and Reader-Writer Locks**](docs/Concurrency/106_Shared_Mutex_And_Reader_Writer_Locks.md)<br>
+[107. **Recursive Mutex**](docs/Concurrency/107_Recursive_Mutex.md)<br>
+[108. **Timed Mutex Operations**](docs/Concurrency/108_Timed_Mutex_Operations.md)<br>
+[109. **Scoped Lock for Multiple Mutexes**](docs/Concurrency/109_Scoped_Lock_For_Multiple_Mutexes.md)<br>
 
 
+## Condition Variables and Synchronization
+
+[110. **Condition Variable Basics**](docs/Concurrency/110_Condition_Variable_Basics.md)<br>
+[111. **Spurious Wakeups and Predicates**](docs/Concurrency/111_Spurious_Wakeups_And_Predicates.md)<br>
+[112. **Producer-Consumer Pattern**](docs/Concurrency/112_Producer_Consumer_Pattern.md)<br>
+[113. **Condition Variable Any**](docs/Concurrency/113_Condition_Variable_Any.md)<br>
+
+
+## Atomic Operations
+
+[114. **Atomic Types Fundamentals**](docs/Concurrency/114_Atomic_Types_Fundamentals.md)<br>
+[115. **Memory Ordering and Sequential Consistency**](docs/Concurrency/115_Memory_Ordering_And_Sequential_Consistency.md)<br>
+[116. **Relaxed Memory Ordering**](docs/Concurrency/116_Relaxed_Memory_Ordering.md)<br>
+[117. **Acquire-Release Semantics**](docs/Concurrency/117_Acquire_Release_Semantics.md)<br>
+[118. **Consume Ordering**](docs/Concurrency/118_Consume_Ordering.md)<br>
+[119. **Compare and Swap Operations**](docs/Concurrency/119_Compare_And_Swap_Operations.md)<br>
+[120. **Atomic Flags and Spinlocks**](docs/Concurrency/120_Atomic_Flags_And_Spinlocks.md)<br>
+[121. **Atomic Smart Pointers**](docs/Concurrency/121_Atomic_Smart_Pointers.md)<br>
+
+
+## Futures and Promises
+
+[122. **Future and Promise Basics**](docs/Concurrency/122_Future_And_Promise_Basics.md)<br>
+[123. **Async Task Launching**](docs/Concurrency/123_Async_Task_Launching.md)<br>
+[124. **Packaged Tasks**](docs/Concurrency/124_Packaged_Tasks.md)<br>
+[125. **Shared Futures**](docs/Concurrency/125_Shared_Futures.md)<br>
+[126. **Exception Handling Across Threads**](docs/Concurrency/126_Exception_Handling_Across_Threads.md)<br>
+
+
+## Thread-Safe Data Structures
+
+[127. **Thread-Safe Queue Implementation**](docs/Concurrency/127_Thread_Safe_Queue_Implementation.md)<br>
+[128. **Lock-Free Stack**](docs/Concurrency/128_Lock_Free_Stack.md)<br>
+[129. **Concurrent Hash Map**](docs/Concurrency/129_Concurrent_Hash_Map.md)<br>
+[130. **Ring Buffer for Lock-Free Communication**](docs/Concurrency/130_Ring_Buffer_For_Lock_Free_Communication.md)<br>
+
+
+## Advanced Patterns
+
+[131. **Thread Pools**](docs/Concurrency/131_Thread_Pools.md)<br>
+[132. **Work Stealing Schedulers**](docs/Concurrency/132_Work_Stealing_Schedulers.md)<br>
+[133. **Read-Copy-Update (RCU) Pattern**](docs/Concurrency/133_Read_Copy_Update_Pattern.md)<br>
+[134. **Double-Checked Locking**](docs/Concurrency/134_Double_Checked_Locking.md)<br>
+[135. **Sequential Locks (SeqLock)**](docs/Concurrency/135_Sequential_Locks.md)<br>
+
+
+## C++20 Features
+
+[136. **Latches**](docs/Concurrency/136_Latches.md)<br>
+[137. **Barriers**](docs/Concurrency/137_Barriers.md)<br>
+[138. **Counting Semaphores**](docs/Concurrency/138_Counting_Semaphores.md)<br>
+[139. **Binary Semaphores**](docs/Concurrency/139_Binary_Semaphores.md)<br>
+[140. **Jthread and Stop Tokens**](docs/Concurrency/140_Jthread_And_Stop_Tokens.md)<br>
+[141. **Atomic Wait and Notify**](docs/Concurrency/141_Atomic_Wait_And_Notify.md)<br>
+
+
+## Memory Models and Optimization
+
+[142. **C++ Memory Model**](docs/Concurrency/142_Cpp_Memory_Model.md)<br>
+[143. **False Sharing and Cache Line Alignment**](docs/Concurrency/143_False_Sharing_And_Cache_Line_Alignment.md)<br>
+[144. **ABA Problem**](docs/Concurrency/144_ABA_Problem.md)<br>
+[145. **Hazard Pointers**](docs/Concurrency/145_Hazard_Pointers.md)<br>
+
+
+## Debugging and Best Practices
+
+[146. **Deadlock Detection and Prevention**](docs/Concurrency/146_Deadlock_Detection_And_Prevention.md)<br>
+[147. **Thread Sanitizer and Race Detection**](docs/Concurrency/147_Thread_Sanitizer_And_Race_Detection.md)<br>
+[148. **Performance Profiling of Concurrent Code**](docs/Concurrency/148_Performance_Profiling_Of_Concurrent_Code.md)<br>
+[149. **Testing Concurrent Code**](docs/Concurrency/149_Testing_Concurrent_Code.md)<br>
