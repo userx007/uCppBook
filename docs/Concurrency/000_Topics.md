@@ -1,4 +1,4 @@
-Create a detailed description of this C++ topic with relevant code examples and a summary:
+Create a detailed description of this C++ concurrency topic with relevant code examples and a summary:
 
 
 
