@@ -326,10 +326,11 @@ Understanding these argument-passing semantics is crucial for writing correct an
 
 ---
 
-# Move Semantics with Threads: Reducing it to **one move** (or zero moves) using references
+# Move Semantics with Threads
+
+Reducing it to **one move** (or zero moves) using references
 
 ## Option A — **Zero moves** (pass by reference)
-
 If the data already exists and you just want the thread to *use it*, don’t pass by value.
 
 ### Change the function signature
@@ -417,12 +418,7 @@ But:
 
 📌 **This is usually the best design**
 
-
-#### 2️⃣ How this behavior is specified in the C++ standard
-
 The two-move behavior is **mandated by the standard**, not an implementation quirk.
-
----
 
 ## Key standard reference — `std::thread` constructor
 
@@ -430,11 +426,10 @@ The two-move behavior is **mandated by the standard**, not an implementation qui
 
 The constructor is specified (simplified):
 
-> The new thread of execution executes:
->
-> ```cpp
-> invoke(decay_copy(f), decay_copy(args)...)
-> ```
+The new thread of execution executes:
+```cpp
+invoke(decay_copy(f), decay_copy(args)...)
+```
 
 ### What `decay_copy` means
 
@@ -461,20 +456,16 @@ Later, when the new thread starts:
 ```cpp
 invoke(stored_f, stored_args...)
 ```
-
 If your function parameter is **by value**:
 
 ```cpp
 void process_data(LargeData data);
 ```
-
 then:
 
 * `stored_args` must be **moved again** to initialize `data`
 
 ➡️ **This is the second move**
-
----
 
 ## Why references change everything
 
@@ -483,26 +474,19 @@ When you use:
 ```cpp
 std::ref(obj)
 ```
-
 The type becomes:
 
 ```cpp
 std::reference_wrapper<T>
 ```
-
 Which:
 
 * Is cheap to copy
 * Decays to a reference at invocation
 * Avoids object materialization
 
-This is explicitly allowed by:
-
-### **[func.require] + `std::invoke`**
-
+This is explicitly allowed by: **[func.require] + `std::invoke`**
 `std::reference_wrapper<T>` is unwrapped into `T&` when invoking the function.
-
----
 
 ## Standard-mandated summary
 
@@ -513,8 +497,6 @@ This is explicitly allowed by:
 | `std::ref` used    | reference_wrapper stored   | no move     |
 | By-value parameter | new object created         | move occurs |
 
----
-
 ## Final mental model (standard-accurate)
 
-> **`std::thread` must first own *decayed copies* of its arguments, then later invoke the function with those arguments — value parameters therefore require two constructions.**
+**`std::thread` must first own *decayed copies* of its arguments, then later invoke the function with those arguments — value parameters therefore require two constructions.**
