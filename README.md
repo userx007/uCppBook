@@ -9,7 +9,7 @@
 [4. **Move semantics** & **perfect forwarding**](docs/Topics/04_Move_Semantics_Perfect_Forwarding.md)<br>
 [5. **RAII** and deterministic destruction](docs/Topics/05_RAII_and_Deterministic_Destruction.md)<br>
 [6. **Operator overloading** (best practices & pitfalls)](docs/Topics/06_Operator_overloading_best_practices_and_pitfalls)<br>
-[7. **Templates** (function, class, variable templates)](docs/Topics/07_templates)<br>
+[7. **Templates** (function, class, variable templates)](docs/Topics/07_Templates)<br>
 [8. **Template specialization & partial specialization**](docs/Topics/08_Template_Specialization)<br>
 [9. **SFINAE**, tag dispatch, enable_if patterns](docs/Topics/09_C++_template_metaprogramming_patterns.md)<br>
 [10. **Concepts & requires-clauses (C++20)**](docs/Topics/10_Understanding_C++20_concepts_and_requires_clauses.md)<br>
@@ -103,6 +103,8 @@
 [70. **Casting operators**](docs/Topics/70_Casting_operators.md)<br>
 [71. **Feature list C++20 (main topics)**](docs/Topics/71_C++20_new_features.md)<br>
 [72. **Feature list C++23 (main topics)**](docs/Topics/72_C++23_new_features.md)<br>
+[73. **C++ View Types Comparison**](docs/Topics/73_C++_View_Types_Comparison.md)<br>
+[74. **C++ Lambdas**](docs/Topics/74_Lambdas.md)<br>
 
 ---
 
