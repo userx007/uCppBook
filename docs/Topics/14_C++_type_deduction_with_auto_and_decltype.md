@@ -285,8 +285,16 @@ public:
 // Deduction guide
 template<typename T>
 MyVector(size_t, T) -> MyVector<T>;
+//       ^^^^^^^^^^    ^^^^^^^^^^^^
+//       constructor   what type to
+//       arguments     deduce
 
-MyVector vec(10, 3.14);  // MyVector<double>
+MyVector vec(10, 3.14);  // / Deduces MyVector<double>
+// How it works:
+// - Constructor takes (size_t, T)
+// - We pass (10, 3.14)
+// - 3.14 is double, so T = double
+// - Result: MyVector<double>
 ```
 
 ### Practical Examples

@@ -110,6 +110,7 @@
 [77. **Universal References and Reference Collapsing**](docs/Topics/77_Universal_References_and_Reference_Collapsing.md)<br>
 [78. **Solutions for Avoiding Unwanted Copies with `auto`**](docs/Topics/78_Solutions_for_Avoiding_Unwanted_Copies_with_auto.md)<br>
 [79. **The `std::vector<bool>` Proxy Problem**](docs/Topics/79_The_std_vector_bool_Proxy_Problem.md)<br>
+[80. **Class Template Argument Deduction (CTAD) and Deduction Guides**](docs/Topics/80_Class_Template_Argument_Deduction_CTAD_and_Deduction_Guides.md)<br>
 
 ---
 
