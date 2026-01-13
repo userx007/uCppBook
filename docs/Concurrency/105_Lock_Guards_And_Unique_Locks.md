@@ -226,11 +226,14 @@ void timedLockExample(int id) {
     std::unique_lock<std::timed_mutex> lock(tmtx, std::defer_lock);
     
     // Try to lock for 50 milliseconds
+    // - Waits up to 50 milliseconds for the mutex to become available
+    // - Returns true if lock acquired within 50ms
+    // - Returns false if timeout expires without getting the lock    
     if (lock.try_lock_for(std::chrono::milliseconds(50))) {
         std::cout << "Thread " << id << " acquired lock" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    } else {
-        std::cout << "Thread " << id << " timeout" << std::endl;
+    } else { // couldn't acquire lock within 50ms
+        std::cout << "Thread " << id << " try_lock_for() timeout" << std::endl;
     }
 }
 
