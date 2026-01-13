@@ -457,3 +457,150 @@ The guide includes:
 - Side-by-side comparisons
 - Practical code examples
 - Best practices table
+
+---
+
+# decltype in C++
+
+`decltype` is a C++ keyword introduced in C++11 that inspects the declared type of an entity or queries the type of an expression. It's particularly useful in template metaprogramming and when you need to deduce types at compile time.
+
+## Basic Syntax
+
+```cpp
+decltype(expression)
+```
+
+This yields the type of the expression without evaluating it.
+
+## Key Use Cases and Examples
+
+### 1. Deducing Variable Types
+
+```cpp
+int x = 42;
+decltype(x) y = 10;  // y has type int
+
+const int& ref = x;
+decltype(ref) z = x;  // z has type const int&
+
+int* ptr = &x;
+decltype(ptr) p = nullptr;  // p has type int*
+```
+
+### 2. Return Type Deduction in Functions
+
+Before C++14, `decltype` was essential for deducing return types:
+
+```cpp
+template<typename T, typename U>
+auto add(T t, U u) -> decltype(t + u) {
+    return t + u;
+}
+
+// Usage
+auto result = add(5, 3.14);  // result has type double
+```
+
+### 3. Preserving Expression Value Categories
+
+`decltype` preserves whether an expression is an lvalue or rvalue:
+
+```cpp
+int x = 5;
+decltype(x) a = x;      // a has type int (x is an identifier)
+decltype((x)) b = x;    // b has type int& (parenthesized x is an lvalue expression)
+```
+
+**Important distinction:**
+- `decltype(identifier)` gives you the declared type
+- `decltype((expression))` gives you the type based on the value category
+
+### 4. Working with Complex Types
+
+```cpp
+#include <vector>
+#include <map>
+
+std::vector<int> vec = {1, 2, 3};
+decltype(vec)::iterator it = vec.begin();  // iterator type
+
+std::map<std::string, int> myMap;
+decltype(myMap)::value_type pair("key", 42);  // std::pair<const std::string, int>
+```
+
+### 5. Template Programming
+
+`decltype` shines in generic programming:
+
+```cpp
+template<typename Container>
+auto getFirst(Container& c) -> decltype(c[0]) {
+    return c[0];
+}
+
+std::vector<int> nums = {10, 20, 30};
+decltype(getFirst(nums)) first = getFirst(nums);  // first has type int&
+```
+
+### 6. Combining with auto
+
+```cpp
+auto x = 5;              // x has type int
+decltype(auto) y = x;    // y has type int (copies x)
+decltype(auto) z = (x);  // z has type int& (reference to x)
+```
+
+`decltype(auto)` (C++14) deduces the type using `decltype` rules rather than `auto` rules.
+
+### 7. Perfect Forwarding Return Types
+
+```cpp
+template<typename Func, typename... Args>
+decltype(auto) wrapper(Func&& func, Args&&... args) {
+    // Do something before
+    return std::forward<Func>(func)(std::forward<Args>(args)...);
+    // Preserves exact return type including references
+}
+```
+
+## Practical Example: Generic Multiplier
+
+```cpp
+#include <iostream>
+
+template<typename T, typename U>
+auto multiply(T a, U b) -> decltype(a * b) {
+    return a * b;
+}
+
+int main() {
+    auto result1 = multiply(5, 3);        // int * int = int
+    auto result2 = multiply(2.5, 4);      // double * int = double
+    auto result3 = multiply(3, 1.5);      // int * double = double
+    
+    std::cout << result1 << ", " << result2 << ", " << result3 << std::endl;
+    // Output: 15, 10, 4.5
+    
+    return 0;
+}
+```
+
+## Key Rules Summary
+
+1. **decltype(entity)**: Returns the declared type of the entity
+2. **decltype(expression)**: Returns the type based on the expression's value category:
+   - If the expression is a prvalue, returns `T`
+   - If the expression is an lvalue, returns `T&`
+   - If the expression is an xvalue, returns `T&&`
+3. **decltype is unevaluated**: The expression is never executed, only analyzed for its type
+4. **Preserves cv-qualifiers and references**: Unlike `auto`, `decltype` keeps const, volatile, and reference qualifiers
+
+## When to Use decltype
+
+- When you need the exact type of an expression
+- In template metaprogramming for type deduction
+- When `auto` would strip away references or cv-qualifiers
+- For trailing return types in function templates
+- When you need to declare variables of the same type as complex expressions
+
+`decltype` is a powerful tool that gives you precise control over type deduction, making generic code more flexible and expressive.
