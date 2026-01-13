@@ -146,6 +146,37 @@ auto v3 = makeVector();   // Move (efficient)
 auto&& v4 = makeVector(); // Extends lifetime of temporary
 // const auto& v5 = makeVector();  // Also extends lifetime
 ```
+In the first case:
+
+```cpp
+auto v1 = getVector();    // COPY
+```
+
+The variable `v1` is declared with `auto`, which means the compiler deduces the type of `v1`. Since `getVector()` returns a reference to a `std::vector<int>`, one might expect `v1` to be a reference as well. However, **it is not**. This happens because of the way `auto` works in C++.
+
+#### Why is it a copy?
+
+1. **`getVector()` returns a reference to a static vector**: The return type of `getVector()` is a reference to a static `std::vector<int>`, which means `v` is a reference to a local static variable.
+
+2. **`auto` type deduction**: When using `auto` to deduce the type, it does not bind to a reference automatically if the return type of the function is a reference. By default, `auto` will deduce the value type, not a reference, unless explicitly told to do so.
+
+   In this case, `auto` will deduce the type as `std::vector<int>`, which is **the value type**, not a reference. So when you assign `v1`, it gets a **copy** of the vector rather than a reference to the original.
+
+#### How to make it a reference?
+
+If you want `v1` to be a reference and avoid the copy, you need to explicitly use `auto&`:
+
+```cpp
+auto& v1 = getVector();    // Reference (no copy)
+```
+
+Here, `auto&` tells the compiler to deduce `v1` as a reference to the return type, thus no copy will occur, and `v1` will be a reference to the same static vector returned by `getVector()`.
+
+#### Key takeaway:
+
+* `auto` by itself will deduce a **value** type, and not a reference.
+* To avoid a copy and bind to the reference, you must use `auto&`.
+
 
 ### Example 4: Container Access
 
