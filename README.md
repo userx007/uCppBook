@@ -201,3 +201,4 @@
 [147. **Thread Sanitizer and Race Detection**](docs/Concurrency/147_Thread_Sanitizer_And_Race_Detection.md)<br>
 [148. **Performance Profiling of Concurrent Code**](docs/Concurrency/148_Performance_Profiling_Of_Concurrent_Code.md)<br>
 [149. **Testing Concurrent Code**](docs/Concurrency/149_Testing_Concurrent_Code.md)<br>
+[150. **Most Used Features and Methods**](docs/Concurrency/150_Most_Used_Features_and_Methods.md)<br>
