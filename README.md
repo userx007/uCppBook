@@ -108,6 +108,7 @@
 [75. **C++ std::function**](docs/Topics/75_std_function.md)<br>
 [76. **C++ std::transform**](docs/Topics/76_std_transform.md)<br>
 [77. **Universal References and Reference Collapsing**](docs/Topics/77_Universal_References_and_Reference_Collapsing.md)<br>
+[78. **Solutions for Avoiding Unwanted Copies with `auto`**](docs/Topics/78_Solutions_for_Avoiding_Unwanted_Copies_with_auto.md)<br>
 
 ---
 
