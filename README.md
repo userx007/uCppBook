@@ -107,6 +107,7 @@
 [74. **C++ Lambdas**](docs/Topics/74_Lambdas.md)<br>
 [75. **C++ std::function**](docs/Topics/75_std_function.md)<br>
 [76. **C++ std::transform**](docs/Topics/76_std_transform.md)<br>
+[77. **Universal References and Reference Collapsing**](docs/Topics/77_Universal_References_and_Reference_Collapsing.md)<br>
 
 ---
 
