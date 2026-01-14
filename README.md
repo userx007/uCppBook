@@ -213,3 +213,9 @@
 ## Miscelaneous
 
 [153. **std::mutex: lock() vs try_lock()**](docs/Concurrency/153_std_mutex_lock_vs_try_lock.md)<br>
+
+
+# C++ vs Rust
+
+[200. **Smart Pointers: C++ vs Rust Cheat Sheet**](docs/Rust/200_Smart_Pointers_C++_vs_Rust_Cheat_Sheet.md)<br>
+
