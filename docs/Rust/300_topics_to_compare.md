@@ -129,4 +129,3 @@ If I had to prioritize for maximum educational value:
 9. **Async/Await & Futures** - Modern concurrent programming
 10. **Unsafe Code** - Understanding safety boundaries
 
-These topics would complement your existing collection well and cover the most significant philosophical and practical differences between the two languages.

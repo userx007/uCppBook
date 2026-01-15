@@ -227,3 +227,23 @@
 [205. **Data structures**](docs/Rust/205_Data_structures.md)<br>
 [206. **Iterators**](docs/Rust/206_Iterators.md)<br>
 
+[207. **Error Handling**](docs/Rust/207_Error_Handling.md)<br>
+[208. **Move Semantics & Ownership**](docs/Rust/208_Move_Semantics_and_Ownership.md)<br>
+[209. **Templates vs. Generics**](docs/Rust/209_Templates_vs_Generics.md)<br>
+[210. **Traits vs. Concepts/Inheritance**](docs/Rust/210_Traits_vs_Concepts_Inheritance.md)<br>
+[211. **Lifetime Management**](docs/Rust/211_Lifetime_Management.md)<br>
+[212. **Memory Management Strategies**](docs/Rust/212_Memory_Management_Strategies.md)<br>
+[213. **Concurrency Primitives**](docs/Rust/213_Concurrency_Primitives.md)<br>
+[214. **Async/Await & Futures**](docs/Rust/214_Async_Await_Futures.md)<br>
+[215. **Reference Types**](docs/Rust/215_Reference_Types.md)<br>
+[216. **Pattern Matching**](docs/Rust/216_Pattern_Matching.md)<br>
+[217. **Macros & Metaprogramming**](docs/Rust/217_Macros_Metaprogramming.md)<br>
+[218. **Module Systems & Namespaces**](docs/Rust/218_Module_Systems_Namespaces.md)<br>
+[219. **Type Inference & Type System**](docs/Rust/219_Type_Inference_and_Type_System.md)<br>
+[220. **FFI (Foreign Function Interface)**](docs/Rust/220_FFI.md)<br>
+[221. **Build Systems & Package Management**](docs/Rust/221_Build_Systems_Package_Management.md)<br>
+[222. **Testing Frameworks**](docs/Rust/222_Testing_Frameworks.md)<br>
+[223. **Unsafe Code**](docs/Rust/223_Unsafe_Code.md)<br>
+[224. **Strings & Text Processing**](docs/Rust/224_Strings_Text_Processing.md)<br>
+[225. **Collections & Containers**](docs/Rust/225_Collections_Containers.md)<br>
+[226. **Operator Overloading**](docs/Rust/226_Operator_Overloading.md)<br>
