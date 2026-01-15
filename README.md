@@ -219,9 +219,10 @@
 
 # C++ vs Rust
 
-[200. **Smart Pointers: C++ vs Rust Cheat Sheet**](docs/Rust/200_Smart_Pointers_C++_vs_Rust_Cheat_Sheet.md)<br>
-[201. **Weak Pointers: C++ vs Rust**](docs/Rust/201_Weak_Pointers_in_C++_and_Rust.md)<br>
+[200. **Smart Pointers**](docs/Rust/200_Smart_Pointers_C++_vs_Rust_Cheat_Sheet.md)<br>
+[201. **Weak Pointers**](docs/Rust/201_Weak_Pointers_in_C++_and_Rust.md)<br>
 [202. **Weak Pointers to Break Cyclic References**](docs/Rust/202_Weak_Pointers_to_Break_Cyclic_References.md)<br>
 [203. **Nodes in Data Structures**](docs/Rust/203_Nodes_in_Data_Structures.md)<br>
-[204. **Synchronization Mechanisms in Concurrent Programming**](docs/Rust/204_Syncronization_mechanisms.md)<br>
+[204. **Synchronization Mechanisms**](docs/Rust/204_Syncronization_mechanisms.md)<br>
+[205. **Data structures**](docs/Rust/205_Data_structures.md)<br>
 
