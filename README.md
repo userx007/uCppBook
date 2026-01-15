@@ -112,6 +112,8 @@
 [79. **The `std::vector<bool>` Proxy Problem**](docs/Topics/79_The_std_vector_bool_Proxy_Problem.md)<br>
 [80. **Class Template Argument Deduction (CTAD) and Deduction Guides**](docs/Topics/80_Class_Template_Argument_Deduction_CTAD_and_Deduction_Guides.md)<br>
 [81. **Perfect Forwarding with `decltype(auto)`**](docs/Topics/81_Perfect_Forwarding_with_decltype_auto.md)<br>
+[82. **if statement with initializer C++17**](docs/Topics/82_If_statement_with_initializer.md)<br>
+
 
 ---
 
