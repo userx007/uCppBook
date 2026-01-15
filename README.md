@@ -225,4 +225,5 @@
 [203. **Nodes in Data Structures**](docs/Rust/203_Nodes_in_Data_Structures.md)<br>
 [204. **Synchronization Mechanisms**](docs/Rust/204_Syncronization_mechanisms.md)<br>
 [205. **Data structures**](docs/Rust/205_Data_structures.md)<br>
+[206. **Iterators**](docs/Rust/206_Iterators.md)<br>
 
