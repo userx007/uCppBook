@@ -57,7 +57,10 @@ use std::sync::{Arc, Mutex};  // Arc = Atomic Reference Counting for shared owne
 use std::thread;
 
 fn main() {
+    
     // Mutex<T> wraps the data - compile-time guarantee of safe access
+    // Multiple threads need read AND write access
+    // Data changes during execution
     let counter = Arc::new(Mutex::new(0));
     let mut handles = vec![];
     

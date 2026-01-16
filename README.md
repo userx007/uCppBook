@@ -247,3 +247,5 @@
 [224. **Strings & Text Processing**](docs/Rust/224_Strings_Text_Processing.md)<br>
 [225. **Collections & Containers**](docs/Rust/225_Collections_Containers.md)<br>
 [226. **Operator Overloading**](docs/Rust/226_Operator_Overloading.md)<br>
+[227. **Sharing data between threads**](docs/Rust/227_Sharing_data_between_threads.md)<br>
+
