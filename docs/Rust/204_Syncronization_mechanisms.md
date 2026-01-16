@@ -16,6 +16,8 @@ Rust's ownership system and type system prevent data races at compile time. The 
 
 ### 1. Mutexes (Mutual Exclusion Locks)
 
+---
+
 **C++ Implementation:**
 
 ```cpp
@@ -57,7 +59,7 @@ use std::sync::{Arc, Mutex};  // Arc = Atomic Reference Counting for shared owne
 use std::thread;
 
 fn main() {
-    
+
     // Mutex<T> wraps the data - compile-time guarantee of safe access
     // Multiple threads need read AND write access
     // Data changes during execution
@@ -77,14 +79,19 @@ fn main() {
         //                         ^^^^ Transfers ownership into this closure
             for _ in 0..1000 {
                 //         Lock acquired here ↓ uses the moved value
-                let mut num = counter_clone.lock().unwrap();
-                //    ^^^                          ^^^^^^^^
+                let mut num = counter_clone.lock().unwrap(); // counter_clone.lock() ->std::sync::LockResult<std::sync::MutexGuard<'_, i32>>
+                //    ^^^     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^
                 //    |                            Extract MutexGuard from Result
                 //    MutexGuard<i32> smart pointer
                 
-                *num += 1;  // Dereference to access the i32 inside
-                //  ^
-                //  Access the actual data through the guard
+                // counter_clone.lock() =>
+                //  =>  std::sync::LockResult<std::sync::MutexGuard<'_, i32>> (alias for)
+                //      =>  Result<T, std::sync::PoisonError<T>> 
+                //          =>  Result<MutexGuard<'_, i32>,PoisonError<MutexGuard<'_, i32>>>
+
+                *num += 1;  // Dereference to access the i32 inside of MutexGuard<i32>
+                // ^
+                // Access the actual data through the guard
 
             }  // IMPORTANT: MutexGuard automatically unlocks when dropped
 
@@ -123,6 +130,8 @@ fn main() {
 **Key Differences:**
 - **C++**: The mutex and data are separate entities. Nothing prevents accessing `shared_counter` without locking `mtx`.
 - **Rust**: `Mutex<T>` wraps the data itself. The only way to access the data is through the lock, enforced at compile time.
+
+---
 
 ### 2. Read-Write Locks
 
@@ -202,6 +211,8 @@ fn main() {
 **Key Differences:**
 - **C++**: Uses `shared_lock` for readers and `unique_lock` for writers. Data and lock are separate.
 - **Rust**: `RwLock<T>` wraps data. Returns `RwLockReadGuard` or `RwLockWriteGuard` that provide access only while held.
+
+---
 
 ### 3. Condition Variables
 
@@ -327,6 +338,7 @@ fn main() {
     }
 }
 ```
+---
 
 ### 4. Atomic Operations
 
@@ -435,6 +447,8 @@ fn main() {
 - Both languages provide similar atomic types and memory ordering options
 - Rust's `Arc<Atomic<T>>` pattern is idiomatic for sharing atomics across threads
 - C++ allows direct atomic variables; Rust enforces explicit sharing through `Arc`
+
+---
 
 ### 5. Channels (Message Passing)
 
@@ -571,6 +585,8 @@ fn multiple_producers_example() {
 - **Rust**: Built-in `mpsc` (multiple producer, single consumer) channels in standard library
 - Rust channels enforce ownership transfer, preventing data races by design
 
+---
+
 ### 6. Barriers
 
 **C++ Implementation:**
@@ -642,6 +658,8 @@ fn main() {
     }
 }
 ```
+
+---
 
 ### 7. Scoped Threads and Thread Safety
 
@@ -719,6 +737,8 @@ fn main() {
 **Key Differences:**
 - **C++**: Programmer must manually ensure references remain valid and threads are joined
 - **Rust**: Scoped threads (`thread::scope`) guarantee all threads finish before local data goes out of scope, enforced at compile time
+
+---
 
 ### 8. Semaphores
 
@@ -855,6 +875,8 @@ fn main() {
 - **Rust**: No built-in semaphore in std library; use external crates like `tokio` or implement using mutex + condvar
 - Both provide similar semantics for resource counting
 
+---
+
 ### 9. Once/Call Once Initialization
 
 For thread-safe lazy initialization that happens exactly once.
@@ -961,6 +983,8 @@ fn use_resource_safe(id: usize) {
 - **C++**: `std::once_flag` with `std::call_once`
 - **Rust**: `Once` for basic cases, `OnceLock`/`LazyLock` for safer typed initialization
 - Rust's `OnceLock` provides type-safe lazy initialization without `unsafe`
+
+---
 
 ### 10. Spin Locks
 
@@ -1115,6 +1139,8 @@ fn with_spin_crate() {
 - **C++**: Manual implementation using `atomic_flag`
 - **Rust**: Manual implementation or use `spin` crate for production-ready spinlocks
 - Both suitable for very short critical sections where context switching overhead exceeds spin time
+
+---
 
 ### 11. Latches and Countdown Latches
 
@@ -1313,6 +1339,8 @@ fn main() {
 - **Rust**: No built-in latch; implement using mutex + condvar or use crates like `crossbeam`
 - Both are single-use synchronization primitives (unlike barriers which can be reused)
 
+---
+
 ### 12. Scoped Threads and Thread Safety
 
 **C++ Implementation:**
@@ -1389,6 +1417,8 @@ fn main() {
 **Key Differences:**
 - **C++**: Programmer must manually ensure references remain valid and threads are joined
 - **Rust**: Scoped threads (`thread::scope`) guarantee all threads finish before local data goes out of scope, enforced at compile time
+
+---
 
 ### 13. Futures and Promises
 
@@ -1570,6 +1600,7 @@ fn main() {
 - **Rust**: No built-in thread-based futures; use channels or async/await with runtimes like `tokio`
 - Rust's async model is fundamentally different and more sophisticated for I/O-bound tasks
 
+---
 
 ## Compile-Time Safety Guarantees
 
@@ -1602,6 +1633,7 @@ Rust forces you to use proper synchronization:
 let counter = Arc::new(Mutex::new(0));
 // Now it compiles and is thread-safe
 ```
+---
 
 ## Comprehensive Summary Comparison Table
 
@@ -1634,6 +1666,7 @@ let counter = Arc::new(Mutex::new(0));
 | **Default Safety** | Unsafe by default, opt-in to safety | Safe by default, `unsafe` explicit | Fundamental philosophy difference |
 | **Ecosystem Maturity** | Very mature, decades of libraries | Growing rapidly, modern design | C++ has more legacy code |
 
+---
 
 ## Key Philosophical Differences
 
@@ -1646,6 +1679,8 @@ let counter = Arc::new(Mutex::new(0));
 4. **Error Discovery**: C++ finds concurrency bugs at runtime (if you're lucky); Rust finds them at compile time.
 
 5. **Abstraction Cost**: Both languages achieve zero-cost abstractions for synchronization primitives, but Rust's compile-time checks add no runtime overhead.
+
+---
 
 ## Conclusion
 

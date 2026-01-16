@@ -20,6 +20,8 @@ for _ in 0..5 {
 - Multiple threads need **read AND write** access
 - Data changes during execution
 
+---
+
 ## 2. **Shared Immutable Data: Just `Arc<T>`**
 
 ```rust
@@ -39,6 +41,8 @@ for _ in 0..5 {
 - Data is immutable (doesn't change)
 - No Mutex overhead!
 
+---
+
 ## 3. **Single Owner, Moved Data: Just `move`**
 
 ```rust
@@ -56,6 +60,8 @@ thread::spawn(move || {
 - Only **one thread** needs the data
 - Transfer ownership completely
 - No Arc or Mutex needed!
+
+---
 
 ## 4. **Read-Write Lock: `Arc<RwLock<T>>`**
 
@@ -83,6 +89,8 @@ thread::spawn(move || {
 - Many reads, few writes
 - Better performance than Mutex for read-heavy workloads
 
+---
+
 ## 5. **Atomic Types: No Mutex Needed!**
 
 ```rust
@@ -105,6 +113,8 @@ for _ in 0..5 {
 - Simple types (integers, booleans)
 - Lock-free atomic operations
 - Better performance than Mutex for simple counters
+
+---
 
 ## Decision Tree:
 
