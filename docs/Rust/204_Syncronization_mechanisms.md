@@ -16,8 +16,6 @@ Rust's ownership system and type system prevent data races at compile time. The 
 
 ### 1. Mutexes (Mutual Exclusion Locks)
 
----
-
 **C++ Implementation:**
 
 ```cpp
@@ -143,32 +141,58 @@ fn main() {
 #include <vector>
 #include <iostream>
 
+// Shared mutex allowing multiple readers or single writer access
 std::shared_mutex rw_mutex;
+
+// Shared data structure protected by the mutex
 std::vector<int> shared_data = {1, 2, 3, 4, 5};
 
+// Reader function: multiple readers can execute concurrently
 void reader(int id) {
+
+    // Acquire shared lock - allows concurrent read access
+    // IMPORTANT: std::shared_lock doesn't actually prevent you from modifying shared_data
+    // - it's purely a convention that you shouldn't modify when holding a shared lock.
+    // This it's undefined behavior because:
+    // - Multiple readers could be modifying shared_data concurrently
+    // - You could have readers modifying while a writer has a unique lock elsewhere
     std::shared_lock<std::shared_mutex> lock(rw_mutex);
-    std::cout << "Reader " << id << " sees " << shared_data.size() 
-              << " elements\n";
+
+    // here you can read safelly
+    std::cout << "Reader " << id << " sees " << shared_data.size() << " elements\n";
+
+    // Lock automatically released when it goes out of scope
 }
 
+// Writer function: exclusive access required for modifying shared data
 void writer(int value) {
+
+    // Acquire unique lock - blocks all other readers and writers
     std::unique_lock<std::shared_mutex> lock(rw_mutex);
+
+    // here you can write safelly
     shared_data.push_back(value);
     std::cout << "Writer added value: " << value << "\n";
+
+    // Lock automatically released when it goes out of scope
 }
 
 int main() {
     std::vector<std::thread> threads;
     
+    // Spawn 3 reader threads
     for (int i = 0; i < 3; ++i) {
         threads.emplace_back(reader, i);
     }
+    
+    // Spawn 1 writer thread
     threads.emplace_back(writer, 42);
     
+    // Wait for all threads to complete
     for (auto& t : threads) {
         t.join();
     }
+    
     return 0;
 }
 ```
@@ -180,15 +204,30 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 
 fn main() {
+    // Arc (Atomic Reference Counted) allows shared ownership across threads
+    // RwLock provides reader-writer lock semantics (multiple readers or single writer)
     let data = Arc::new(RwLock::new(vec![1, 2, 3, 4, 5]));
     let mut handles = vec![];
     
     // Spawn reader threads
     for i in 0..3 {
+        // Clone the Arc to share ownership with the new thread
         let data_clone = Arc::clone(&data);
         let handle = thread::spawn(move || {
+
+            // Acquire read lock - allows concurrent read access
+            // unwrap() panics if the lock is poisoned (another thread panicked while holding it)
+
+            // read() 
+            // - returns RwLockReadGuard - an immutable reference
+            // - read_guard implements Deref to &T (immutable reference)
+            // - you can only call methods that take &self
             let read_guard = data_clone.read().unwrap();
+
+            // OK - read-only access
             println!("Reader {} sees {} elements", i, read_guard.len());
+
+            // IMPORTANT: Read lock automatically released when read_guard goes out of scope
         });
         handles.push(handle);
     }
@@ -196,17 +235,140 @@ fn main() {
     // Spawn writer thread
     let data_clone = Arc::clone(&data);
     let handle = thread::spawn(move || {
+
+        // Acquire write lock - blocks all other readers and writers
+
+        // write() 
+        // - returns RwLockWriteGuard - a mutable reference  
+        // - write_guard implements DerefMut to &mut T (mutable reference)
+        // - you can call methods that take &mut self        
         let mut write_guard = data_clone.write().unwrap();
+
+        // OK - can mutate
         write_guard.push(42);
+
         println!("Writer added value: 42");
+
+        // IMPORTANT: Write lock automatically released when write_guard goes out of scope
     });
     handles.push(handle);
     
+    // Wait for all threads to complete
+    // unwrap() panics if the thread panicked
     for handle in handles {
         handle.join().unwrap();
     }
 }
 ```
+
+#### Data types clarification for `read()`
+
+```rust
+let read_guard = data_clone.read().unwrap();
+//      ↑            ↑         ↑       ↑
+//      |            |         |       |
+//   Final type   Arc<...>  Method   Method
+```
+
+**Step-by-step type analysis:**
+
+1. **`data_clone`**
+   - Type: `Arc<RwLock<Vec<i32>>>`
+   - An atomically reference-counted pointer to a read-write lock containing a vector
+
+2. **`data_clone.read()`**
+   - Returns: `LockResult<RwLockReadGuard<Vec<i32>>>`
+   - This is actually `Result<RwLockReadGuard<Vec<i32>>, PoisonError<RwLockReadGuard<Vec<i32>>>>`
+   - The `Result` type handles the case where the lock might be "poisoned" (another thread panicked while holding it)
+   - If successful: `Ok(RwLockReadGuard<Vec<i32>>)`
+   - If poisoned: `Err(PoisonError<...>)`
+
+3. **`.unwrap()`**
+   - Takes the `Result<T, E>` and extracts the `T` value
+   - Returns: `RwLockReadGuard<Vec<i32>>`
+   - If the Result was `Err`, this will **panic** (crash the thread)
+   - If the Result was `Ok`, it returns the guard inside
+
+4. **`read_guard`**
+   - Final type: `RwLockReadGuard<Vec<i32>>`
+   - This guard implements `Deref` to `&Vec<i32>` (immutable reference)
+   - When you use it (like `read_guard.len()`), Rust automatically dereferences it
+   - When `read_guard` goes out of scope, the read lock is automatically released (RAII pattern)
+
+**Visual representation:**
+
+```rust
+Arc<RwLock<Vec<i32>>>
+    ↓ .read()
+Result<RwLockReadGuard<Vec<i32>>, PoisonError<...>>
+    ↓ .unwrap()
+RwLockReadGuard<Vec<i32>>
+    ↓ Deref coercion (automatic)
+&Vec<i32>  // When you actually use it
+```
+
+The beauty here is that `RwLockReadGuard` holds the lock for as long as it exists, and gives you immutable access through the `Deref` trait!
+
+#### Data types clarification for `write()`
+
+```rust
+let mut write_guard = data_clone.write().unwrap();
+//  ↑       ↑            ↑         ↑        ↑
+//  |       |            |         |        |
+// mut  Final type   Arc<...>   Method   Method
+```
+
+**Step-by-step type analysis:**
+
+1. **`data_clone`**
+   - Type: `Arc<RwLock<Vec<i32>>>`
+   - An atomically reference-counted pointer to a read-write lock containing a vector
+
+2. **`data_clone.write()`**
+   - Returns: `LockResult<RwLockWriteGuard<Vec<i32>>>`
+   - This is actually `Result<RwLockWriteGuard<Vec<i32>>, PoisonError<RwLockWriteGuard<Vec<i32>>>>`
+   - The `Result` type handles the case where the lock might be "poisoned"
+   - If successful: `Ok(RwLockWriteGuard<Vec<i32>>)`
+   - If poisoned: `Err(PoisonError<...>)`
+
+3. **`.unwrap()`**
+   - Takes the `Result<T, E>` and extracts the `T` value
+   - Returns: `RwLockWriteGuard<Vec<i32>>`
+   - If the Result was `Err`, this will **panic** (crash the thread)
+   - If the Result was `Ok`, it returns the guard inside
+
+4. **`write_guard`**
+   - Final type: `RwLockWriteGuard<Vec<i32>>`
+   - **Declared with `mut`** - this is important!
+   - This guard implements `Deref` to `&Vec<i32>` AND `DerefMut` to `&mut Vec<i32>` (mutable reference)
+   - When you use it mutably (like `write_guard.push(42)`), Rust dereferences it to `&mut Vec<i32>`
+   - When `write_guard` goes out of scope, the write lock is automatically released (RAII pattern)
+
+**Visual representation:**
+
+```rust
+Arc<RwLock<Vec<i32>>>
+    ↓ .write()
+Result<RwLockWriteGuard<Vec<i32>>, PoisonError<...>>
+    ↓ .unwrap()
+RwLockWriteGuard<Vec<i32>>  // Stored in mut variable
+    ↓ DerefMut coercion (automatic when mutating)
+&mut Vec<i32>  // When you actually mutate it
+```
+
+**Key differences from `read()`:**
+
+| Aspect | `read()` | `write()` |
+|--------|----------|-----------|
+| Guard type | `RwLockReadGuard<T>` | `RwLockWriteGuard<T>` |
+| Implements | `Deref` to `&T` | `Deref` + `DerefMut` to `&mut T` |
+| Variable needs `mut`? | No | **Yes** (to call mutating methods) |
+| Allows mutation? | No (compile error) | Yes |
+| Concurrent access | Multiple readers allowed | Exclusive access only |
+
+The `mut` keyword on `write_guard` is necessary because to use the `DerefMut` trait (which gives you `&mut Vec<i32>`), the guard itself must be mutable!
+
+#### Final summary between C++ and RUST
 
 **Key Differences:**
 - **C++**: Uses `shared_lock` for readers and `unique_lock` for writers. Data and lock are separate.
@@ -218,6 +380,20 @@ fn main() {
 
 **C++ Implementation:**
 
+***Essential concept***: 
+- A synchronization primitive that allows threads to wait until a condition becomes true.
+
+***Key points***:
+- Must be used with `std::unique_lock<std::mutex>` (not `lock_guard`)
+- `wait(lock, predicate)`: Atomically releases lock and sleeps until notified AND predicate is true
+- `notify_one()`: Wakes one waiting thread
+- `notify_all()`: Wakes all waiting threads
+- ***Spurious wakeups***: Can wake up even when not notified, so always use a predicate/loop
+
+```cpp
+cv.wait(lock, []{ return condition_is_true; });
+```
+
 ```cpp
 #include <iostream>
 #include <thread>
@@ -225,57 +401,235 @@ fn main() {
 #include <condition_variable>
 #include <queue>
 
+// Mutex to protect shared data structures
 std::mutex mtx;
+
+// Condition variable for producer-consumer signaling
 std::condition_variable cv;
+
+// Shared queue for passing data between producer and consumers
 std::queue<int> data_queue;
+
+// Flag to signal consumers when production is complete
 bool finished = false;
 
 void producer() {
+    // Produce 10 items
     for (int i = 0; i < 10; ++i) {
+        // Simulate production time
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // Note the separate block needed to release the lock after accessing the data_queue
         {
+            // Acquire lock before modifying shared data
             std::lock_guard<std::mutex> lock(mtx);
             data_queue.push(i);
             std::cout << "Produced: " << i << "\n";
+            // Lock automatically released at end of scope
         }
+        
+        // Notify one waiting consumer that data is available
         cv.notify_one();
     }
+    
+    // Signal that production is finished
     {
         std::lock_guard<std::mutex> lock(mtx);
         finished = true;
     }
+    
+    // Wake up all consumers so they can exit
     cv.notify_all();
 }
 
 void consumer(int id) {
     while (true) {
+        // Acquire unique_lock (needed for condition_variable)
+        // IMPORTANT: unique_lock<T>
         std::unique_lock<std::mutex> lock(mtx);
+        
+        // Wait until queue has data OR production is finished
+        // The lambda is the predicate: wait returns when it's true
+        //
+        // --- Visual flow ---
+        //
+        // Thread calls wait()
+        //     ↓
+        // Check predicate (holding lock)
+        //     ↓
+        // false → Release lock → Sleep → Notified → Reacquire lock → Check predicate → repeat
+        // true  → Return immediately (holding lock)     
         cv.wait(lock, []{ return !data_queue.empty() || finished; });
         
+        // If queue is empty and production finished, exit loop
         if (data_queue.empty() && finished) break;
         
+        // Process available data
         if (!data_queue.empty()) {
             int value = data_queue.front();
             data_queue.pop();
+            
+            // Release lock before doing work (improves concurrency)
+            // Not mandatory but otherwise the lock is held during std::cout, which:
+            // - Blocks the producer from adding new items
+            // - Blocks other consumers from taking items
+            // - I/O operations (like printing) are relatively slow
             lock.unlock();
+            
+            // Now printing happens WITHOUT holding the lock
             std::cout << "Consumer " << id << " consumed: " << value << "\n";
         }
     }
 }
 
 int main() {
+    // Create producer thread
     std::thread prod(producer);
+    
+    // Create two consumer threads
     std::thread cons1(consumer, 1);
     std::thread cons2(consumer, 2);
     
+    // Wait for all threads to complete
     prod.join();
     cons1.join();
     cons2.join();
+    
     return 0;
 }
 ```
 
+**NOTE 1**: The choice between `lock_guard` and `unique_lock` is about **what operations each thread needs to perform**.
+
+#### Why Producer Uses `lock_guard`
+
+The producer only needs to:
+1. Lock the mutex
+2. Modify the queue
+3. Unlock the mutex (automatically)
+4. Notify waiting threads
+
+```cpp
+// Producer
+{
+    std::lock_guard<std::mutex> lock(mtx);  // Lock acquired
+    queue.push(item);
+    // Lock released automatically when scope ends
+}
+cv.notify_one();  // Notification happens AFTER lock is released
+```
+
+Since the producer **never needs to temporarily release and reacquire the lock**, `lock_guard` is perfect—it's simpler and slightly more efficient.
+
+#### Why Consumer Uses `unique_lock`
+
+The consumer needs to:
+1. Lock the mutex
+2. **Wait on the condition variable** (which requires releasing the lock temporarily and only `unique_lock` support this)
+3. Be woken up and reacquire the lock
+4. Check the condition and possibly wait again
+
+```cpp
+// Consumer
+std::unique_lock<std::mutex> lock(mtx);  // Lock acquired
+
+// wait() needs to:
+// 1. Release the lock (so producer can add items)
+// 2. Put thread to sleep
+// 3. Wake up when notified
+// 4. Reacquire the lock
+cv.wait(lock, []{ return !queue.empty(); });
+
+// Lock is still held here
+auto item = queue.pop();
+// Lock released when scope ends
+```
+
+The `wait()` function **requires a `unique_lock`** because it needs to:
+- **Unlock** the mutex (otherwise the producer could never add items!)
+- **Relock** the mutex when woken up
+
+`lock_guard` cannot be unlocked and relocked—it only locks in the constructor and unlocks in the destructor. 
+- That's why `condition_variable::wait()` accepts `unique_lock` as a parameter, not `lock_guard`.
+
+#### Summary
+
+- **`lock_guard`**: Simple RAII lock—acquire once, release once. Used when you just need to protect a critical section.
+- **`unique_lock`**: Flexible lock—can be locked/unlocked multiple times. **Required** for condition variables because `wait()` needs to release and reacquire the lock.
+- The decision is based on **functionality needed**, not the number of threads!
+
+**NOTE 2**: Calling `cv.notify_one()` while holding the lock is **not a critical issue** in terms of correctness—it's purely a **performance issue**.
+
+#### Scenario 1: Notify INSIDE the lock (Performance Issue)
+
+```cpp
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    data_queue.push(i);
+    std::cout << "Produced: " << i << "\n";
+    cv.notify_one();  // Still holding the lock!
+}  // Lock released here
+```
+
+**What happens:**
+1. Producer notifies a waiting consumer
+2. Consumer wakes up and **immediately tries to acquire the lock**
+3. **Consumer blocks** because producer still holds the lock
+4. Producer releases the lock
+5. Consumer finally acquires the lock and proceeds
+
+This causes unnecessary **lock contention**—the consumer wakes up only to immediately block again.
+
+#### Scenario 2: Notify OUTSIDE the lock (Better Performance)
+
+```cpp
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    data_queue.push(i);
+    std::cout << "Produced: " << i << "\n";
+}  // Lock released here
+
+cv.notify_one();  // Lock already released
+```
+
+**What happens:**
+1. Producer releases the lock
+2. Producer notifies a waiting consumer
+3. Consumer wakes up and **immediately acquires the lock** (no blocking!)
+4. Consumer proceeds without delay
+
+#### Is It Really a Problem?
+
+For most applications, the performance difference is **negligible**. You should notify outside the lock when:
+- High-performance requirements
+- Many threads competing for the lock
+- Long critical sections
+
+You can notify inside the lock when:
+- Code simplicity is more important
+- Low contention scenarios
+- The critical section is already very short
+
 **Rust Implementation:**
+
+***Essential concept***: 
+- Same as C++, but type-safe integration with Rust's ownership system.
+- Key difference: Rust's wait() consumes and returns the guard, enforcing at compile-time that you hold the lock.
+
+***Key points***:
+- Type: `std::sync::Condvar`
+- Must be used with `MutexGuard` (from `Mutex::lock()`)
+- `wait(guard)`: Takes ownership of guard, releases lock, sleeps, returns new guard when woken
+- `notify_one()`: Wakes one waiting thread
+- `notify_all()`: Wakes all waiting threads
+- Returns `LockResult<MutexGuard>` - must handle poisoning
+
+```rust
+let mut guard = mutex.lock().unwrap();
+while !condition_is_true {
+    guard = cv.wait(guard).unwrap();
+}
+```
 
 ```rust
 use std::sync::{Arc, Mutex, Condvar};
@@ -284,60 +638,257 @@ use std::collections::VecDeque;
 use std::time::Duration;
 
 fn main() {
-    let pair = Arc::new((Mutex::new(VecDeque::new()), Condvar::new()));
-    let finished = Arc::new(Mutex::new(false));
+    // Create a shared pair of (Mutex-protected queue, Condvar for notifications)
+    // Arc allows multiple threads to share ownership of this data
+    let pair = Arc::new( (Mutex::new(VecDeque::new()), Condvar::new()) );
+    //         ^shared^  ^--------- tuple of 2 items ----------------^
     
+    // Shared flag to signal when production is finished
+    let finished = Arc::new(Mutex::new(false));
+    //           ^shared^   ^---- flag ----^
+
+    // Clone Arc pointers for the producer thread (increments reference count)
     let pair_clone = Arc::clone(&pair);
     let finished_clone = Arc::clone(&finished);
     
-    // Producer thread
+    // Producer thread - generates items and adds them to the queue
     let producer = thread::spawn(move || {
+        // Destructure the pair into separate references
+        // &*pair_clone
+        // - First:  *pair_clone → dereferences Arc to get the tuple
+        // - Second: &           → borrows a reference to that tuple
+        // --> Type: &(Mutex<VecDeque<i32>>, Condvar)  
+        // This is a common Rust idiom for accessing the contents of smart pointers
+        // (Arc or Box) when you need references to the inner data:
+        // - Can't do this "let (lock, cvar) = *pair_clone;", would move out of Arc => Error!
+        // - Correct - get references instead => Works!
         let (lock, cvar) = &*pair_clone;
+        
+        // Produce 10 items
         for i in 0..10 {
+            // Simulate work with a delay
             thread::sleep(Duration::from_millis(100));
+            
             {
+                // Lock the mutex to access the queue
                 let mut queue = lock.lock().unwrap();
+
+                // Add item to the back of the queue
                 queue.push_back(i);
+
                 println!("Produced: {}", i);
-            }
+            } // Lock is automatically released when queue goes out of scope
+            
+            // Notify one waiting consumer thread that data is available
             cvar.notify_one();
         }
+        
+        // Signal that production is complete
         *finished_clone.lock().unwrap() = true;
+        
+        // Wake up all consumer threads so they can check the finished flag
         cvar.notify_all();
     });
     
-    // Consumer threads
+    // Consumer threads - retrieve and process items from the queue
     let mut consumers = vec![];
+    
+    // Spawn 2 consumer threads
     for id in 1..=2 {
+        // Clone Arc pointers for each consumer thread
         let pair_clone = Arc::clone(&pair);
         let finished_clone = Arc::clone(&finished);
         
         let consumer = thread::spawn(move || {
+            // Destructure the pair into separate references
             let (lock, cvar) = &*pair_clone;
+            
             loop {
+                // Lock the mutex to access the queue
                 let mut queue = lock.lock().unwrap();
                 
+                // Wait while queue is empty AND production is not finished
+                // The condition variable releases the lock and waits for notification
                 while queue.is_empty() && !*finished_clone.lock().unwrap() {
+                    // wait() atomically releases the lock and blocks until notified
+                    // When notified, it re-acquires the lock before returning
                     queue = cvar.wait(queue).unwrap();
                 }
                 
+                // Try to get an item from the front of the queue
                 if let Some(value) = queue.pop_front() {
+                    // Explicitly drop the lock before processing (good practice)
                     drop(queue);
                     println!("Consumer {} consumed: {}", id, value);
                 } else if *finished_clone.lock().unwrap() {
+                    // Queue is empty and production is finished - exit loop
                     break;
                 }
             }
         });
+        
+        // Store consumer thread handle for later joining
         consumers.push(consumer);
     }
     
+    // Wait for producer thread to complete
     producer.join().unwrap();
+    
+    // Wait for all consumer threads to complete
     for consumer in consumers {
         consumer.join().unwrap();
     }
 }
 ```
+The comments explain:
+- **Data structures**: Arc for shared ownership, Mutex for thread-safe access, Condvar for thread synchronization
+- **Producer-consumer pattern**: How items flow from producer to consumers through the shared queue
+- **Synchronization**: How the condition variable coordinates waiting and notification between threads
+- **Lock management**: When locks are acquired and released
+- **Thread lifecycle**: Spawning, execution, and joining of threads
+
+**NOTE 1**: Why Clone Then Move?
+
+```rust
+// ❌ Can't do this - Arc doesn't implement Copy:
+let producer = thread::spawn(move || {
+    let (lock, cvar) = &*pair;  // Error! pair moved into closure
+});
+let consumer = thread::spawn(move || {
+    let (lock, cvar) = &*pair;  // Error! pair already moved!
+});
+
+// ✅ Clone first, then each thread gets its own Arc (pointing to same data):
+let pair_clone1 = Arc::clone(&pair);
+let pair_clone2 = Arc::clone(&pair);
+
+let producer = thread::spawn(move || {
+    // pair_clone1 moved here
+});
+
+let consumer = thread::spawn(move || {
+    // pair_clone2 moved here
+});
+
+// Original 'pair' still accessible in main thread
+```
+
+**NOTE 2** Deconstruction of the `finished` flag:
+
+#### Type Declarations
+
+```rust
+// ORIGINAL
+let finished = Arc::new(Mutex::new(false));
+//  ^------^   ^--^ ^---^ ^--^ ^---^
+//     |        |     |     |     |
+//     |        |     |     |     +-- bool value
+//     |        |     |     +-------- Mutex constructor
+//     |        |     +-------------- Mutex<bool>
+//     |        +-------------------- Arc constructor
+//     +----------------------------- Arc<Mutex<bool>>
+
+// CLONE (new Arc, same data)
+let finished_clone = Arc::clone(&finished);
+//  ^------------^                ^-------^
+//       |                             |
+//       |                             +-- &Arc<Mutex<bool>> (borrow for cloning)
+//       +------------------------------- Arc<Mutex<bool>> (new Arc, same data)
+```
+
+#### The Assignment Expression (Right to Left)
+
+```rust
+*finished_clone.lock().unwrap() = true;
+```
+
+Let's break this down from **left to right** to understand the types:
+
+##### Step 1: `finished_clone`
+```rust
+finished_clone
+// Type: Arc<Mutex<bool>>
+```
+
+##### Step 2: `finished_clone.lock()`
+```rust
+finished_clone.lock() // => Result<T,E>
+// Calls lock() on the Mutex inside the Arc
+// Type: LockResult<MutexGuard<bool>>
+//       (which is Result<MutexGuard<bool>, PoisonError<MutexGuard<bool>>>)
+```
+
+The `lock()` method returns a `Result` because locking can fail if the mutex is "poisoned" (a thread panicked while holding the lock).
+
+##### Step 3: `finished_clone.lock().unwrap()`
+```rust
+finished_clone.lock().unwrap() // either T or E, (and T is a pointer)
+// Unwraps the Result, panics if error
+// Type: MutexGuard<bool>
+```
+
+`MutexGuard` is a smart pointer that:
+- Holds the lock while it exists
+- Automatically releases the lock when dropped
+- Implements `Deref` to access the inner `bool`
+
+##### Step 4: `*finished_clone.lock().unwrap()`
+```rust
+*finished_clone.lock().unwrap() // * will dereference T which is a pointer
+// Dereferences the MutexGuard to access the bool inside
+// Type: bool (mutable reference)
+```
+
+##### Step 5: Assignment
+```rust
+*finished_clone.lock().unwrap() = true;
+// Assigns true to the bool
+// The MutexGuard is dropped at the end of the statement
+// Lock is automatically released
+```
+
+#### Visual Type Flow
+
+```rust
+finished_clone
+    ↓ (is a)
+Arc<Mutex<bool>>
+    ↓ .lock()
+Result<MutexGuard<bool>, PoisonError>
+    ↓ .unwrap()
+MutexGuard<bool>
+    ↓ * (dereference)
+bool (mutable)
+    ↓ = true
+Assigns true to the bool
+```
+
+#### Complete Type Annotations
+
+```rust
+let finished: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+let finished_clone: Arc<Mutex<bool>> = Arc::clone(&finished);
+
+// Breaking down the assignment:
+let lock_result: LockResult<MutexGuard<bool>> = finished_clone.lock();
+let guard: MutexGuard<bool> = lock_result.unwrap();
+let bool_ref: &mut bool = &mut *guard;  // Implicit with deref
+*bool_ref = true;
+
+// Or the idiomatic one-liner:
+*finished_clone.lock().unwrap() = true;
+```
+
+#### Key Points
+
+1. **`Arc`** provides shared ownership across threads
+2. **`Mutex`** provides mutual exclusion (thread-safe interior mutability)
+3. **`MutexGuard`** is an RAII guard that holds the lock and auto-releases it
+4. **`unwrap()`** extracts the guard from the `Result` (panics on error)
+5. **`*`** dereferences the guard to access the `bool` inside
+
+The type system ensures you can't forget to lock the mutex before accessing the data! 
+
 ---
 
 ### 4. Atomic Operations
@@ -350,47 +901,155 @@ fn main() {
 #include <vector>
 #include <iostream>
 
+// Atomic counter - safe for concurrent access from multiple threads
 std::atomic<int> atomic_counter(0);
+
+// Atomic flag for thread synchronization
 std::atomic<bool> flag(false);
 
+// Increments the atomic counter using relaxed memory ordering
+// Relaxed ordering provides no synchronization guarantees but allows maximum performance
 void increment_atomic(int iterations) {
     for (int i = 0; i < iterations; ++i) {
+        // fetch_add atomically increments and returns the previous value
+        // memory_order_relaxed: no ordering constraints, only atomicity guaranteed
         atomic_counter.fetch_add(1, std::memory_order_relaxed);
     }
 }
 
+// Waits in a busy loop until the flag becomes true
 void spin_wait() {
+    // memory_order_acquire: ensures all writes before the release in set_flag()
+    // are visible after this load returns true
     while (!flag.load(std::memory_order_acquire)) {
-        // Busy wait
+        // Busy wait (spin lock) - continuously checks the flag
+        // Note: Consider using std::this_thread::yield() to reduce CPU usage
     }
     std::cout << "Flag is now true!\n";
 }
 
+// Sets the flag to true after a delay
 void set_flag() {
+    // Sleep for 100ms before setting the flag
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    
+    // memory_order_release: ensures all writes before this store are visible
+    // to threads that acquire-load this flag
     flag.store(true, std::memory_order_release);
 }
 
 int main() {
     std::vector<std::thread> threads;
     
+    // Create 5 threads, each incrementing the counter 1000 times
+    // Total expected: 5000 increments
     for (int i = 0; i < 5; ++i) {
         threads.emplace_back(increment_atomic, 1000);
     }
     
-    std::thread waiter(spin_wait);
-    std::thread setter(set_flag);
+    // Create synchronization demonstration threads
+    std::thread waiter(spin_wait);  // Waits for flag to be set
+    std::thread setter(set_flag);   // Sets flag after delay
     
+    // Wait for all increment threads to complete
     for (auto& t : threads) {
         t.join();
     }
+    
+    // Wait for synchronization threads to complete
     waiter.join();
     setter.join();
     
+    // Display final counter value (should be 5000)
     std::cout << "Final atomic counter: " << atomic_counter.load() << "\n";
+    
     return 0;
 }
 ```
+
+```
+Main Thread    Thread 1-5 (increment)    atomic_counter  flag     Waiter Thread       Setter Thread
+    |                   |                      |           |  [loop until flag true]  [sleep 100ms]
+    |--create---------->|                      |           |            |                   |
+    |--create---------->|                      |           |            |                   |
+    |--create---------->|                      |           |            |                   |
+    |--create---------->|                      |           |            |                   |
+    |--create---------->|                      |           |            |                   |
+    |                   |                      |           |            |                   |
+    |--create waiter--------------------------------------------------->|                   |
+    |                   |                      |           |            |                   |
+    |--create setter----------------------------------------------------------------------->|             
+    |                   |                      |           |            |                   |
+    |                [Loop 1000x]              |           |            |                   |
+    |                   |                      |           |            |                   |
+    |                   | fetch_add(relaxed)   |           |            |                   |
+    |                   |--------------------->|           |            |                   |
+    |                   |    (increment)       |           |            |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |      [Spin loop]  [Sleep 100ms]            |
+    |                   |                      |           |            |                   |
+    |                   |                      |           |            |                   |    
+    |                   |                      |           |            |                   |
+    |                   |                      |     flag.load(std::memory_order_acquire)   | 
+    |                   |                      |           |<-----------|                   |
+    |                   |                      |           |   false    |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |     flag.load(std::memory_order_acquire)   | 
+    |                   |                      |           |<-----------|                   |
+    |                   |                      |           |   false    |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |           |            |             (100ms elapsed)
+    |                   |                      |           |            |                   |
+    |                   |                      | flag.store(true, std::memory_order_release)|
+    |                   |                      |           |<-------------------------------|
+    |                   |                      |           |   true     |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |     flag.load(std::memory_order_acquire)   | 
+    |                   |                      |           |<-----------|                   |
+    |                   |                      |           |   true     |                   |
+    |                   |                      |           |            |                   |
+    |                   |                      |           |    "Flag is now true!"         |
+    |                   |                      |           |            |                   |
+    | join()----------->|                      |           |            |                   |
+    |<------------------|                      |           |            |                   |
+    |                   X                      |           |            |                   |
+    |                                          |           |            |                   |
+    | join()----------------------------------------------------------->|                   |
+    |<------------------------------------------------------------------|                   |
+    |                                          |           |            X                   |
+    |                                          |           |                                |
+    | join()------------------------------------------------------------------------------->| 
+    |<--------------------------------------------------------------------------------------|      
+    |                                          |           |                                X
+    |                                          |           |                              
+    | load() final value                       |           |                              
+    |<-----------------------------------------|           |                              
+    | 5000                                     |           |                              
+    |                                          |           |                              
+    | "Final atomic counter: 5000"             |           |                              
+    |                                          |           |                              
+    V
+```
+***Key interactions:***
+
+1. **Main thread** creates 5 increment threads, 1 waiter thread, and 1 setter thread
+2. **Increment threads** (1-5) run concurrently, each calling `fetch_add(relaxed)` 1000 times on the atomic counter
+3. **Waiter thread** spins in a loop, repeatedly calling `load(acquire)` on the flag until it becomes true
+4. **Setter thread** sleeps for 100ms, then calls `store(release)` to set the flag to true
+5. **Acquire-release synchronization** happens when the waiter's `load(acquire)` sees the setter's `store(release)`
+6. **Main thread** joins all threads in order: increment threads first, then waiter, then setter
+7. **Finally** main displays the counter value (5000)
+
+***Key concepts:***
+
+1. **Atomic operations**: Thread-safe operations that complete without interruption
+2. **Memory ordering**: Controls how operations are ordered relative to other threads
+  - `relaxed`: Only guarantees atomicity, no ordering constraints
+  - `acquire`: Prevents reordering of subsequent reads/writes before this operation
+  - `release`: Prevents reordering of prior reads/writes after this operation
+3. **Acquire-Release semantics**: Create a synchronization point between threads (setter releases, waiter acquires)
 
 **Rust Implementation:**
 
