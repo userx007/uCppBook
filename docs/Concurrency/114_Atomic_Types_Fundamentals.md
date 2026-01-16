@@ -65,32 +65,49 @@ int main() {
 #include <thread>
 #include <vector>
 
+// Shared atomic counter - safe for concurrent access from multiple threads
+// Initialized to 0
 std::atomic<int> shared_counter(0);
 
+// Function executed by each thread to increment the shared counter
 void increment_counter(int iterations) {
     for (int i = 0; i < iterations; ++i) {
-        // Atomic increment - thread-safe
+        // Atomic increment operation - thread-safe without locks
+        // fetch_add atomically adds 1 and returns the previous value
+        // memory_order_relaxed: provides atomicity but no synchronization/ordering guarantees
+        // - Fastest memory order for simple counters where order doesn't matter
+        // - Only ensures this operation itself is atomic
+        // - Does not prevent reordering with other operations
         shared_counter.fetch_add(1, std::memory_order_relaxed);
     }
 }
 
 int main() {
-    const int num_threads = 10;
-    const int iterations = 1000;
+    // Configuration:  
+    const int num_threads = 10;     // number of threads
+    const int iterations = 1000;    // iterations per thread
     
+    // Container to hold all thread objects
     std::vector<std::thread> threads;
     
-    // Launch multiple threads
+    // Launch multiple threads that will run concurrently
+    // Each thread will increment the counter 'iterations' times
     for (int i = 0; i < num_threads; ++i) {
+        // emplace_back constructs thread in-place, passing 
+        // increment_counter function and iterations parameter
         threads.emplace_back(increment_counter, iterations);
     }
     
-    // Wait for all threads
+    // Wait for all threads to complete execution
+    // join() blocks until the thread finishes
     for (auto& t : threads) {
         t.join();
     }
     
-    // Result is always exactly num_threads * iterations
+    // Display results
+    // load() atomically reads the counter value
+    // Result is always exactly num_threads * iterations because atomic operations
+    // guarantee that no increments are lost due to race conditions
     std::cout << "Final counter: " << shared_counter.load() << std::endl;
     std::cout << "Expected: " << (num_threads * iterations) << std::endl;
     
@@ -141,39 +158,186 @@ int main() {
 #include <thread>
 #include <vector>
 
+// Shared atomic value - will be safely incremented up to a maximum by multiple threads
 std::atomic<int> atomic_value(0);
 
-// Atomic compare-and-swap implementation
+// Atomic compare-and-swap (CAS) implementation
+// Safely increments the atomic value without exceeding max_value
+// Multiple threads can call this concurrently without data races
 void safe_increment_to_max(int max_value) {
+    // Load the current value - this is our initial "expected" value
     int current = atomic_value.load();
     
+    // Loop until we've either successfully incremented or reached the max
     while (current < max_value) {
-        // Try to increment: only succeeds if value hasn't changed
+        // compare_exchange_weak attempts to atomically:
+        // 1. Compare atomic_value with 'current' (expected value)
+        // 2. If equal: set atomic_value to 'current + 1' and return true
+        // 3. If not equal: update 'current' to actual atomic_value and return false
+        //
+        // Why "weak"? 
+        // - Can spuriously fail (return false even when values match)
+        // - Faster on some architectures (e.g., ARM, PowerPC with LL/SC instructions)
+        // - Acceptable here because we're in a loop that will retry
+        // - Use compare_exchange_strong if spurious failures are problematic
+        //
+        // This is a lock-free algorithm: no thread can block another
         if (atomic_value.compare_exchange_weak(current, current + 1)) {
-            break;  // Success
+            break;  // Success - we incremented the value, our work is done
         }
-        // Failure: 'current' is updated to actual value, retry
+        // Failure case (another thread changed the value first):
+        // - 'current' is automatically updated to the actual current value
+        // - Loop continues with the updated 'current' value
+        // - Will retry if still below max_value
+        // - This is the CAS retry loop pattern
     }
+    // Note: If current >= max_value when we enter or after update, 
+    // the loop exits without incrementing (preventing overflow)
 }
 
 int main() {
+    // Maximum value the atomic counter should reach
     const int max_val = 100;
+    
     std::vector<std::thread> threads;
     
-    // Many threads trying to increment
+    // Create 200 threads all trying to increment to max_val
+    // Since max_val is 100, only the first 100 successful increments will occur
+    // The remaining 100+ threads will find the value already at max and exit
     for (int i = 0; i < 200; ++i) {
         threads.emplace_back(safe_increment_to_max, max_val);
     }
     
+    // Wait for all threads to complete
     for (auto& t : threads) {
         t.join();
     }
     
+    // Display final value
     std::cout << "Final value: " << atomic_value.load() << std::endl;
     // Output: Final value: 100 (never exceeds max)
+    // Guaranteed: despite 200 threads, the value stops at exactly max_val
+    // because compare_exchange ensures no thread can increment past the limit
     
     return 0;
 }
+```
+
+```
+Main Thread    Thread 1         Thread 2         Thread 3             atomic_value = 0
+    |              |                |                |                        |
+    |--create----->|                |                |                        | 
+    |--create---------------------->|                |                        |
+    |--create--------------------------------------->|                        |
+    |              |                |                |                        |
+    |              | load()         |                |                        |
+    |              |--------------->|--------------->|----------------------->|
+    |              | current=0      | current=0      | current=0              |
+    |              |                |                |                        |
+    |       [while: 0 < 100]        |                |                        |
+    |              |                |                |                        |
+    |              | compare_exchange_weak(0, 1)     |                        |
+    |              |--------------------------------------------------------->|         
+    |              |                |                | [CAS: 0==0?]           |
+    |              |                |                | YES, set to 1          |
+    |              |<---------------------------------------------------------| true 
+    |              | break          |                |                        |
+    |              |                |                |                        |
+    |              |             [while: 0 < 100]    |                        |
+    |              |                |                |                        |
+    |              |                | compare_exchange_weak(0, 1)             |
+    |              |                |---------------------------------------->|
+    |              |                |                |         [CAS: 1==0?]   |
+    |              |                |                |         NO, current=1  |
+    |              |                |<----------------------------------------| false
+    |              |                | current=1      |                        | = 1
+    |              |                |                |                        |
+    |              |                |         [while: 1 < 100]                |
+    |              |                |                |                        |
+    |              |                | compare_exchange_weak(1, 2)             |
+    |              |                |---------------------------------------->|
+    |              |                |                | [CAS: 1==1?]           |
+    |              |                |                | YES, set to 2          |
+    |              |                |<----------------------------------------| true
+    |              |                | break          |                        | = 2
+    |              |                |                |                        |
+    |              |                |           [while: 0 < 100]              |
+    |              |                |                |                        |
+    |              |                |                | compare_exchange_weak(0, 1)
+    |              |                |                |----------------------->|
+    |              |                |                | [CAS: 2==0?]           |
+    |              |                |                | NO, current=2          |
+    |              |                |                |<-----------------------| false
+    |              |                |                | current=2              | = 2
+    |              |                |                |                        |
+    |              |                |          [while: 2 < 100]               |
+    |              |                |                |                        |
+    |              |                |                | compare_exchange_weak(2, 3)
+    |              |                |                |----------------------->|
+    |              |                |                | [CAS: 2==2?]           |
+    |              |                |                | YES, set to 3          |
+    |              |                |                |<-----------------------| true
+    |              |                |                | break                  | = 3
+    |              |                |                |                        |
+    |              |                |                |                        |
+    |         ... (continues until atomic_value reaches 100) ...              |
+    |              |                |                |                        |
+    |              |                |                |                        | = 99
+    |              |                |                |                        |
+    |              | load()         |                |                        |
+    |              |--------------------------------------------------------->|
+    |              | current=99     |                |                        |
+    |              |                |                |                        |
+    |        [while: 99 < 100]      |                |                        |
+    |              |                |                |                        |
+    |              | compare_exchange_weak(99, 100)  |                        |
+    |              |--------------------------------------------------------->|
+    |              |                |                | [CAS: 99==99?]         |
+    |              |                |                | YES, set to 100        |
+    |              |<---------------------------------------------------------| true     
+    |              | break          |                |                        | = 100
+    |              X                |                |                        |
+    |              |                |                |                        |
+    |              |             load()              |                        |
+    |              |                |---------------------------------------->|
+    |              |                | current=100    |                        |
+    |              |                |                |                        |
+    |              |     [while: 100 < 100 = FALSE]  |                        |
+    |              |                | exit loop      |                        |
+    |              |                X                |                        |
+    |              |                |                |                        |
+    |              |                |             load()                      |
+    |              |                |                |----------------------->|
+    |              |                |                | current=100            |
+    |              |                |                |                        |
+    |              |                |     [while: 100 < 100 = FALSE]          |
+    |              |                |                | exit loop              |
+    |              |                |                X                        |
+    |              |                |                |                        |
+    | join()------>|                |                |                        |
+    |<-------------|                |                |                        |
+    |              |                |                |                        |
+    | join()----------------------->|                |                        |
+    |<------------------------------|                |                        |
+    |              |                |                |                        |
+    | join()---------------------------------------->|                        |
+    |<-----------------------------------------------|                        |
+    |              |                |                |                        |
+    | load() final value                             |                        |
+    |<------------------------------------------------------------------------|  
+    | 100          |                |                |                        |
+    |              |                |                |                        |
+    | "Final value: 100"            |                |                        |
+    |              |                |                |                        |
+    V
+
+Key CAS Scenarios Shown:
+------------------------
+1. Thread 1: CAS(0,1) succeeds - first increment (value: 0→1)
+2. Thread 2: CAS(0,1) fails because Thread 1 changed it to 1
+   - 'current' auto-updates to 1, retries with CAS(1,2)
+3. Thread 3: CAS(0,1) fails, updates to current=2, retries with CAS(2,3)
+4. Eventually reaches 100, remaining threads exit without incrementing
 ```
 
 ## Lock-Free Operations
