@@ -40,11 +40,19 @@ bar.wait(std::move(token)); // Wait using previously obtained token
 ### Example 1: Basic Barrier Usage - Parallel Matrix Computation
 
 ```cpp
+/*
+g++ -pthread --std=c++20 parallel_matrix_calculation.cpp -o app
+*/
+
 #include <iostream>
 #include <vector>
 #include <thread>
 #include <barrier>
+#include <mutex>
 #include <cmath>
+
+// safe std::cout access
+std::mutex cout_mutex;
 
 void parallel_matrix_computation(int thread_id, int num_threads, 
                                  std::vector<double>& data,
@@ -58,7 +66,12 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         data[i] = thread_id * 100.0 + i;
     }
-    std::cout << "Thread " << thread_id << " completed initialization\n";
+
+    // safe std::cout access
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Thread " << thread_id << " completed initialization\n";
+    }
     
     // Wait for all threads to complete initialization
     sync_point.arrive_and_wait();
@@ -68,7 +81,12 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         sum += std::sqrt(data[i]);
     }
-    std::cout << "Thread " << thread_id << " computed sum: " << sum << "\n";
+
+    // safe std::cout access
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Thread " << thread_id << " computed sum: " << sum << "\n";
+    }
     
     // Wait for all threads to complete processing
     sync_point.arrive_and_wait();
@@ -77,7 +95,12 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         data[i] = data[i] / (sum + 1.0);
     }
-    std::cout << "Thread " << thread_id << " completed finalization\n";
+
+    // safe std::cout access
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Thread " << thread_id << " completed finalization\n";
+    }
     
     sync_point.arrive_and_wait();
 }
@@ -180,11 +203,19 @@ int main() {
 ### Example 3: arrive() and wait() Separately
 
 ```cpp
+/*
+g++ -pthread --std=c++20 arrive_and_wait_separately.cpp -o app
+*/
+
 #include <iostream>
 #include <thread>
 #include <barrier>
 #include <vector>
 #include <chrono>
+#include <mutex>
+
+// safe std::cout access
+std::mutex cout_mutex;
 
 void worker_with_async_arrival(int id, std::barrier<>& bar) {
     std::cout << "Thread " << id << " starting work\n";
@@ -194,17 +225,35 @@ void worker_with_async_arrival(int id, std::barrier<>& bar) {
     
     // Arrive at barrier but don't wait yet (get arrival token)
     auto arrival_token = bar.arrive();
-    std::cout << "Thread " << id << " arrived at barrier\n";
+
+    // safe std::cout access
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Thread " << id << " arrived at barrier\n";
+    }
     
+    // safe std::cout access    
+    {    
+        std::lock_guard<std::mutex> lock(cout_mutex);        
+        std::cout << "Thread " << id << " doing post-arrival work\n";
+    }
     // Do additional work while others are arriving
-    std::cout << "Thread " << id << " doing post-arrival work\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
+    // safe std::cout access
+    {    
+        std::lock_guard<std::mutex> lock(cout_mutex);                
+        std::cout << "Thread " << id << " waiting at barrier\n";
+    }
+
     // Now wait for all threads using the token
-    std::cout << "Thread " << id << " waiting at barrier\n";
     bar.wait(std::move(arrival_token));
     
-    std::cout << "Thread " << id << " passed barrier\n";
+    // safe std::cout access
+    {    
+        std::lock_guard<std::mutex> lock(cout_mutex);                
+        std::cout << "Thread " << id << " passed barrier\n";
+    }    
 }
 
 int main() {
@@ -227,11 +276,18 @@ int main() {
 ### Example 4: arrive_and_drop() for Dynamic Thread Management
 
 ```cpp
+/*
+g++ -pthread --std=c++20 arrive_and_drop.cpp -o app
+*/
+
 #include <iostream>
 #include <thread>
 #include <barrier>
 #include <vector>
 #include <random>
+
+// mutex for safe std::cout access
+std::mutex cout_mutex;
 
 void worker_that_may_exit(int id, std::barrier<>& bar, int max_iterations) {
     std::random_device rd;
@@ -239,15 +295,23 @@ void worker_that_may_exit(int id, std::barrier<>& bar, int max_iterations) {
     std::uniform_int_distribution<> exit_chance(1, 10);
     
     for (int iter = 0; iter < max_iterations; ++iter) {
-        std::cout << "Thread " << id << " at iteration " << iter << "\n";
+        // safe std::cout access
+        {
+            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::cout << "Thread " << id << " at iteration " << iter << "\n";
+        }
         
         // Simulate work
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
         // Random chance to exit early
         if (exit_chance(gen) > 8 && iter > 2) {
-            std::cout << "Thread " << id << " exiting early at iteration " 
-                     << iter << "\n";
+            // safe std::cout access
+            {
+                std::lock_guard<std::mutex> lock(cout_mutex);
+                std::cout << "Thread " << id << " exiting early at iteration " << iter << "\n";
+            }
+
             // Arrive and permanently drop from barrier
             bar.arrive_and_drop();
             return;
@@ -257,7 +321,11 @@ void worker_that_may_exit(int id, std::barrier<>& bar, int max_iterations) {
         bar.arrive_and_wait();
     }
     
-    std::cout << "Thread " << id << " completed all iterations\n";
+    // safe std::cout access
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << "Thread " << id << " completed all iterations\n";
+    }
 }
 
 int main() {

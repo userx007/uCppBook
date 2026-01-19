@@ -1,6 +1,7 @@
 /*
 g++ -pthread --std=c++20 parallel_matrix_calculation.cpp -o app
 */
+
 #include <iostream>
 #include <vector>
 #include <thread>
@@ -22,6 +23,8 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         data[i] = thread_id * 100.0 + i;
     }
+
+    // safe std::cout access
     {
         std::lock_guard<std::mutex> lock(cout_mutex);
         std::cout << "Thread " << thread_id << " completed initialization\n";
@@ -35,6 +38,8 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         sum += std::sqrt(data[i]);
     }
+
+    // safe std::cout access
     {
         std::lock_guard<std::mutex> lock(cout_mutex);
         std::cout << "Thread " << thread_id << " computed sum: " << sum << "\n";
@@ -47,6 +52,8 @@ void parallel_matrix_computation(int thread_id, int num_threads,
     for (int i = start; i < end; ++i) {
         data[i] = data[i] / (sum + 1.0);
     }
+    
+    // safe std::cout access
     {
         std::lock_guard<std::mutex> lock(cout_mutex);
         std::cout << "Thread " << thread_id << " completed finalization\n";

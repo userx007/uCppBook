@@ -1444,32 +1444,49 @@ Think of it like `Arc` - dropping one `Arc` doesn't deallocate the data, only wh
 #include <barrier>
 #include <vector>
 
+// Function executed by each thread for a given phase
+// Simulates work and synchronizes all threads at the end of each phase
 void parallel_phase(std::barrier<>& sync_point, int id, int phase) {
     std::cout << "Thread " << id << " working on phase " << phase << "\n";
+    
+    // Simulate variable work duration (longer for higher thread IDs)
     std::this_thread::sleep_for(std::chrono::milliseconds(100 * id));
+    
     std::cout << "Thread " << id << " finished phase " << phase << "\n";
+    
+    // Wait for all threads to reach this synchronization point before proceeding
     sync_point.arrive_and_wait();
 }
 
 int main() {
     const int num_threads = 4;
+    
+    // Create a barrier that waits for all 4 threads to arrive before releasing them
     std::barrier sync_point(num_threads);
+    
+    // Container to hold thread objects
     std::vector<std::thread> threads;
     
+    // Launch worker threads
     for (int id = 0; id < num_threads; ++id) {
         threads.emplace_back([&sync_point, id]() {
+            // Each thread executes 3 phases sequentially
             for (int phase = 0; phase < 3; ++phase) {
                 parallel_phase(sync_point, id, phase);
             }
         });
     }
     
+    // Wait for all threads to complete all phases
     for (auto& t : threads) {
         t.join();
     }
+    
     return 0;
 }
 ```
+
+The key concept here is that the `std::barrier` ensures all threads complete each phase before any thread can proceed to the next phase, creating synchronized phases of parallel work.
 
 **Rust Implementation:**
 
@@ -1478,33 +1495,55 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::Duration;
 
+// Function executed by each thread for a given phase
+// Simulates work and synchronizes all threads at the end of each phase
 fn parallel_phase(barrier: &Barrier, id: usize, phase: usize) {
     println!("Thread {} working on phase {}", id, phase);
+    
+    // Simulate variable work duration (longer for higher thread IDs)
     thread::sleep(Duration::from_millis(100 * id as u64));
+    
     println!("Thread {} finished phase {}", id, phase);
+    
+    // Wait for all threads to reach this synchronization point before proceeding
     barrier.wait();
 }
 
 fn main() {
     let num_threads = 4;
+    
+    // Create a barrier wrapped in Arc for safe sharing across threads
+    // Barrier waits for all 4 threads to arrive before releasing them
     let barrier = Arc::new(Barrier::new(num_threads));
+    
+    // Container to hold thread join handles
     let mut handles = vec![];
     
+    // Spawn worker threads
     for id in 0..num_threads {
+        // Clone the Arc to share barrier ownership with the new thread
         let barrier_clone = Arc::clone(&barrier);
+        
+        // Spawn thread with moved barrier clone and thread ID
         let handle = thread::spawn(move || {
+            // Each thread executes 3 phases sequentially
             for phase in 0..3 {
                 parallel_phase(&barrier_clone, id, phase);
             }
         });
+        
         handles.push(handle);
     }
     
+    // Wait for all threads to complete all phases
+    // unwrap() panics if any thread panicked
     for handle in handles {
         handle.join().unwrap();
     }
 }
 ```
+
+The Rust version uses `Arc` (Atomic Reference Counting) to safely share the `Barrier` across multiple threads, ensuring synchronized phase execution just like the C++ version.
 
 ---
 
@@ -1517,6 +1556,8 @@ fn main() {
 #include <thread>
 #include <vector>
 
+// Process a range of data elements by doubling each value
+// Operates on a slice [start, end) of the vector
 void process_data(std::vector<int>& data, int start, int end) {
     for (int i = start; i < end; ++i) {
         data[i] *= 2;
@@ -1524,31 +1565,45 @@ void process_data(std::vector<int>& data, int start, int end) {
 }
 
 int main() {
+    // Initialize data vector with 8 elements
     std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8};
     const int num_threads = 4;
+    
+    // Container to hold thread objects
     std::vector<std::thread> threads;
     
+    // Calculate how many elements each thread should process
     int chunk_size = data.size() / num_threads;
     
+    // Spawn threads to process different chunks of the data in parallel
     for (int i = 0; i < num_threads; ++i) {
+        // Calculate the start index for this thread's chunk
         int start = i * chunk_size;
+        
+        // Calculate the end index (last thread handles any remaining elements)
         int end = (i == num_threads - 1) ? data.size() : (i + 1) * chunk_size;
         
-        // Reference to data is captured, programmer must ensure safety
+        // Create thread passing data by reference (std::ref ensures reference semantics)
+        // Each thread processes a non-overlapping range, ensuring thread safety
         threads.emplace_back(process_data, std::ref(data), start, end);
     }
     
+    // Wait for all threads to complete their work
     for (auto& t : threads) {
         t.join();
     }
     
+    // Print the processed results
     for (int val : data) {
         std::cout << val << " ";
     }
     std::cout << "\n";
+    
     return 0;
 }
 ```
+
+This demonstrates data parallelism where the vector is partitioned into non-overlapping chunks, allowing safe concurrent modification without synchronization primitives since each thread accesses distinct memory regions.
 
 **Rust Implementation:**
 
@@ -1556,30 +1611,43 @@ int main() {
 use std::thread;
 
 fn main() {
+    // Initialize data vector with 8 elements
     let mut data = vec![1, 2, 3, 4, 5, 6, 7, 8];
     let num_threads = 4;
+    
+    // Calculate how many elements each thread should process
     let chunk_size = data.len() / num_threads;
     
-    // Scoped threads allow borrowing local data
+    // Create a scoped thread environment that allows safe borrowing of local data
+    // IMPORTANT: Scoped threads guarantee all threads complete before the scope ends
     thread::scope(|s| {
+        // Split the vector into mutable, non-overlapping chunks
+        // Each chunk will be processed by a separate thread
         let chunks: Vec<&mut [i32]> = data.chunks_mut(chunk_size).collect();
         
+        // Spawn a thread for each chunk
         for chunk in chunks {
+            // Move ownership of the chunk into the thread closure
             s.spawn(move || {
+                // Process each element in this chunk by doubling its value
                 for item in chunk.iter_mut() {
                     *item *= 2;
                 }
             });
         }
-        // All threads automatically joined at end of scope
+        // All spawned threads are automatically joined at the end of this scope
+        // This ensures all modifications complete before accessing data again
     });
     
+    // Print the processed results
     for val in &data {
         print!("{} ", val);
     }
     println!();
 }
 ```
+
+Rust's scoped threads and `chunks_mut` provide compile-time guarantees that the data is safely partitioned with no overlapping access, eliminating the need for manual synchronization and preventing data races at compile time.
 
 **Key Differences:**
 - **C++**: Programmer must manually ensure references remain valid and threads are joined
@@ -1601,74 +1669,100 @@ Semaphores are synchronization primitives that maintain a count, allowing a limi
 #include <chrono>
 
 // C++20 introduces counting_semaphore
+// Create a semaphore with max capacity of 5 to limit concurrent connections
 std::counting_semaphore<5> connection_pool(5); // Max 5 concurrent connections
 
+// Simulate a thread acquiring a connection from a limited pool
 void simulate_connection(int id) {
     std::cout << "Thread " << id << " waiting for connection...\n";
     
+    // Acquire a connection slot (blocks if all 5 slots are taken)
     connection_pool.acquire(); // Wait for available slot
     
+    // Simulate work with the connection
     std::cout << "Thread " << id << " got connection, working...\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::cout << "Thread " << id << " releasing connection\n";
     
+    // Release the connection slot back to the pool
     connection_pool.release(); // Release slot
 }
 
 int main() {
+    // Container to hold thread objects
     std::vector<std::thread> threads;
     
+    // Spawn 10 threads competing for 5 connection slots
     for (int i = 0; i < 10; ++i) {
         threads.emplace_back(simulate_connection, i);
     }
     
+    // Wait for all threads to complete
     for (auto& t : threads) {
         t.join();
     }
+    
     return 0;
 }
 
 // Binary semaphore example (mutex-like)
 void binary_semaphore_example() {
+    // Binary semaphore initialized to 1 (acts like a mutex)
     std::binary_semaphore sem(1); // Acts like a mutex
+    
+    // Shared resource protected by the semaphore
     int shared_resource = 0;
     
+    // Worker lambda that safely increments the shared resource
     auto worker = [&sem, &shared_resource](int id) {
         for (int i = 0; i < 3; ++i) {
+            // Acquire exclusive access (lock)
             sem.acquire();
+            
+            // Critical section: safely modify shared resource
             ++shared_resource;
             std::cout << "Thread " << id << " incremented to " 
                       << shared_resource << "\n";
+            
+            // Release exclusive access (unlock)
             sem.release();
         }
     };
     
+    // Spawn two threads that will safely increment the shared counter
     std::thread t1(worker, 1);
     std::thread t2(worker, 2);
     
+    // Wait for both threads to complete
     t1.join();
     t2.join();
 }
 ```
 
+This demonstrates two semaphore use cases: 
+- a counting semaphore for resource pooling (limiting 10 threads to 5 concurrent connections), 
+- a binary semaphore as a mutex alternative for protecting shared data access.
+
 **Rust Implementation:**
 
 ```rust
-use std::sync::{Arc, Semaphore};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
 // Note: As of Rust 1.x, semaphores are not in std, but available in tokio
 // Here's a custom implementation for demonstration:
-
 use std::sync::{Mutex, Condvar};
 
+// Semaphore implementation to limit concurrent access to a resource
+// Uses a mutex to protect the count and a condition variable for waiting
 struct Semaphore {
-    count: Mutex<usize>,
-    cvar: Condvar,
+    count: Mutex<usize>,  // Number of available permits
+    cvar: Condvar,        // Condition variable to block/wake waiting threads
 }
 
 impl Semaphore {
+    // Create a new semaphore with the specified number of available permits
     fn new(count: usize) -> Self {
         Semaphore {
             count: Mutex::new(count),
@@ -1676,46 +1770,71 @@ impl Semaphore {
         }
     }
     
+    // Acquire a permit, blocking if none are available
     fn acquire(&self) {
         let mut count = self.count.lock().unwrap();
+        
+        // Wait while no permits are available
         while *count == 0 {
             count = self.cvar.wait(count).unwrap();
         }
+        
+        // Decrement the count to consume a permit
         *count -= 1;
     }
     
+    // Release a permit, making it available for other threads
     fn release(&self) {
         let mut count = self.count.lock().unwrap();
+        
+        // Increment the count to return a permit
         *count += 1;
+        
+        // Wake up one waiting thread (if any)
         self.cvar.notify_one();
     }
 }
 
 fn main() {
+    // Create a connection pool semaphore limiting concurrent connections to 5
+    // Wrapped in Arc for safe sharing across threads
     let connection_pool = Arc::new(Semaphore::new(5));
+    
+    // Container to hold thread join handles
     let mut handles = vec![];
     
+    // Spawn 10 threads competing for 5 connection slots
     for id in 0..10 {
+        // Clone the Arc to share semaphore ownership with the new thread
         let pool = Arc::clone(&connection_pool);
+        
         let handle = thread::spawn(move || {
             println!("Thread {} waiting for connection...", id);
             
+            // Acquire a connection (blocks if all 5 slots are taken)
             pool.acquire();
             
+            // Simulate work with the connection
             println!("Thread {} got connection, working...", id);
             thread::sleep(Duration::from_millis(500));
             println!("Thread {} releasing connection", id);
             
+            // Release the connection back to the pool
             pool.release();
         });
+        
         handles.push(handle);
     }
     
+    // Wait for all threads to complete
     for handle in handles {
         handle.join().unwrap();
     }
 }
 ```
+
+This demonstrates resource pooling using a semaphore: 10 threads compete for 5 connection slots, with threads automatically blocking when the pool is full and resuming when a slot becomes available.
+
 
 **Key Differences:**
 - **C++**: `counting_semaphore` and `binary_semaphore` in C++20 standard library
