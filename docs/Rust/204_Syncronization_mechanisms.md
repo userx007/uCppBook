@@ -640,12 +640,13 @@ use std::time::Duration;
 fn main() {
     // Create a shared pair of (Mutex-protected queue, Condvar for notifications)
     // Arc allows multiple threads to share ownership of this data
-    let pair = Arc::new( (Mutex::new(VecDeque::new()), Condvar::new()) );
-    //         ^shared^  ^--------- tuple of 2 items ----------------^
+    let pair = Arc::new(( Mutex::new(VecDeque::new()), Condvar::new() ));
+    //                    ^--Mutex-protected queue--^  ^--Condvar---^
+    //         ^shared^ ^----------- tuple of 2 items ----------------^
     
-    // Shared flag to signal when production is finished
+    // Shared mutex-protected flag to signal when production is finished
     let finished = Arc::new(Mutex::new(false));
-    //           ^shared^   ^---- flag ----^
+    //             ^shared^ ^---- flag ----^
 
     // Clone Arc pointers for the producer thread (increments reference count)
     let pair_clone = Arc::clone(&pair);
@@ -653,15 +654,17 @@ fn main() {
     
     // Producer thread - generates items and adds them to the queue
     let producer = thread::spawn(move || {
+        //----------------------------------------------------------------------------------
         // Destructure the pair into separate references
         // &*pair_clone
         // - First:  *pair_clone → dereferences Arc to get the tuple
         // - Second: &           → borrows a reference to that tuple
         // --> Type: &(Mutex<VecDeque<i32>>, Condvar)  
-        // This is a common Rust idiom for accessing the contents of smart pointers
-        // (Arc or Box) when you need references to the inner data:
+        // This is a common Rust idiom for accessing the contents of smart pointers (Arc/Box)
+        // when you need references to the inner data:
         // - Can't do this "let (lock, cvar) = *pair_clone;", would move out of Arc => Error!
-        // - Correct - get references instead => Works!
+        // - Correct - get references instead: &*pair_clone => this works!
+        //----------------------------------------------------------------------------------
         let (lock, cvar) = &*pair_clone;
         
         // Produce 10 items
@@ -669,11 +672,25 @@ fn main() {
             // Simulate work with a delay
             thread::sleep(Duration::from_millis(100));
             
+            // independent block (scope)
             {
-                // Lock the mutex to access the queue
-                let mut queue = lock.lock().unwrap();
+                //--------------------------------------------------------------------------
+                // Lock the mutex to access the queue 
+                // - mutex.lock() returns Result<MutexGuard<T>, PoisonError<MutexGuard<T>>>
+                // - unwrap returns MutexGuard<T> which implements Deref and DerefMut, 
+                //   so we can use it as if it were a reference to T. 
+                // - When we dereference it (explicitly with * or implicitly), we access the 
+                //   underlying T
+                //--------------------------------------------------------------------------
+                let mut queue = lock.lock().unwrap(); // queue is MutexGuard<T>
 
-                // Add item to the back of the queue
+                //--------------------------------------------------------------------------
+                // Generic usage examples (either of them)
+                // - let value = *queue; // dereference to get T (if T is Copy)
+                // - queue.some_method(); // calls method on T due to Deref
+                //--------------------------------------------------------------------------
+                
+                // Add item to the back of the queue (calls method on T due to Deref)
                 queue.push_back(i);
 
                 println!("Produced: {}", i);
@@ -683,6 +700,16 @@ fn main() {
             cvar.notify_one();
         }
         
+        //--------------------------------------------------------------------------
+        // - finished_clone.lock() → Result<MutexGuard<bool>, PoisonError<...>>
+        // - .unwrap() → MutexGuard<bool>
+        // - *... → dereferences to the bool inside
+        // - = true` → assigns true to that bool
+        // - This is a common pattern for updating a value inside a Mutex 
+        //    let mut guard = finished_clone.lock().unwrap();
+        //    *guard = true;
+        //--------------------------------------------------------------------------
+
         // Signal that production is complete
         *finished_clone.lock().unwrap() = true;
         
@@ -710,11 +737,25 @@ fn main() {
                 // Wait while queue is empty AND production is not finished
                 // The condition variable releases the lock and waits for notification
                 while queue.is_empty() && !*finished_clone.lock().unwrap() {
-                    // wait() atomically releases the lock and blocks until notified
-                    // When notified, it re-acquires the lock before returning
-                    queue = cvar.wait(queue).unwrap();
+
+                    //--------------------------------------------------------------------------
+                    // queue is MutexGuard<T>
+                    // cvar.wait(queue) returns Result<MutexGuard<T>, PoisonError<MutexGuard<T>>>
+                    // The wait() method: 
+                    // - takes ownership of the MutexGuard, 
+                    // - releases the lock, 
+                    // - blocks the thread, 
+                    // - and then re-acquires the lock when notified
+                    // The unwrap() method: 
+                    // - extracts the MutexGuard<T> from the Result
+                    //--------------------------------------------------------------------------
+                    queue = cvar.wait(queue).unwrap(); // queue type is MutexGuard<T>
                 }
                 
+                //--------------------------------------------------------------------------
+                // Note: queue type is MutexGuard<T> so we can call method on T due to Deref
+                //--------------------------------------------------------------------------
+
                 // Try to get an item from the front of the queue
                 if let Some(value) = queue.pop_front() {
                     // Explicitly drop the lock before processing (good practice)
@@ -750,15 +791,23 @@ The comments explain:
 **NOTE 1**: Why Clone Then Move?
 
 ```rust
-// ❌ Can't do this - Arc doesn't implement Copy:
+//--------------------------------------------------------------------------
+// Can't do this - Arc doesn't implement Copy:
+//--------------------------------------------------------------------------
+
 let producer = thread::spawn(move || {
     let (lock, cvar) = &*pair;  // Error! pair moved into closure
 });
+
 let consumer = thread::spawn(move || {
     let (lock, cvar) = &*pair;  // Error! pair already moved!
 });
 
-// ✅ Clone first, then each thread gets its own Arc (pointing to same data):
+
+//--------------------------------------------------------------------------
+// Instead clone first, then each thread gets its own Arc (pointing to same data):
+//--------------------------------------------------------------------------
+
 let pair_clone1 = Arc::clone(&pair);
 let pair_clone2 = Arc::clone(&pair);
 
@@ -812,7 +861,7 @@ finished_clone
 
 ##### Step 2: `finished_clone.lock()`
 ```rust
-finished_clone.lock() // => Result<T,E>
+finished_clone.lock() // => Result<MutexGuard<bool>, PoisonError<MutexGuard<bool>>>
 // Calls lock() on the Mutex inside the Arc
 // Type: LockResult<MutexGuard<bool>>
 //       (which is Result<MutexGuard<bool>, PoisonError<MutexGuard<bool>>>)
@@ -883,7 +932,10 @@ let bool_ref: &mut bool = &mut *guard;  // Implicit with deref
 
 1. **`Arc`** provides shared ownership across threads
 2. **`Mutex`** provides mutual exclusion (thread-safe interior mutability)
-3. **`MutexGuard`** is an RAII guard that holds the lock and auto-releases it
+3. **`MutexGuard`** is an RAII guard that holds the lock and auto-releases it, a smart pointer that:
+    - Holds the lock while it exists
+    - Automatically releases the lock when dropped
+    - Implements `Deref` to access the inner `bool`
 4. **`unwrap()`** extracts the guard from the `Result` (panics on error)
 5. **`*`** dereferences the guard to access the `bool` inside
 
@@ -894,6 +946,36 @@ The type system ensures you can't forget to lock the mutex before accessing the 
 ### 4. Atomic Operations
 
 **C++ Implementation:**
+
+***`fetch_add(value)`***
+- Atomically adds `value` to the current value and returns the **old** value
+- Example: if atomic is 5, `fetch_add(3)` returns 5 and atomic becomes 8
+- Useful when you need to know the previous value (e.g., generating unique IDs)
+
+***`store(value)`***
+- Atomically writes a new value, replacing the old one
+- Returns nothing (void)
+- Example: `counter.store(0)` sets counter to 0
+
+***`load()`***
+- Atomically reads and returns the current value
+- Doesn't modify anything
+- Example: `int x = counter.load()` reads counter's value into x
+
+All three take an optional memory order parameter like:
+- `std::memory_order_relaxed`, 
+- `std::memory_order_acquire`, 
+- `std::memory_order_release`,etc. 
+that controls synchronization guarantees. 
+The default is usually `std::memory_order_seq_cst` (sequentially consistent, strongest guarantees, potentially slower
+
+Quick example:
+```cpp
+std::atomic<int> counter(0);
+counter.fetch_add(5);  // counter is now 5, returns 0
+counter.store(10);     // counter is now 10
+int val = counter.load(); // val is 10
+```
 
 ```cpp
 #include <atomic>
