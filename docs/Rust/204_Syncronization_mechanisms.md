@@ -1050,7 +1050,7 @@ int main() {
 ```
 
 ```
-Main Thread    Thread 1-5 (increment)    atomic_counter  flag     Waiter Thread       Setter Thread
+Main Thread     Thread 1-5 (increment)   atomic_counter  flag     Waiter Thread       Setter Thread
     |                   |                      |           |  [loop until flag true]  [sleep 100ms]
     |--create---------->|                      |           |            |                   |
     |--create---------->|                      |           |            |                   |
@@ -1137,50 +1137,70 @@ Main Thread    Thread 1-5 (increment)    atomic_counter  flag     Waiter Thread 
 
 ```rust
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
-use std::sync::Arc;
+use std::sync::Arc;  // Atomic Reference Counted pointer - enables shared ownership across threads
 use std::thread;
 use std::time::Duration;
 
 fn main() {
+    // Arc allows multiple threads to share ownership of the atomic values
+    // AtomicI32: thread-safe integer that can be modified without locks
     let counter = Arc::new(AtomicI32::new(0));
+    
+    // AtomicBool: thread-safe boolean for signaling between threads
     let flag = Arc::new(AtomicBool::new(false));
     
     let mut handles = vec![];
     
-    // Increment threads
+    // Spawn 5 threads that each increment the counter 1000 times
     for _ in 0..5 {
-        let counter_clone = Arc::clone(&counter);
+        // Clone Arc (increments ref count), not the data
+        let counter_clone = Arc::clone(&counter);  
         let handle = thread::spawn(move || {
             for _ in 0..1000 {
+                // fetch_add: atomically adds 1 and returns old value
+                // Ordering::Relaxed: no synchronization guarantees, just atomicity
+                // Relaxed is fine here since we only care about the final sum
                 counter_clone.fetch_add(1, Ordering::Relaxed);
             }
         });
         handles.push(handle);
     }
     
-    // Spin wait thread
+    // Waiter thread: busy-waits until flag becomes true
     let flag_clone = Arc::clone(&flag);
     let waiter = thread::spawn(move || {
+        // Spin loop - continuously checks flag (inefficient but simple)
+        // Ordering::Acquire: ensures we see all writes that happened before the Release store
         while !flag_clone.load(Ordering::Acquire) {
-            // Busy wait
+            // Busy wait - keeps CPU active (consider thread::yield_now() for efficiency)
         }
         println!("Flag is now true!");
     });
     
-    // Flag setter thread
+    // Setter thread: waits 100ms then sets flag to true
     let flag_clone = Arc::clone(&flag);
     let setter = thread::spawn(move || {
         thread::sleep(Duration::from_millis(100));
+        
+        // Ordering::Release: ensures all previous writes are visible to threads that Acquire
+        // Pairs with the Acquire in the waiter thread above
         flag_clone.store(true, Ordering::Release);
     });
     
+    // Wait for all incrementer threads to complete
     for handle in handles {
         handle.join().unwrap();
     }
+    
+    // Wait for waiter and setter threads
     waiter.join().unwrap();
     setter.join().unwrap();
     
+    // SeqCst (Sequentially Consistent): strongest ordering guarantee
+    // Ensures total ordering of all SeqCst operations across all threads
+    // Overkill here, but guarantees we see the final value
     println!("Final atomic counter: {}", counter.load(Ordering::SeqCst));
+    // Expected output: 5000 (5 threads × 1000 increments each)
 }
 ```
 
@@ -1196,6 +1216,7 @@ fn main() {
 **C++ Implementation (using a simple approach):**
 
 ```cpp
+```cpp
 #include <iostream>
 #include <thread>
 #include <queue>
@@ -1203,63 +1224,101 @@ fn main() {
 #include <condition_variable>
 #include <optional>
 
+// Thread-safe channel for sending data between threads (similar to Rust's mpsc channel)
 template<typename T>
 class Channel {
 private:
-    std::queue<T> queue;
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool closed = false;
-
+    std::queue<T> queue;              // Internal message queue
+    std::mutex mtx;                   // Protects queue and closed flag
+    std::condition_variable cv;       // Signals when queue state changes
+    bool closed = false;              // Indicates if channel is closed for sending
+    
 public:
+
+    // Send a value through the channel
+    // Throws if channel is already closed
     void send(T value) {
         {
-            std::lock_guard<std::mutex> lock(mtx);
-            if (closed) throw std::runtime_error("Channel closed");
-            queue.push(std::move(value));
-        }
-        cv.notify_one();
+            // Acquire lock, auto-released at scope exit
+            std::lock_guard<std::mutex> lock(mtx);  
+
+            // Throws if channel is already closed
+            if (closed) 
+                throw std::runtime_error("Channel closed");
+
+            // Move value into queue to avoid copying
+            queue.push(std::move(value));           
+
+        }  // Lock released here
+
+        // Wake up one waiting receiver thread
+        cv.notify_one();  
     }
+
     
+    // Receive a value from the channel
+    // Returns std::nullopt if channel is closed and empty
     std::optional<T> receive() {
-        std::unique_lock<std::mutex> lock(mtx);
+
+        // unique_lock needed for condition_variable
+        std::unique_lock<std::mutex> lock(mtx);  
+        
+        // Wait until queue has data OR channel is closed
         cv.wait(lock, [this]{ return !queue.empty() || closed; });
         
-        if (queue.empty()) return std::nullopt;
+        // If channel closed and no more data, return empty optional
+        if (queue.empty()) 
+            return std::nullopt;
         
+        // Extract value from front of queue
         T value = std::move(queue.front());
         queue.pop();
-        return value;
+
+        // Implicitly wraps in std::optional
+        return value;  
     }
     
+    // Close the channel - no more sends allowed
+    // Wakes all waiting receivers so they can exit
     void close() {
         {
             std::lock_guard<std::mutex> lock(mtx);
             closed = true;
         }
-        cv.notify_all();
+
+        // Wake all receivers to check closed status
+        cv.notify_all();  
     }
 };
 
 int main() {
     Channel<int> channel;
     
+    // Sender thread: sends 5 integers then closes channel
     std::thread sender([&channel]() {
         for (int i = 0; i < 5; ++i) {
             channel.send(i);
             std::cout << "Sent: " << i << "\n";
         }
-        channel.close();
+        channel.close();  // Signal no more data coming
     });
     
+    // Receiver thread: loops until channel is closed and empty
+    // receive() returns std::nullopt when channel closes
     std::thread receiver([&channel]() {
-        while (auto value = channel.receive()) {
-            std::cout << "Received: " << *value << "\n";
+
+        // Loop while optional has value
+        while (auto value = channel.receive()) {  
+
+            // Dereference optional
+            std::cout << "Received: " << *value << "\n";  
         }
     });
     
+    // Wait for both threads to complete
     sender.join();
     receiver.join();
+    
     return 0;
 }
 ```
@@ -1267,59 +1326,106 @@ int main() {
 **Rust Implementation:**
 
 ```rust
-use std::sync::mpsc;
+use std::sync::mpsc;  // Multi-producer, single-consumer channel
 use std::thread;
 
 fn main() {
+    // Create a channel: tx (transmitter/sender), rx (receiver)
     let (tx, rx) = mpsc::channel();
     
+    // Spawn sender thread - `move` transfers ownership of tx into the closure
     let sender = thread::spawn(move || {
         for i in 0..5 {
-            tx.send(i).unwrap();
+            tx.send(i).unwrap();  // Send value, unwrap the Result
             println!("Sent: {}", i);
         }
-        // Channel automatically closes when tx is dropped
+        // Channel automatically closes when tx is dropped at end of scope
     });
     
+    // Spawn receiver thread - `move` transfers ownership of rx into the closure
     let receiver = thread::spawn(move || {
+        // recv() blocks until a value is available or channel is closed
+        // Returns Err when all senders are dropped (channel closed)
         while let Ok(value) = rx.recv() {
             println!("Received: {}", value);
         }
     });
     
+    // Wait for both threads to complete
     sender.join().unwrap();
     receiver.join().unwrap();
 }
 
-// Multiple producer example
+// Demonstrates mpsc's "multiple producer" capability
 fn multiple_producers_example() {
+    // Create a channel: tx (transmitter/sender), rx (receiver)
     let (tx, rx) = mpsc::channel();
     
     let mut senders = vec![];
+    
+    // Create 3 producer threads, each with a cloned sender
     for id in 0..3 {
-        let tx_clone = tx.clone();
+        // Clone the sender - multiple producers allowed
+        let tx_clone = tx.clone();  
         let sender = thread::spawn(move || {
             for i in 0..3 {
+                // Send tuple (producer_id, value)
                 tx_clone.send((id, i)).unwrap();
                 println!("Producer {} sent: {}", id, i);
             }
+            // tx_clone dropped here when thread finishes
         });
         senders.push(sender);
     }
-    drop(tx); // Drop original sender
     
+    // Drop the original tx - important! Otherwise receiver will wait forever
+    // Channel only closes when ALL senders are dropped
+    // See explanation below ..
+    drop(tx);
+    
+    // Single receiver consumes messages from all producers
     let receiver = thread::spawn(move || {
+        // Receives until all senders are dropped
         while let Ok((id, value)) = rx.recv() {
             println!("Received from producer {}: {}", id, value);
         }
     });
     
+    // Wait for all producer threads to finish
     for sender in senders {
         sender.join().unwrap();
     }
+    
+    // Wait for receiver to finish
     receiver.join().unwrap();
 }
 ```
+
+***How `mpsc::Sender` works internally:***
+
+The channel has an internal reference count (similar to `Arc`). Each `tx.clone()` increments this count, and each `drop(tx)` or going out of scope decrements it.
+
+When you `drop(tx)`:
+- You're dropping the **original** sender
+- The reference count decreases by 1
+- But the clones (`tx_clone` in each thread) are still alive
+- The channel itself stays open as long as **any** sender exists
+
+***The channel only closes when the reference count reaches zero*** - meaning all senders (original + all clones) have been dropped.
+
+So the sequence is:
+1. `let (tx, rx) = mpsc::channel()` - creates channel, ref count = 1
+2. `tx.clone()` three times - ref count = 4 (original + 3 clones)
+3. `drop(tx)` - ref count = 3 (clones still alive)
+4. Each thread finishes and drops its `tx_clone` - ref count decreases
+5. When last clone drops - ref count = 0, channel closes
+6. `rx.recv()` returns `Err`, receiver loop exits
+
+***Why drop the original?***
+
+If we don't `drop(tx)`, the main thread keeps holding a sender. Even after all spawned threads finish, `rx.recv()` would keep waiting because there's still one sender alive (the unused one in main).
+
+Think of it like `Arc` - dropping one `Arc` doesn't deallocate the data, only when the **last** one drops.
 
 **Key Differences:**
 - **C++**: No built-in channel support; must implement or use third-party libraries
