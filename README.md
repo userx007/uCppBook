@@ -113,7 +113,7 @@
 [80. **Class Template Argument Deduction (CTAD) and Deduction Guides**](docs/Topics/80_Class_Template_Argument_Deduction_CTAD_and_Deduction_Guides.md)<br>
 [81. **Perfect Forwarding with `decltype(auto)`**](docs/Topics/81_Perfect_Forwarding_with_decltype_auto.md)<br>
 [82. **if statement with initializer C++17**](docs/Topics/82_If_statement_with_initializer.md)<br>
-
+[83. **Binary semaphores vs. mutex**](docs/Topics/83_Binary_semaphores_vs_mutex.md)<br>
 
 ---
 
@@ -248,5 +248,9 @@
 [225. **Collections & Containers**](docs/Rust/225_Collections_Containers.md)<br>
 [226. **Operator Overloading**](docs/Rust/226_Operator_Overloading.md)<br>
 [227. **Sharing data between threads**](docs/Rust/227_Sharing_data_between_threads.md)<br>
-[228. **Handle panic from mutex lock `unwrap()`**](docs/Rust/228_Handling_mutex_lock_unwrap_failures.md)<br>
+[228. **Handle panic from mutex lock `unwrap()`**](docs/Rust/228_Handling_mutex_lock_unwrap_failures.md
+)<br>
+[229. **Thread Creation Patterns**](docs/Rust/229_Thread_Creation_Patterns.md)<br>
+[230. **Mutex unlock**](docs/Rust/230_Mutex_unlock.md)<br>
+
 
