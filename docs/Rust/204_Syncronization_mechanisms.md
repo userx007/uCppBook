@@ -1855,35 +1855,52 @@ For thread-safe lazy initialization that happens exactly once.
 #include <mutex>
 #include <vector>
 
+// Flag to ensure initialization happens only once across all threads
 std::once_flag init_flag;
+
+// Shared resource that needs thread-safe initialization
 int expensive_resource = 0;
 
+// Initialization function that simulates an expensive operation
+// This will be called exactly once, even with multiple threads
 void initialize_resource() {
     std::cout << "Initializing expensive resource...\n";
+    // Simulate time-consuming initialization (e.g., database connection, file loading)
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     expensive_resource = 42;
     std::cout << "Resource initialized!\n";
 }
 
+// Function executed by each thread
+// Ensures resource is initialized before use
 void use_resource(int id) {
+    // std::call_once guarantees initialize_resource is called exactly once
+    // All other threads will block here until initialization completes
     std::call_once(init_flag, initialize_resource);
-    std::cout << "Thread " << id << " using resource: " 
-              << expensive_resource << "\n";
+    
+    // Safe to use the resource now - initialization is complete
+    std::cout << "Thread " << id << " using resource: " << expensive_resource << "\n";
 }
 
 int main() {
+    // Container to hold thread objects
     std::vector<std::thread> threads;
     
+    // Create 5 threads that will all try to initialize and use the resource
     for (int i = 0; i < 5; ++i) {
         threads.emplace_back(use_resource, i);
     }
     
+    // Wait for all threads to complete execution
     for (auto& t : threads) {
         t.join();
     }
+    
     return 0;
 }
 ```
+
+This code demonstrates **thread-safe lazy initialization** using `std::call_once`. The key benefit is that even though multiple threads call `use_resource()` simultaneously, the expensive initialization happens exactly once, and all threads safely wait for it to complete before proceeding.
 
 **Rust Implementation:**
 
@@ -1892,57 +1909,106 @@ use std::sync::Once;
 use std::thread;
 use std::time::Duration;
 
+// Synchronization primitive to ensure one-time initialization
+// Similar to C++ std::once_flag
 static INIT: Once = Once::new();
+
+// Global mutable resource - requires unsafe to access
+// Note: This pattern is not ideal; see OnceLock alternative below
 static mut EXPENSIVE_RESOURCE: i32 = 0;
 
+// Initialization function that simulates an expensive operation
+// Will be called exactly once across all threads
 fn initialize_resource() {
     println!("Initializing expensive resource...");
+    // Simulate time-consuming initialization (e.g., loading config, establishing connection)
     thread::sleep(Duration::from_millis(100));
+    
+    // Unsafe block required to modify static mut variable
     unsafe {
         EXPENSIVE_RESOURCE = 42;
     }
     println!("Resource initialized!");
 }
 
+// Function executed by each thread
+// Ensures resource is initialized before use
 fn use_resource(id: usize) {
+    // call_once guarantees the closure runs exactly once
+    // Other threads will block here until initialization completes
     INIT.call_once(|| {
         initialize_resource();
     });
     
+    // Unsafe block required to read static mut variable
+    // Safe here because initialization is complete and we're only reading
     unsafe {
         println!("Thread {} using resource: {}", id, EXPENSIVE_RESOURCE);
     }
 }
 
 fn main() {
+    // Vector to store thread handles
     let mut handles = vec![];
     
+    // Spawn 5 threads that will all try to initialize and use the resource
     for id in 0..5 {
+        // spawn() takes ownership of variables, so we use 'move' to transfer id
         let handle = thread::spawn(move || {
             use_resource(id);
         });
         handles.push(handle);
     }
     
+    // Wait for all threads to complete
+    // unwrap() panics if a thread panicked
     for handle in handles {
         handle.join().unwrap();
     }
 }
 
-// Better approach with OnceLock (Rust 1.70+)
+// ============================================================================
+// BETTER APPROACH: Using OnceLock (available in Rust 1.70+)
+// ============================================================================
+// OnceLock provides a safer, more idiomatic way to do lazy initialization
+// without requiring unsafe code
+
 use std::sync::OnceLock;
 
+// Type-safe, thread-safe lazy initialization container
+// No unsafe code needed!
 static RESOURCE: OnceLock<i32> = OnceLock::new();
 
+// Safer version using OnceLock
 fn use_resource_safe(id: usize) {
+    // get_or_init() returns a reference to the value
+    // If not initialized, it calls the closure to initialize it (exactly once)
+    // Returns &i32, so no unsafe code required
     let value = RESOURCE.get_or_init(|| {
         println!("Initializing expensive resource (safe)...");
         thread::sleep(Duration::from_millis(100));
-        42
+        42 // Return value to store in OnceLock
     });
     
+    // value is &i32, safe to use directly
     println!("Thread {} using resource: {}", id, value);
 }
+
+// Example usage of the safer approach:
+// fn main() {
+//     let mut handles = vec![];
+//     
+//     for id in 0..5 {
+//         let handle = thread::spawn(move || {
+//             use_resource_safe(id);
+//         });
+//         handles.push(handle);
+//     }
+//     
+//     for handle in handles {
+//         handle.join().unwrap();
+//     }
+// }
 ```
 
 **Key Differences:**
@@ -1964,53 +2030,95 @@ Low-level locks that busy-wait instead of yielding to the OS scheduler.
 #include <atomic>
 #include <vector>
 
+// A lightweight lock implementation using atomic operations
+// Spins in a busy-wait loop instead of blocking the thread
 class SpinLock {
 private:
+    // Atomic flag for lock state (false = unlocked, true = locked)
     std::atomic_flag flag = ATOMIC_FLAG_INIT;
     
 public:
+    // Acquire the lock - blocks until the lock becomes available
     void lock() {
+        // Try to set the flag; if already set, spin until it's cleared
         while (flag.test_and_set(std::memory_order_acquire)) {
-            // Busy wait
+            // Busy wait loop - continuously attempts to acquire the lock
+            
             #ifdef __cpp_lib_atomic_flag_test
+            // Optimization: test without modifying to reduce cache contention
+            // Only attempt test_and_set when the flag appears to be clear
             while (flag.test(std::memory_order_relaxed)) {
-                // Reduce contention
+                // Spin here with relaxed memory ordering for better performance
+                // Reduces unnecessary cache line invalidations between cores
             }
             #endif
         }
     }
     
+    // Release the lock - makes it available for other threads
     void unlock() {
+        // Clear the flag with release semantics to ensure all previous
+        // writes are visible to threads that subsequently acquire the lock
         flag.clear(std::memory_order_release);
     }
 };
 
+// Global spinlock instance shared across all threads
 SpinLock spin_lock;
+
+// Shared counter variable protected by the spinlock
 int counter = 0;
 
+// Thread function: safely increments the counter using the spinlock
+// @param iterations: number of times to increment the counter
 void increment_with_spinlock(int iterations) {
     for (int i = 0; i < iterations; ++i) {
-        spin_lock.lock();
-        ++counter;
-        spin_lock.unlock();
+        spin_lock.lock();      // Enter critical section
+        ++counter;             // Safely modify shared data
+        spin_lock.unlock();    // Exit critical section
     }
 }
 
 int main() {
     std::vector<std::thread> threads;
     
+    // Create 4 worker threads, each incrementing the counter 10000 times
     for (int i = 0; i < 4; ++i) {
         threads.emplace_back(increment_with_spinlock, 10000);
     }
     
+    // Wait for all threads to complete their work
     for (auto& t : threads) {
         t.join();
     }
     
+    // Expected output: 40000 (4 threads × 10000 increments)
     std::cout << "Final counter: " << counter << "\n";
     return 0;
 }
 ```
+
+#### The key comments explain:
+
+- **SpinLock design**: Uses busy-waiting instead of OS-level blocking
+- **Memory ordering**: Why `acquire` and `release` semantics are used for synchronization
+- **Two-phase spinning**: The optimization that reduces cache contention by testing before attempting to acquire
+- **Thread safety**: How the spinlock protects the shared counter from race conditions
+
+#### Why two loops?
+
+1. **Inner loop** (`flag.test`): Passively checks if the lock is still held without trying to acquire it. Uses relaxed memory ordering and doesn't modify the cache line.
+
+2. **Outer loop** (`flag.test_and_set`): Actually attempts to acquire the lock by performing an atomic read-modify-write operation.
+
+#### The benefit:
+
+- `test_and_set` is expensive because it writes to the cache line, causing invalidation on other cores
+- `test` is cheap because it only reads, allowing multiple cores to read the same cache line simultaneously
+- The inner loop spins cheaply until the lock *appears* available, then the outer loop attempts the expensive acquisition
+
+This is called **"test and test-and-set"** - a common spinlock optimization that significantly reduces cache coherency traffic in high-contention scenarios.
+
 
 **Rust Implementation:**
 
@@ -2020,66 +2128,108 @@ use std::sync::Arc;
 use std::thread;
 use std::hint;
 
+/// A simple spin lock implementation using atomic operations.
+/// Spin locks busy-wait (continuously check) rather than yielding the CPU,
+/// making them efficient for very short critical sections.
 struct SpinLock {
+    /// Atomic boolean tracking whether the lock is currently held.
+    /// `true` means locked, `false` means unlocked.
     locked: AtomicBool,
 }
 
 impl SpinLock {
+    /// Creates a new SpinLock in the unlocked state.
     fn new() -> Self {
         SpinLock {
             locked: AtomicBool::new(false),
         }
     }
     
+    /// Acquires the lock, spinning (busy-waiting) until it becomes available.
+    /// This uses a two-phase approach to reduce memory contention:
+    /// 1. Try to acquire the lock with compare_exchange_weak
+    /// 2. If that fails, spin on a simple read until the lock appears free
     fn lock(&self) {
+        // Attempt to atomically change locked from false to true
+        // compare_exchange_weak may spuriously fail but is faster than compare_exchange
         while self.locked.compare_exchange_weak(
-            false,
-            true,
-            Ordering::Acquire,
-            Ordering::Relaxed
+            false,                  // Expected value (unlocked)
+            true,                   // New value (locked)
+            Ordering::Acquire,      // Success ordering: establishes happens-before relationship
+            Ordering::Relaxed       // Failure ordering: no synchronization needed on failure
         ).is_err() {
-            // Reduce contention
+            // Lock acquisition failed - another thread holds the lock
+            // Enter the "spin-wait" phase to reduce cache coherency traffic
+            
+            // Spin on a simple read operation (doesn't modify cache state)
+            // until the lock appears to be free
             while self.locked.load(Ordering::Relaxed) {
+                // Hint to CPU that we're in a spin loop - may reduce power consumption
+                // and improve performance on hyperthreaded CPUs
                 hint::spin_loop();
             }
+            // Once the lock appears free, loop back to try compare_exchange_weak again
         }
     }
     
+    /// Releases the lock, making it available for other threads.
     fn unlock(&self) {
+        // Set locked to false with Release ordering
+        // This ensures all writes before unlock() are visible to the thread
+        // that subsequently acquires the lock
         self.locked.store(false, Ordering::Release);
     }
 }
 
 fn main() {
+    // Create a spin lock wrapped in Arc for sharing across threads
     let spin_lock = Arc::new(SpinLock::new());
+    
+    // Counter protected by the spin lock
     let counter = Arc::new(std::sync::atomic::AtomicI32::new(0));
+    
+    // Vector to hold thread join handles
     let mut handles = vec![];
     
+    // Spawn 4 threads that will compete for the lock
     for _ in 0..4 {
+        // Clone Arc references for this thread
         let lock = Arc::clone(&spin_lock);
         let counter_clone = Arc::clone(&counter);
         
         let handle = thread::spawn(move || {
+            // Each thread increments the counter 10,000 times
             for _ in 0..10000 {
+                // Acquire the lock (may spin-wait here)
                 lock.lock();
+                
+                // Critical section: increment counter
+                // Relaxed ordering is safe here because the lock provides synchronization
                 counter_clone.fetch_add(1, Ordering::Relaxed);
+                
+                // Release the lock
                 lock.unlock();
             }
         });
         handles.push(handle);
     }
     
+    // Wait for all threads to complete
     for handle in handles {
         handle.join().unwrap();
     }
     
+    // Print the final result - should be 40,000 (4 threads × 10,000 increments)
+    // SeqCst ensures we see the most up-to-date value
     println!("Final counter: {}", counter.load(Ordering::SeqCst));
 }
 
-// Using the spin crate (popular in Rust ecosystem)
+// Alternative implementation using the popular `spin` crate
+// The spin crate provides production-ready spin lock implementations
 use spin::Mutex as SpinMutex;
 
 fn with_spin_crate() {
+    // SpinMutex provides RAII-style locking (automatic unlock on drop)
     let counter = Arc::new(SpinMutex::new(0));
     let mut handles = vec![];
     
@@ -2087,6 +2237,8 @@ fn with_spin_crate() {
         let counter_clone = Arc::clone(&counter);
         let handle = thread::spawn(move || {
             for _ in 0..10000 {
+                // lock() returns a guard that automatically unlocks when dropped
+                // This prevents forgetting to unlock and is exception-safe
                 *counter_clone.lock() += 1;
             }
         });
@@ -2100,6 +2252,13 @@ fn with_spin_crate() {
     println!("Final counter: {}", *counter.lock());
 }
 ```
+
+**The key improvements in the comments explain:**
+- The two-phase locking strategy to reduce cache contention
+- Memory ordering semantics (Acquire/Release for synchronization)
+- Why `compare_exchange_weak` is used over `compare_exchange`
+- The purpose of `hint::spin_loop()`
+- How the spin crate provides a safer, RAII-based alternative
 
 **Key Differences:**
 - **C++**: Manual implementation using `atomic_flag`
