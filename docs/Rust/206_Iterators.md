@@ -439,3 +439,4 @@ v.into_iter();   // T
 Both C++ and Rust provide powerful iterator abstractions, but they reflect their languages' different philosophies. C++ iterators offer flexibility and direct control with pointer-like semantics, but require careful manual management to avoid undefined behavior. Rust iterators prioritize safety through the type system and borrow checker, preventing entire classes of bugs at compile time while maintaining excellent performance.
 
 For developers coming from C++, Rust's iterator model may initially feel restrictive, but these restrictions eliminate common sources of bugs. Rust's functional programming style with iterator combinators also encourages more declarative code. Meanwhile, C++ iterators remain familiar to those used to pointer arithmetic and offer fine-grained control when needed, though this comes at the cost of requiring more careful programming practices.
+
