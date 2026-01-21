@@ -253,5 +253,6 @@
 [229. **Thread Creation Patterns**](docs/Rust/229_Thread_Creation_Patterns.md)<br>
 [230. **Mutex unlock**](docs/Rust/230_Mutex_unlock.md)<br>
 [231. **Closure parameters**](docs/Rust/231_Closure_parameters.md)<br>
+[232. **Destructuring Explained**](docs/Rust/232_Destructuring_Explained.md)<br>
 
 
