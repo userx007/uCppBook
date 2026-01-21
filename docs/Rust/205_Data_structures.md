@@ -15,31 +15,100 @@ A dynamically resizable array that stores elements contiguously in memory.
 #include <iostream>
 
 int main() {
-    // Creation and initialization
+    // ============================================
+    // CREATION AND INITIALIZATION
+    // ============================================
+    // Initialize vector with 5 elements using initializer list
+    // Memory is allocated on the heap, managed automatically
     std::vector<int> numbers = {1, 2, 3, 4, 5};
     
-    // Adding elements
+    // ============================================
+    // ADDING ELEMENTS
+    // ============================================
+    // push_back() adds element to the end of the vector
+    // May trigger reallocation if capacity is exceeded
+    // Time complexity: O(1) amortized
     numbers.push_back(6);
     
-    // Accessing elements
+    // ============================================
+    // ACCESSING ELEMENTS - KEY DIFFERENCE
+    // ============================================
+    
+    // OPERATOR[] - UNCHECKED ACCESS
+    // - No bounds checking
+    // - Undefined behavior if index is out of range
+    // - Faster (no overhead)
+    // - Use when you're certain the index is valid
     std::cout << "First: " << numbers[0] << std::endl;
+    
+    // AT() - CHECKED ACCESS
+    // - Performs bounds checking
+    // - Throws std::out_of_range exception if index is invalid
+    // - Slightly slower (overhead of bounds check)
+    // - Use when index validity is uncertain or in critical code
     std::cout << "At index 2: " << numbers.at(2) << std::endl;
     
-    // Iteration
+    // Example demonstrating the difference:
+    // numbers[100];      // Undefined behavior - may crash or return garbage
+    // numbers.at(100);   // Throws std::out_of_range exception - safe
+    
+    // ============================================
+    // ITERATION
+    // ============================================
+    // Range-based for loop (C++11)
+    // const auto& avoids copying, auto deduces type (int)
     for (const auto& num : numbers) {
         std::cout << num << " ";
     }
+    std::cout << std::endl;
     
-    // Size and capacity
+    // ============================================
+    // SIZE AND CAPACITY
+    // ============================================
+    // size() - number of elements currently stored
     std::cout << "Size: " << numbers.size() << std::endl;
+    
+    // capacity() - number of elements that can be stored without reallocation
+    // capacity() >= size() always true
+    // Vector typically over-allocates to minimize reallocations
     std::cout << "Capacity: " << numbers.capacity() << std::endl;
     
-    // Removing elements
+    // ============================================
+    // REMOVING ELEMENTS
+    // ============================================
+    // pop_back() removes the last element
+    // Decreases size by 1, but capacity remains unchanged
+    // Time complexity: O(1)
+    // Does NOT deallocate memory - use shrink_to_fit() for that
     numbers.pop_back();
     
     return 0;
 }
 ```
+
+#### Key Differences: `operator[]` vs `.at()`
+
+| Feature | `operator[]` | `.at()` |
+|---------|-------------|---------|
+| **Bounds Checking** | ❌ No | ✅ Yes |
+| **Out-of-range behavior** | Undefined behavior | Throws `std::out_of_range` |
+| **Performance** | Faster (no checks) | Slightly slower |
+| **Safety** | Unsafe | Safe |
+| **Best for** | Performance-critical code with guaranteed valid indices | User input, uncertain indices, debugging |
+
+#### When to use which:
+
+**Use `operator[]` when:**
+- You're certain the index is valid
+- Performance is critical
+- Index comes from controlled logic (loop counters, etc.)
+
+**Use `.at()` when:**
+- Index comes from user input or external sources
+- You want to catch errors explicitly
+- Debugging or developing new code
+- Safety is more important than the small performance overhead
+
 
 ### Rust: `Vec<T>`
 
@@ -47,34 +116,162 @@ Similar to C++'s vector but with ownership semantics and guaranteed memory safet
 
 ```rust
 fn main() {
-    // Creation and initialization
+    // ============================================
+    // CREATION AND INITIALIZATION
+    // ============================================
+    // vec! macro creates a Vec<i32> on the heap
+    // 'mut' keyword makes the vector mutable (can be modified)
+    // Without 'mut', you couldn't push, pop, or modify elements
     let mut numbers = vec![1, 2, 3, 4, 5];
     
-    // Adding elements
+    // ============================================
+    // ADDING ELEMENTS
+    // ============================================
+    // push() adds element to the end of the vector
+    // May trigger reallocation if capacity is exceeded
+    // Time complexity: O(1) amortized
+    // Ownership: takes ownership of the value (or copies if Copy trait)
     numbers.push(6);
     
-    // Accessing elements
+    // ============================================
+    // ACCESSING ELEMENTS - KEY DIFFERENCE
+    // ============================================
+    
+    // INDEXED ACCESS: numbers[index]
+    // - Direct access, no runtime bounds checking in release mode
+    // - PANICS at runtime if index is out of bounds (even in release)
+    // - Returns a reference to the element: &T
+    // - Fast but can crash your program
+    // - Use when you're certain the index is valid
     println!("First: {}", numbers[0]);
+    
+    // GET() METHOD: .get(index)
+    // - Returns Option<&T> (Some(&value) or None)
+    // - NEVER panics - returns None if out of bounds
+    // - Requires handling the Option (using unwrap, unwrap_or, match, etc.)
+    // - Slightly slower due to Option wrapping
+    // - Safe and idiomatic for uncertain indices
     println!("At index 2: {}", numbers.get(2).unwrap());
     
-    // Iteration
+    // Better alternatives to .get().unwrap():
+    // Safe pattern matching:
+    // match numbers.get(2) {
+    //     Some(value) => println!("At index 2: {}", value),
+    //     None => println!("Index out of bounds"),
+    // }
+    
+    // Or with if let:
+    // if let Some(value) = numbers.get(2) {
+    //     println!("At index 2: {}", value);
+    // }
+    
+    // Or with unwrap_or for default value:
+    // println!("At index 2: {}", numbers.get(2).unwrap_or(&0));
+    
+    // Example demonstrating the difference:
+    // numbers[100];        // PANICS: "index out of bounds"
+    // numbers.get(100);    // Returns None - no panic, safe
+    
+    // ============================================
+    // ITERATION
+    // ============================================
+    // Iterate over immutable references to avoid moving/copying
+    // &numbers creates an iterator over &i32 (references)
+    // 'num' has type &i32 (reference to integer)
     for num in &numbers {
         print!("{} ", num);
     }
+    println!(); // newline
     
-    // Size and capacity
+    // Alternative iteration patterns:
+    // 1. Mutable references (to modify elements):
+    //    for num in &mut numbers { *num += 1; }
+    // 2. Take ownership (consumes the vector):
+    //    for num in numbers { ... }
+    // 3. Enumerate with indices:
+    //    for (i, num) in numbers.iter().enumerate() { ... }
+    
+    // ============================================
+    // SIZE AND CAPACITY
+    // ============================================
+    // len() - number of elements currently stored
+    // Returns usize (platform-dependent unsigned integer)
     println!("Size: {}", numbers.len());
+    
+    // capacity() - number of elements that can be stored without reallocation
+    // Vec over-allocates to minimize expensive reallocations
+    // Typically grows by factor of 2 when capacity is exceeded
     println!("Capacity: {}", numbers.capacity());
     
-    // Removing elements
-    numbers.pop();
+    // ============================================
+    // REMOVING ELEMENTS
+    // ============================================
+    // pop() removes and returns the last element as Option<T>
+    // - Returns Some(value) if vector is not empty
+    // - Returns None if vector is empty (doesn't panic!)
+    // - Decreases len by 1, capacity remains unchanged
+    // - Time complexity: O(1)
+    let last = numbers.pop();
+    println!("Popped: {:?}", last); // Prints Some(6)
+    
+    // If vector was empty:
+    // let empty_vec: Vec<i32> = vec![];
+    // let result = empty_vec.pop(); // Returns None, doesn't panic
+    
+    // To deallocate excess capacity:
+    // numbers.shrink_to_fit();
 }
 ```
 
-**Key Differences:**
+#### Key Differences: Indexed Access `[]` vs `.get()`
+
+| Feature | `numbers[index]` | `numbers.get(index)` |
+|---------|------------------|----------------------|
+| **Return Type** | `&T` (direct reference) | `Option<&T>` (Some or None) |
+| **Out-of-bounds behavior** | **Panics** (crashes program) | Returns `None` (safe) |
+| **Performance** | Faster (direct access) | Slightly slower (Option wrapping) |
+| **Safety** | Can crash if index invalid | Never crashes |
+| **Mutability** | `numbers[i]` or `&mut numbers[i]` | `.get(i)` or `.get_mut(i)` |
+| **Best for** | Guaranteed valid indices | User input, uncertain indices |
+
+##### When to use which:
+
+**Use indexed access `[]` when:**
+- You're certain the index is valid (e.g., iterating with known bounds)
+- Performance is critical and bounds are guaranteed
+- You want the code to panic on logic errors (fail-fast principle)
+```rust
+let first = numbers[0];  // Fine if vector is never empty
+for i in 0..numbers.len() {
+    println!("{}", numbers[i]);  // Safe: i is always valid
+}
+```
+
+**Use `.get()` when:**
+- Index comes from user input or external sources
+- You want to handle the "not found" case gracefully
+- The vector might be empty or index might be out of bounds
+```rust
+if let Some(value) = numbers.get(user_index) {
+    println!("Found: {}", value);
+} else {
+    println!("Invalid index");
+}
+```
+
+##### Important Rust-Specific Notes:
+
+1. **`.get()` is more idiomatic** in Rust when dealing with potentially invalid indices
+2. **Never use `.unwrap()` on `.get()`** unless you're absolutely certain - it defeats the safety purpose
+3. Rust's **borrow checker prevents** many common C++ mistakes (dangling references, iterator invalidation)
+4. **`pop()` returns `Option<T>`** (not void like C++), preventing errors when popping from empty vectors
+
+**Final Key Differences:**
 - Rust's `get()` returns `Option<&T>` for safe bounds checking
 - Rust requires explicit mutability with `mut`
 - Rust's ownership prevents iterator invalidation at compile time
+
+---
 
 ## 2. Hash Maps (Key-Value Store)
 
