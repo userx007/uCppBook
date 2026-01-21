@@ -1,8 +1,11 @@
-# Closure pattern matching
+# Closure parameter type
+
+
+- The closure parameter type depends on the specific method and how it's designed.
+- The difference in the patterns `|&&x|` vs `|&x|` is just about **how much we choose to unpack** in the pattern, not what they receive.
 
 ## EPLANATION OF `|&&x|` PATTERN MATCHING
 
-***The closure parameter type depends on the specific method and how it's designed.***
 
 ```rust
 fn main() {
@@ -297,6 +300,8 @@ When using **`.into_iter()`** (which yields `T`):
 
 
 ---
+
+## The difference in the patterns `|&&x|` vs `|&x|` is just about how much we choose to unpack
 
 **Both `find()` and `all()` actually receive the same type `&&i32`**. 
 The difference in the patterns `|&&x|` vs `|&x|` is just about **how much we choose to unpack** in the pattern, not what they receive.

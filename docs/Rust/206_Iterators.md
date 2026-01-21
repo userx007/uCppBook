@@ -171,6 +171,9 @@ fn main() {
 
 ***EXPLANATION OF |&&x| PATTERN MATCHING***
 
+- The closure parameter type depends on the specific method and how it's designed.
+- The difference in the patterns `|&&x|` vs `|&x|` is just about **how much we choose to unpack** in the pattern
+
 ```rust
 fn main() {
     let numbers = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -286,40 +289,59 @@ fn main() {
 ### Rust Example - Custom Iterator
 
 ```rust
+// A custom struct that will act as an iterator
 struct Counter {
+    // Current value of the counter
     count: u32,
+    // Upper limit (exclusive) for the counter
     max: u32,
 }
 
 impl Counter {
+    // Constructor to create a new Counter starting at 0
     fn new(max: u32) -> Counter {
         Counter { count: 0, max }
     }
 }
 
+// Implement the Iterator trait for Counter
 impl Iterator for Counter {
+    // The type of value produced on each iteration
     type Item = u32;
     
+    // Defines how the iterator advances
     fn next(&mut self) -> Option<Self::Item> {
+        // Check if we are still below the maximum limit
         if self.count < self.max {
+            // Increment the counter
             self.count += 1;
+            // Return the next value wrapped in Some
             Some(self.count)
         } else {
+            // Return None to signal the end of iteration
             None
         }
     }
 }
 
 fn main() {
+    // Create a Counter that yields values from 1 to 5
     let counter = Counter::new(5);
     
+    // Use iterator adaptors to process the values:
+    // 1. filter: keep only even numbers
+    // 2. map: double each remaining value
+    // 3. sum: add them all together
     let sum: u32 = counter
         .filter(|x| x % 2 == 0)
         .map(|x| x * 2)
         .sum();
     
-    println!("Sum: {}", sum);  // 12 (2*2 + 4*2)
+    // Print the final result
+    // Even numbers are 2 and 4 → (2 * 2) + (4 * 2) = 12
+    println!("Sum: {}", sum);
 }
+
 ```
 
 ### Rust Safety - No Iterator Invalidation
@@ -366,6 +388,20 @@ fn main() {
 - `iter()` borrows immutably
 - `iter_mut()` borrows mutably
 - `into_iter()` takes ownership
+
+
+```rust
+let v = vec![1, 2, 3];
+
+// Borrowing iterator
+v.iter();        // &T
+
+// Mutable borrowing iterator
+v.iter_mut();    // &mut T
+
+// Consuming iterator
+v.into_iter();   // T
+```
 
 ### Functional Programming
 
