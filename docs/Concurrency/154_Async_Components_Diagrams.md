@@ -1136,7 +1136,7 @@ T4: Cleanup
     (Promise)                (Shared State)                (Future)
     
     ┌─────┐                                               ┌─────┐
-    │ ✉️  │   Write letter                                │     │
+    │     │  Write letter                                 │     │
     │     │  (set_value)       ┌───────────┐              │     │ Check mailbox
     │     │                    │           │<─────────────│     │ (get)
     │     │                    │  [EMPTY]  │              │     │  
