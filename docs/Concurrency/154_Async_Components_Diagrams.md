@@ -2,6 +2,199 @@
 
 ## 1. BASIC ASYNC LAUNCH - Flow Description
 
+### The promise/future pattern
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <future>
+#include <chrono>
+
+// Thread A: Producer function
+void producer(std::promise<int>&& prom) {
+    std::cout << "[Producer] Starting work...\n";
+    
+    // Simulate some work
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
+    // Do the actual computation
+    int result = 42;
+    std::cout << "[Producer] Work complete! Setting value: " << result << "\n";
+    
+    // Set the value in the promise (this unblocks the consumer)
+    prom.set_value(result);
+    
+    std::cout << "[Producer] Value set, exiting\n";
+}
+
+// Thread B: Consumer function
+void consumer(std::future<int> fut) {
+    std::cout << "[Consumer] Waiting for result...\n";
+    
+    // This blocks until the promise sets a value
+    int result = fut.get();
+    
+    std::cout << "[Consumer] Received result: " << result << "\n";
+    std::cout << "[Consumer] Continuing with result...\n";
+}
+
+int main() {
+    std::cout << "=== Promise/Future Example ===\n\n";
+    
+    // Create promise
+    std::promise<int> prom;
+    
+    // Get future from promise
+    std::future<int> fut = prom.get_future();
+    
+    // Launch Thread B (consumer) with the future
+    std::thread threadB(consumer, std::move(fut));
+    
+    // Launch Thread A (producer) with the promise
+    std::thread threadA(producer, std::move(prom));
+    
+    // Wait for both threads to complete
+    threadA.join();
+    threadB.join();
+    
+    std::cout << "\n=== Both threads completed ===\n";
+    
+    return 0;
+}
+
+/* Expected Output:
+=== Promise/Future Example ===
+
+[Consumer] Waiting for result...
+[Producer] Starting work...
+[Producer] Work complete! Setting value: 42
+[Producer] Value set, exiting
+[Consumer] Received result: 42
+[Consumer] Continuing with result...
+
+=== Both threads completed ===
+*/
+```
+
+**Key Components:**
+- **Thread A (Producer)**: Creates a `std::promise<int>`, does work, then calls `set_value()` to fulfill the promise
+- **Thread B (Consumer)**: Receives a `std::future<int>`, calls `get()` which blocks until the value is available
+- **Synchronization**: The future's `get()` blocks Thread B until Thread A calls `set_value()`
+
+**What happens:**
+1. Main creates a promise and gets its future
+2. Thread B starts and immediately blocks on `fut.get()`
+3. Thread A does work (simulated with sleep)
+4. Thread A sets the value with `prom.set_value(42)`
+5. Thread B unblocks, receives the value, and continues
+
+This is a common pattern for one-time value passing between threads where you want the consumer to wait for the producer to finish its work.
+
+### Using std::async
+
+```cpp
+#include <iostream>
+#include <future>
+#include <chrono>
+
+// Task that will run asynchronously
+int producer_task() {
+    std::cout << "[Async Task] Starting work...\n";
+    
+    // Simulate some work
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
+    // Do the actual computation
+    int result = 42;
+    std::cout << "[Async Task] Work complete! Returning: " << result << "\n";
+    
+    return result;
+}
+
+int main() {
+    std::cout << "=== std::async Example ===\n\n";
+    
+    // Launch async task - returns std::future<int>
+    // std::async automatically creates promise/future internally
+    std::future<int> fut = std::async(std::launch::async, producer_task);
+    
+    std::cout << "[Main Thread] Async task launched, doing other work...\n";
+    
+    // Main thread can do other work here
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::cout << "[Main Thread] Still working...\n";
+    
+    std::cout << "[Main Thread] Now waiting for result...\n";
+    
+    // This blocks until the async task completes
+    int result = fut.get();
+    
+    std::cout << "[Main Thread] Received result: " << result << "\n";
+    std::cout << "[Main Thread] Continuing with result...\n";
+    
+    std::cout << "\n=== Completed ===\n";
+    
+    return 0;
+}
+
+/* Expected Output:
+=== std::async Example ===
+
+[Main Thread] Async task launched, doing other work...
+[Async Task] Starting work...
+[Main Thread] Still working...
+[Main Thread] Now waiting for result...
+[Async Task] Work complete! Returning: 42
+[Main Thread] Received result: 42
+[Main Thread] Continuing with result...
+
+=== Completed ===
+*/
+
+// ============================================
+// COMPARISON EXAMPLE: Both approaches
+// ============================================
+
+/*
+// Manual promise/future approach:
+std::promise<int> prom;
+std::future<int> fut = prom.get_future();
+std::thread t([](std::promise<int> p) {
+    p.set_value(42);
+}, std::move(prom));
+int result = fut.get();
+t.join();
+
+// std::async approach (simpler):
+std::future<int> fut = std::async(std::launch::async, []() {
+    return 42;
+});
+int result = fut.get();
+// No need to join - future destructor handles cleanup
+
+Key differences:
+1. std::async creates promise/future internally
+2. No need to manually manage threads
+3. Future's destructor waits for completion
+4. Can specify launch policy (async vs deferred)
+5. Exception propagation is automatic
+*/
+```
+
+**Key Advantages of `std::async`:**
+- **Automatic promise/future creation** - You don't need to manually create them
+- **No manual thread management** - No need to create, move, or join threads
+- **Cleaner syntax** - Just call the function and get a future back
+- **Automatic cleanup** - The future's destructor waits for task completion
+
+**What happens internally:**
+1. `std::async` creates a promise/future pair for you
+2. Launches the task (in a thread or thread pool)
+3. The task's return value automatically calls `set_value()` on the promise
+4. You just call `get()` on the returned future
+
+The `std::async` approach is generally preferred for simple asynchronous tasks because it's less error-prone and more concise. You'd use manual promise/future when you need more control over thread creation or when the producer needs to set values at arbitrary points (not just return values).
+
 ```
 Main Thread                           Async Thread
 ───────────                           ────────────
@@ -24,6 +217,7 @@ Main Thread                           Async Thread
     │  resumes with result                  X (thread ends)
     ▼
 ```
+
 
 **Detailed Flow:**
 
