@@ -119,7 +119,6 @@
 
 # C++ Concurrency Essential Topics
 
-
 ## Fundamentals
 
 [100. **Thread Basics and Lifecycle**](docs/Concurrency/100_Thread_Basics_And_Lifecycle.md)<br>
@@ -216,42 +215,53 @@
 
 [153. **std::mutex: lock() vs try_lock()**](docs/Concurrency/153_std_mutex_lock_vs_try_lock.md)<br>
 
+## Async Diagrams and Descriptions
 
-# C++ vs Rust
+[154. **C++ Async Components Flow Descriptions**](docs/Concurrency/154_Async_Components_Diagrams.md)<br>
+[155. **C++ Runtime Components Detailed Flow Descriptions**](docs/Concurrency/155_Runtime_Components_Flow.md)<br>
+[156. **C++ Runtime Lifecycle And Memory Detailed Flow Descriptions**](docs/Concurrency/156_Runtime_Lifecycle_And_Memory.md)<br>
+
+---
+
+# C++ vs. Rust
 
 [200. **Smart Pointers**](docs/Rust/200_Smart_Pointers_C++_vs_Rust_Cheat_Sheet.md)<br>
 [201. **Weak Pointers**](docs/Rust/201_Weak_Pointers_in_C++_and_Rust.md)<br>
 [202. **Weak Pointers to Break Cyclic References**](docs/Rust/202_Weak_Pointers_to_Break_Cyclic_References.md)<br>
 [203. **Nodes in Data Structures**](docs/Rust/203_Nodes_in_Data_Structures.md)<br>
 [204. **Synchronization Mechanisms**](docs/Rust/204_Syncronization_mechanisms.md)<br>
+
 [205. **Data structures**](docs/Rust/205_Data_structures.md)<br>
 [206. **Iterators**](docs/Rust/206_Iterators.md)<br>
-
 [207. **Error Handling**](docs/Rust/207_Error_Handling.md)<br>
 [208. **Move Semantics & Ownership**](docs/Rust/208_Move_Semantics_and_Ownership.md)<br>
 [209. **Templates vs. Generics**](docs/Rust/209_Templates_vs_Generics.md)<br>
 [210. **Traits vs. Concepts/Inheritance**](docs/Rust/210_Traits_vs_Concepts_Inheritance.md)<br>
+
 [211. **Lifetime Management**](docs/Rust/211_Lifetime_Management.md)<br>
 [212. **Memory Management Strategies**](docs/Rust/212_Memory_Management_Strategies.md)<br>
 [213. **Concurrency Primitives**](docs/Rust/213_Concurrency_Primitives.md)<br>
 [214. **Async/Await & Futures**](docs/Rust/214_Async_Await_Futures.md)<br>
 [215. **Reference Types**](docs/Rust/215_Reference_Types.md)<br>
+
 [216. **Pattern Matching**](docs/Rust/216_Pattern_Matching.md)<br>
 [217. **Macros & Metaprogramming**](docs/Rust/217_Macros_Metaprogramming.md)<br>
 [218. **Module Systems & Namespaces**](docs/Rust/218_Module_Systems_Namespaces.md)<br>
 [219. **Type Inference & Type System**](docs/Rust/219_Type_Inference_and_Type_System.md)<br>
 [220. **FFI (Foreign Function Interface)**](docs/Rust/220_FFI.md)<br>
+
 [221. **Build Systems & Package Management**](docs/Rust/221_Build_Systems_Package_Management.md)<br>
 [222. **Testing Frameworks**](docs/Rust/222_Testing_Frameworks.md)<br>
 [223. **Unsafe Code**](docs/Rust/223_Unsafe_Code.md)<br>
 [224. **Strings & Text Processing**](docs/Rust/224_Strings_Text_Processing.md)<br>
 [225. **Collections & Containers**](docs/Rust/225_Collections_Containers.md)<br>
+
 [226. **Operator Overloading**](docs/Rust/226_Operator_Overloading.md)<br>
 [227. **Sharing data between threads**](docs/Rust/227_Sharing_data_between_threads.md)<br>
-[228. **Handle panic from mutex lock `unwrap()`**](docs/Rust/228_Handling_mutex_lock_unwrap_failures.md
-)<br>
+[228. **Handle panic from mutex lock `unwrap()`**](docs/Rust/228_Handling_mutex_lock_unwrap_failures.md)<br>
 [229. **Thread Creation Patterns**](docs/Rust/229_Thread_Creation_Patterns.md)<br>
 [230. **Mutex unlock**](docs/Rust/230_Mutex_unlock.md)<br>
+
 [231. **Closure parameters**](docs/Rust/231_Closure_parameters.md)<br>
 [232. **Destructuring Explained**](docs/Rust/232_Destructuring_Explained.md)<br>
 [233. **Direct Iterator Usage vs `into_iter()` in Rust**](docs/Rust/233_Direct_Iterator_Usage_vs_into_iter.md)<br>
