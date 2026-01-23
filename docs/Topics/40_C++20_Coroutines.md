@@ -335,3 +335,112 @@ int main() {
  *    MSVC: /std:c++20
  */
 ```
+
+## ASCII diagram showing how C++ 20 coroutines work:
+
+```
+C++ 20 COROUTINES FLOW
+======================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         CALLER FUNCTION                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ calls coroutine
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    COROUTINE FUNCTION                           │
+│  Task<int> myCoroutine() {                                      │
+│      co_await someOperation();  ◄─── suspension point           │
+│      co_return 42;                                              │
+│  }                                                              │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ creates
+                              ▼
+        ┌─────────────────────────────────────────┐
+        │       COROUTINE STATE (heap)            │
+        │  ┌───────────────────────────────────┐  │
+        │  │  • Local variables                │  │
+        │  │  • Suspend/resume point           │  │
+        │  │  • Parameters                     │  │
+        │  │  • Promise object                 │  │
+        │  └───────────────────────────────────┘  │
+        └─────────────────────────────────────────┘
+                              │
+                              ▼
+        ┌─────────────────────────────────────────┐
+        │        PROMISE OBJECT                   │
+        │  ┌───────────────────────────────────┐  │
+        │  │  get_return_object()              │  │
+        │  │  initial_suspend()                │  │
+        │  │  final_suspend()                  │  │
+        │  │  return_value() / return_void()   │  │
+        │  │  unhandled_exception()            │  │
+        │  └───────────────────────────────────┘  │
+        └─────────────────────────────────────────┘
+                              │
+                              │ returns
+                              ▼
+        ┌─────────────────────────────────────────┐
+        │     COROUTINE HANDLE / TASK             │
+        │          (returned to caller)           │
+        └─────────────────────────────────────────┘
+
+
+EXECUTION TIMELINE:
+===================
+
+Time ──────────────────────────────────────────────────────►
+
+Caller:  [call]────[RUNNING]────────────[resume]────[done]
+                      │                     │
+                      │                     │
+Coro:              [START]──[SUSPENDED]──[RESUME]──[FINISH]
+                      │         │            │
+                      │         │            │
+                   co_await  (waiting)   continues
+                             
+                             
+SUSPENSION POINTS (co_await):
+=============================
+
+┌──────────────┐
+│   RUNNING    │
+└──────┬───────┘
+       │ encounters co_await
+       ▼
+┌──────────────┐         ┌─────────────────┐
+│   SUSPEND    │────────►│  Save state to  │
+│              │         │  coroutine      │
+└──────┬───────┘         │  frame (heap)   │
+       │                 └─────────────────┘
+       │ return to caller
+       ▼
+┌──────────────┐
+│   CALLER     │
+│  continues   │
+└──────┬───────┘
+       │ later...
+       │ calls resume()
+       ▼
+┌──────────────┐         ┌─────────────────┐
+│   RESUME     │◄────────│  Restore state  │
+│              │         │  from frame     │
+└──────┬───────┘         └─────────────────┘
+       │
+       ▼
+┌──────────────┐
+│   RUNNING    │
+│  (continues) │
+└──────────────┘
+
+
+KEY KEYWORDS:
+=============
+• co_await  → suspends execution, returns control to caller
+• co_yield  → suspends and produces a value
+• co_return → completes coroutine, destroys frame
+```
+
+The key concept is that coroutines can **suspend** their execution at specific points (using `co_await` or `co_yield`) without blocking the thread, save their state to the heap, return control to the caller, and later be **resumed** from exactly where they left off.
