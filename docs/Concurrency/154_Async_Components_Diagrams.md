@@ -76,10 +76,109 @@ int main() {
 */
 ```
 
-**Key Components:**
-- **Thread A (Producer)**: Creates a `std::promise<int>`, does work, then calls `set_value()` to fulfill the promise
-- **Thread B (Consumer)**: Receives a `std::future<int>`, calls `get()` which blocks until the value is available
-- **Synchronization**: The future's `get()` blocks Thread B until Thread A calls `set_value()`
+### Graphical diagram
+
+```
+Main Thread          C++ Runtime                Thread A                 Thread B 
+                                               (Producer)               (Consumer)
+    |                     |                        |                        |
+    |  std::promise<int>  |                        |                        |
+    |-------------------->|                        |                        |
+    |                     |                        |                        |
+    |                  [Allocate]                  |                        |
+    |                  [promise]                   |                        |
+    |                  [object]                    |                        |
+    |                     |                        |                        |
+    |  get_future()       |                        |                        |
+    |-------------------->|                        |                        |
+    |                     |                        |                        |
+    |                  [Create]                    |                        |
+    |                  [future]                    |                        |
+    |                  [linked to]                 |                        |
+    |                  [promise]                   |                        |
+    |                     |                        |                        |
+    |  future object      |                        |                        |
+    |<--------------------|                        |                        |
+    |                     |                        |                        |
+    |  std::thread(consumer, std::move(fut))       |                        |
+    |-------------------->|                        |                        |
+    |                     |                        |                        |
+    |                  [Spawn]                     |                        |
+    |                  [Thread B]                  |                        |
+    |                     |------------------------------------------------>|
+    |                     |                        |                        |
+    |                     |                        |                   [Consumer] Waiting...
+    |                     |                        |                        |
+    |                     |                        |                   fut.get()
+    |                     |                        |                        |
+    |                     |<------------------------------------------------|
+    |                     |                        |                        |
+    |                  [Check shared]              |                        |
+    |                  [state: NOT READY]          |                        |
+    |                  [BLOCK]                     |                        |
+    |                     |                        |                        |
+    |  std::thread(producer, std::move(prom))      |                        |
+    |-------------------->|                        |                        |
+    |                     |                        |                        |
+    |                  [Spawn]                     |                        |
+    |                  [Thread A]                  |                        |
+    |                     |----------------------->|                        |
+    |                     |                        |                        |
+    |                     |                   [Producer] Starting...        |
+    |                     |                        |                        |
+    |                     |                   sleep(2s)                     |
+    |                     |                        |                        |
+    |                     |                   compute result = 42           |
+    |                     |                        |                        |
+    |                     |                   prom.set_value(42)            |
+    |                     |                        |                        |
+    |                     |<-----------------------|                        |
+    |                     |                        |                        |
+    |                  [Store value]               |                        |
+    |                  [in shared]                 |                        |
+    |                  [state]                     |                        |
+    |                     |                        |                        |
+    |                  [Mark READY]                |                        |
+    |                     |                        |                        |
+    |                  [Notify]                    |                        |
+    |                  [waiting]                   |                        |
+    |                  [thread]                    |                        |
+    |                     |------------------------------------------------>|
+    |                     |                        |                        |
+    |                     |                        |                   UNBLOCKED!
+    |                     |                        |                        |
+    |                     |                   [Producer] Exiting            |
+    |                     |                        |                        |
+    |                     |                        |                   return value = 42
+    |                     |                        |                        |
+    |                     |                        |                   [Consumer] Received 42
+    |                     |                        |                        |
+    |                     |                        |                   [Consumer] Continuing...
+    |                     |                        |                        |
+    |  threadA.join()     |                        |                        |
+    |-------------------->|                        |                        |
+    |                     |                        |                        |
+    |                  [Wait for]                  |                        |
+    |                  [Thread A]                  |                        |
+    |                     |<-----------------------|                        |
+    |                     |                        X                        |
+    |  thread joined      |                                                 |
+    |<--------------------|                                                 |
+    |                     |                                                 |
+    |  threadB.join()     |                                                 |
+    |-------------------->|                                                 |
+    |                     |                                                 |
+    |                  [Wait for]                                           |
+    |                  [Thread B]                                           |
+    |                     |<------------------------------------------------|
+    |                     |                                                 X
+    |  thread joined      |
+    |<--------------------|
+    |                     |
+    | Both threads completed
+    |                     |
+    V                     V
+```
 
 **What happens:**
 1. Main creates a promise and gets its future
@@ -150,48 +249,204 @@ int main() {
 
 === Completed ===
 */
-
-// ============================================
-// COMPARISON EXAMPLE: Both approaches
-// ============================================
-
-/*
-// Manual promise/future approach:
-std::promise<int> prom;
-std::future<int> fut = prom.get_future();
-std::thread t([](std::promise<int> p) {
-    p.set_value(42);
-}, std::move(prom));
-int result = fut.get();
-t.join();
-
-// std::async approach (simpler):
-std::future<int> fut = std::async(std::launch::async, []() {
-    return 42;
-});
-int result = fut.get();
-// No need to join - future destructor handles cleanup
-
-Key differences:
-1. std::async creates promise/future internally
-2. No need to manually manage threads
-3. Future's destructor waits for completion
-4. Can specify launch policy (async vs deferred)
-5. Exception propagation is automatic
-*/
 ```
 
-**Key Advantages of `std::async`:**
-- **Automatic promise/future creation** - You don't need to manually create them
-- **No manual thread management** - No need to create, move, or join threads
-- **Cleaner syntax** - Just call the function and get a future back
-- **Automatic cleanup** - The future's destructor waits for task completion
+```
+Main Thread          C++ Runtime              Async Thread 
+                                             (producer_task)
+    |                     |                        |
+    |  std::async(        |                        |
+    |    std::launch::async,                       |
+    |    producer_task)   |                        |
+    |-------------------->|                        |
+    |                     |                        |
+    |                  [Create]                    |
+    |                  [promise]                   |
+    |                  [internally]                |
+    |                     |                        |
+    |                  [Create]                    |
+    |                  [future]                    |
+    |                  [linked to]                 |
+    |                  [promise]                   |
+    |                     |                        |
+    |                  [Spawn new]                 |
+    |                  [thread for]                |
+    |                  [producer_task]             |
+    |                     |----------------------->|
+    |                     |                        |
+    |  future object      |                   [Async Task] Starting...
+    |<--------------------|                        |
+    |                     |                        |
+    | [Main] Async task   |                   sleep(2s)
+    | launched, doing     |                        |
+    | other work...       |                        |
+    |                     |                        |
+    | sleep(500ms)        |                        |
+    |                     |                        |
+    | [Main] Still        |                        |
+    | working...          |                        |
+    |                     |                        |
+    | [Main] Now waiting  |                        |
+    | for result...       |                        |
+    |                     |                        |
+    |  fut.get()          |                        |
+    |-------------------->|                        |
+    |                     |                        |
+    |                  [Check shared]              |
+    |                  [state: NOT]                |
+    |                  [ready - BLOCK]             |
+    |                  [main thread]               |
+    |                     |                        |
+    |                     |                   compute result = 42
+    |                     |                        |
+    |                     |                   [Async Task] Work complete!
+    |                     |                        |
+    |                     |                   return 42
+    |                     |                        |
+    |                     |<-----------------------|
+    |                     |                        |
+    |                  [Implicit]                  |
+    |                  [promise.set_value(42)]     |
+    |                     |                        |
+    |                  [Store value]               |
+    |                  [in shared]                 |
+    |                  [state]                     |
+    |                     |                        |
+    |                  [Mark READY]                |
+    |                     |                        |
+    |                  [Notify]                    |
+    |                  [waiting]                   |
+    |                  [main thread]               |
+    |                     |                        |
+    |  UNBLOCKED!         |                        |
+    |                     |                        |
+    |  return value = 42  |                        |
+    |<--------------------|                        |
+    |                     |                        |
+    | [Main] Received     |                   [Thread exits]
+    | result: 42          |                        |
+    |                     |                        X
+    | [Main] Continuing   |                        
+    | with result...      |                        
+    |                     |                        
+    | [Completed]         |                        
+    |                     |                        
+    |                  [Cleanup]                   
+    |                  [future/promise]            
+    |                  [shared state]              
+    |                     |                        
+    V                     V
+```
 
-**What happens internally:**
-1. `std::async` creates a promise/future pair for you
-2. Launches the task (in a thread or thread pool)
-3. The task's return value automatically calls `set_value()` on the promise
-4. You just call `get()` on the returned future
+#### COMPARISON EXAMPLE: Both approaches
+
+***Manual promise/future approach:***
+
+```cpp
+// Step 1: Create a promise object that will hold the result
+// The promise is the "write end" of the communication channel
+std::promise<int> prom;
+
+// Step 2: Extract the future from the promise
+// The future is the "read end" of the communication channel
+// A promise can only create ONE future (calling get_future() twice throws exception)
+std::future<int> fut = prom.get_future();
+
+// Step 3: Launch a new thread with a lambda function
+// IMPORTANT: Promise must be moved (not copied) into the thread
+// Once moved, the original 'prom' in main thread is no longer valid
+std::thread t([](std::promise<int> p) {
+    // Inside the thread: set the value in the promise
+    // This stores 42 in the shared state and unblocks any thread waiting on fut.get()
+    // After set_value(), the promise has fulfilled its purpose
+    p.set_value(42);
+}, std::move(prom));  // std::move transfers ownership to the thread
+
+// Step 4: Block and wait for the result
+// fut.get() will:
+//   - Block if the promise hasn't called set_value() yet
+//   - Return immediately if set_value() was already called
+//   - Return the value (42) and invalidate the future (can only call get() once)
+int result = fut.get();
+
+// Step 5: Wait for the thread to finish execution
+// REQUIRED: Without join(), the thread destructor would call std::terminate()
+// join() blocks until the thread completes
+t.join();
+
+// Manual approach requires:
+// - Explicit promise creation
+// - Explicit future extraction
+// - Explicit thread management (launch + join)
+// - Explicit set_value() call
+// - Careful ownership management (std::move)
+```
+
+
+***std::async approach (simpler):***
+
+```cpp
+// Step 1: Launch async task - all-in-one operation
+// std::async AUTOMATICALLY:
+//   - Creates a promise internally (hidden from you)
+//   - Creates and returns a future linked to that promise
+//   - Spawns a new thread (with std::launch::async policy)
+//   - Executes the lambda in that thread
+//   - Calls promise.set_value() when lambda returns
+//   - Manages thread lifetime
+// The lambda returns 42, which becomes the future's value
+std::future<int> fut = std::async(std::launch::async, []() {
+    return 42;  // Return value automatically becomes promise value
+});
+
+// Step 2: Block and wait for the result
+// fut.get() works the same as manual approach:
+//   - Blocks if async task hasn't completed yet
+//   - Returns the value (42) when ready
+//   - Invalidates the future (can only call get() once)
+int result = fut.get();
+
+// Step 3: Cleanup is AUTOMATIC
+// No need to join() - the future's destructor will:
+//   - Wait for the async thread to complete (blocks if necessary)
+//   - Clean up all internal resources (promise, shared state, thread)
+// 
+// IMPORTANT: If you don't call fut.get(), the future destructor will
+// still block waiting for the task to complete when 'fut' goes out of scope
+//
+// Async approach benefits:
+// - No manual promise/future creation
+// - No explicit thread management
+// - No need to call set_value() - return does it automatically
+// - No need to join() - destructor handles it
+// - Much less boilerplate code
+// - Exception safety: exceptions from lambda are stored and re-thrown on get()
+```
+
+**MANUAL APPROACH - You control everything:**
+- ✓ Full control over promise/future lifecycle
+- ✓ Can separate promise and future creation
+- ✓ Can pass promise to different threads/functions
+- ✗ More verbose and error-prone
+- ✗ Must manually manage thread lifetime (join/detach)
+- ✗ Must manually call set_value()
+
+**ASYNC APPROACH - Runtime controls everything:**
+- ✓ Minimal boilerplate
+- ✓ Automatic thread management
+- - Can specify launch policy (async vs deferred)
+- ✓ Automatic promise fulfillment (return = set_value) 
+- - std::async creates promise/future internally
+- ✓ Exception propagation is automatic
+- ✓ Automatic cleanup
+- ✗ Less control over when/how thread is created
+- ✗ Cannot separate promise and future
+- ✗ Future destructor blocks and waits for completion (can be surprising)
+- What happens internally:
+- - `std::async` creates a promise/future pair for you
+- - Launches the task (in a thread or thread pool)
+- - The task's return value automatically calls `set_value()` on the promise
+- - You just call `get()` on the returned future
 
 The `std::async` approach is generally preferred for simple asynchronous tasks because it's less error-prone and more concise. You'd use manual promise/future when you need more control over thread creation or when the producer needs to set values at arbitrary points (not just return values).
 
@@ -217,7 +472,6 @@ Main Thread                           Async Thread
     │  resumes with result                  X (thread ends)
     ▼
 ```
-
 
 **Detailed Flow:**
 
@@ -716,3 +970,233 @@ Main Thread                              Worker Thread
 
 This complete workflow demonstrates the full lifecycle of an async operation, from creation through parallel execution to synchronization and cleanup.
 
+---
+
+# The "channel" metaphor/relationship between promise and future:
+
+```
+═══════════════════════════════════════════════════════════════════════════
+                    PROMISE/FUTURE CHANNEL ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════
+
+   PRODUCER SIDE                 SHARED STATE              CONSUMER SIDE
+   (Write End)                  (The Channel)              (Read End)
+        
+   ┌─────────────┐             ┌─────────────┐           ┌─────────────┐
+   │             │             │             │           │             │
+   │  std::      │   writes    │   SHARED    │   reads   │   std::     │
+   │  promise    │────────────>│   STATE     │<──────────│   future    │
+   │  <int>      │   to        │             │   from    │   <int>     │
+   │             │             │             │           │             │
+   └─────────────┘             └─────────────┘           └─────────────┘
+        │                             │                         │
+        │                             │                         │
+        │ set_value(42)               │                         │ get()
+        │ set_exception(...)          │                         │ wait()
+        │                             │                         │ valid()
+        │                             │                         │
+        └─────────────────────────────┴─────────────────────────┘
+                                  ONE-TO-ONE
+                      single producer - single consumer 
+
+
+═══════════════════════════════════════════════════════════════════════════
+                         SHARED STATE INTERNALS
+═══════════════════════════════════════════════════════════════════════════
+
+                          ┌────────────────────────┐
+                          │    SHARED STATE        │
+                          │  (Reference Counted)   │
+                          ├────────────────────────┤
+                          │                        │
+                          │  State Flag:           │
+                          │  ┌──────────────────┐  │
+                          │  │ NOT_READY        │  │ ← Initial state
+                          │  │ READY            │  │ ← After set_value()
+                          │  │ EXCEPTION        │  │ ← After set_exception()
+                          │  └──────────────────┘  │
+                          │                        │
+                          │  Storage:              │
+                          │  ┌──────────────────┐  │
+                          │  │ int value;       │  │ ← Holds 42
+                          │  │     OR           │  │
+                          │  │ exception_ptr    │  │ ← Holds exception
+                          │  └──────────────────┘  │
+                          │                        │
+                          │  Synchronization:      │
+                          │  ┌──────────────────┐  │
+                          │  │ std::mutex       │  │ ← Protects state
+                          │  │ condition_var    │  │ ← Wakes waiters
+                          │  └──────────────────┘  │
+                          │                        │
+                          │  Reference Count:      │
+                          │  ┌──────────────────┐  │
+                          │  │ promise: 1       │  │ ← Counts owners
+                          │  │ future:  1       │  │
+                          │  └──────────────────┘  │
+                          │                        │
+                          └────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                      COMMUNICATION FLOW EXAMPLE
+═══════════════════════════════════════════════════════════════════════════
+
+TIMELINE:
+───────────────────────────────────────────────────────────────────────────    
+T0: Creation
+───────────────────────────────────────────────────────────────────────────        
+    promise<int> prom;           →    [SHARED STATE CREATED]
+                                      State: NOT_READY
+                                      Value: <empty>
+                                      RefCount: 1
+
+    future<int> fut = prom.get_future();
+                                 →    RefCount: 2
+                                      (promise + future)
+
+───────────────────────────────────────────────────────────────────────────    
+T1: Consumer waits (Thread B)
+───────────────────────────────────────────────────────────────────────────    
+    int result = fut.get();      →    [CHECK STATE]
+          ↓                           State: NOT_READY
+          ↓                           ↓
+        BLOCKS ON                     [WAIT ON CONDITION_VAR]
+    CONDITION VARIABLE                Thread B sleeps...
+          ↓
+          ↓
+      [WAITING...]
+          ↓
+          ↓
+
+───────────────────────────────────────────────────────────────────────────    
+T2: Producer writes (Thread A)
+───────────────────────────────────────────────────────────────────────────    
+    prom.set_value(42);          →    [LOCK MUTEX]
+                                      ↓
+                                      [STORE VALUE]
+                                      value = 42
+                                      ↓
+                                      [UPDATE STATE]
+                                      State: NOT_READY → READY
+                                      ↓
+                                      [NOTIFY CONDITION_VAR]
+                                      ↓
+                                      [UNLOCK MUTEX]
+                                      ↓
+                                      Wake up Thread B!
+
+───────────────────────────────────────────────────────────────────────────    
+T3: Consumer unblocked (Thread B)
+───────────────────────────────────────────────────────────────────────────    
+    [WAKES UP]                   →    [LOCK MUTEX]
+          ↓                           ↓
+    fut.get() returns            ←    [READ VALUE]
+          ↓                           value = 42
+    result = 42                       ↓
+                                      [UNLOCK MUTEX]
+
+───────────────────────────────────────────────────────────────────────────    
+T4: Cleanup
+───────────────────────────────────────────────────────────────────────────    
+    prom destroyed               →    RefCount: 2 → 1
+    
+    fut destroyed                →    RefCount: 1 → 0
+                                      ↓
+                                      [SHARED STATE DESTROYED]
+
+
+═══════════════════════════════════════════════════════════════════════════
+                         CHANNEL GUARANTEES
+═══════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│  ✓ THREAD-SAFE: Multiple threads can safely access promise/future       │
+│                                                                         │
+│  ✓ ONE-TIME USE: set_value() can only be called ONCE                    │
+│                  get() can only be called ONCE                          │
+│                                                                         │
+│  ✓ BLOCKING: get() blocks until set_value() is called                   │
+│                                                                         │
+│  ✓ EXCEPTION PROPAGATION: Exceptions in producer thread are             │
+│                            stored and re-thrown in consumer thread      │
+│                                                                         │
+│  ✓ MEMORY SAFETY: Shared state kept alive until both promise            │
+│                   and future are destroyed                              │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                    VISUAL ANALOGY: MAIL SYSTEM
+═══════════════════════════════════════════════════════════════════════════
+
+    SENDER                      MAILBOX                    RECEIVER
+    (Promise)                (Shared State)                (Future)
+    
+    ┌─────┐                                               ┌─────┐
+    │ ✉️  │   Write letter                                │     │
+    │     │  (set_value)       ┌───────────┐              │     │ Check mailbox
+    │     │                    │           │<─────────────│     │ (get)
+    │     │                    │  [EMPTY]  │              │     │  
+    │     │  Put in mailbox    │           │              │     │  
+    │     │───────────────────>│           │              │     │
+    └─────┘                    └───────────┘              └─────┘
+                                     │                         │
+                                     │                         │
+                               [Letter arrives!]               │
+                                     │                    [Mailbox empty]
+                                     ↓                         ↓
+                               ┌───────────┐              [WAITING...]
+                               │    [42]   │                   │
+                               │           │                   │
+                               │  [READY]  │                   │
+                               │           │<──────────────────┘
+                               └───────────┘         [Check again]
+                                     │                         │
+                                     │                         ↓
+                                     │                    [Letter found!]
+                                     │                         │
+                                     └────────────────────> [Read: 42]
+
+
+═══════════════════════════════════════════════════════════════════════════
+                      MULTIPLE FUTURES (NOT ALLOWED)
+═══════════════════════════════════════════════════════════════════════════
+
+    promise<int> prom;
+    
+    future<int> fut1 = prom.get_future();  ✓ OK
+    
+    future<int> fut2 = prom.get_future();  ✗ THROWS std::future_error!
+                                              (future_already_retrieved)
+    
+    
+    WHY? The channel is ONE-TO-ONE:
+    
+         ┌─────────┐         ┌─────────┐
+         │ promise │────────>│ future1 │  ✓ Valid
+         └─────────┘         └─────────┘
+              │                    
+              │              ┌─────────┐
+              └─────────────>│ future2 │  ✗ Not allowed!
+                             └─────────┘
+    
+    Only ONE consumer can read from the channel.
+    Use std::shared_future if you need multiple readers.
+
+
+═══════════════════════════════════════════════════════════════════════════
+```
+
+This diagram shows:
+
+1. **The channel metaphor** - Promise (write end) and Future (read end) connected by shared state
+2. **Shared state internals** - What's actually stored (value, state flag, mutex, condition variable)
+3. **Communication flow** - Step-by-step timeline of how data flows through the channel
+4. **Thread safety mechanisms** - Mutex and condition variable for synchronization
+5. **Mail system analogy** - A real-world parallel to help understand the concept
+6. **One-to-one constraint** - Why you can't have multiple futures from one promise
+
+The key insight is that promise and future are just **handles** to a shared state object that acts as a synchronized communication channel between threads!
