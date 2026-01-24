@@ -122,35 +122,238 @@ Specialized acquire for dependent operations (rarely used in practice).
 
 ## Acquire-Release Semantics Example
 
-This is the most common pattern for synchronization:
+These are the most common pattern for synchronization:
 
 ```cpp
 #include <atomic>
 #include <thread>
 #include <cassert>
+#include <iostream>
+#include <vector>
+#include <chrono>
+
+// ============================================================================
+// BASIC EXAMPLE: Memory Order Release-Acquire
+// ============================================================================
 
 std::atomic<bool> ready(false);
 int data = 0;
 
 void producer() {
-    data = 100;  // Non-atomic write
-    ready.store(true, std::memory_order_release);  // Release
+    // Step 1: Write to non-atomic variable
+    // This write happens-before the release store below
+    data = 100;  
+    
+    // Step 2: Release operation - publishes all prior writes
+    // Any thread that performs an acquire load and sees 'true' will also
+    // see data == 100 due to the synchronizes-with relationship
+    ready.store(true, std::memory_order_release);
 }
 
 void consumer() {
-    while (!ready.load(std::memory_order_acquire)) {  // Acquire
-        // Spin wait
+    // Acquire operation - waits until producer publishes data
+    // The acquire load synchronizes-with the release store in producer()
+    while (!ready.load(std::memory_order_acquire)) {
+        std::this_thread::yield();  // More CPU-friendly than pure spin
     }
-    assert(data == 100);  // Guaranteed to pass
+    
+    // Guaranteed to pass: acquire-release ensures we see all writes
+    // that happened-before the release store
+    assert(data == 100);
 }
 
+// ============================================================================
+// EXTENSION 1: Multiple Data Items (Producer-Consumer Pattern)
+// ============================================================================
+
+struct SharedData {
+    int value1 = 0;
+    int value2 = 0;
+    double value3 = 0.0;
+};
+
+std::atomic<bool> multi_ready(false);
+SharedData shared;
+
+void producer_multi() {
+    // Write multiple non-atomic variables
+    shared.value1 = 42;
+    shared.value2 = 84;
+    shared.value3 = 3.14159;
+    
+    // Single release ensures all above writes are visible
+    multi_ready.store(true, std::memory_order_release);
+}
+
+void consumer_multi() {
+    while (!multi_ready.load(std::memory_order_acquire)) {
+        std::this_thread::yield();  // More CPU-friendly than pure spin
+    }
+    
+    // All values are guaranteed to be visible
+    std::cout << "Value1: " << shared.value1 << "\n";
+    std::cout << "Value2: " << shared.value2 << "\n";
+    std::cout << "Value3: " << shared.value3 << "\n";
+}
+
+// ============================================================================
+// EXTENSION 2:Sequentially Consistent (Strongest Guarantee)
+// ============================================================================
+
+std::atomic<bool> seq_ready(false);
+int seq_data = 0;
+
+void producer_seq_cst() {
+    seq_data = 200;
+    // memory_order_seq_cst provides total ordering across all threads
+    // Slower but easier to reason about - good starting point
+    seq_ready.store(true, std::memory_order_seq_cst);
+}
+
+void consumer_seq_cst() {
+    while (!seq_ready.load(std::memory_order_seq_cst)) {}
+    assert(seq_data == 200);
+}
+
+// ============================================================================
+// EXTENSION 3: Relaxed Ordering (Flag/Counter Example)
+// ============================================================================
+
+std::atomic<int> counter(0);
+std::atomic<bool> done(false);
+
+void increment_worker() {
+    for (int i = 0; i < 1000; ++i) {
+        // Relaxed: no synchronization, but atomic increment is safe
+        // Use for counters where you only care about final value
+        counter.fetch_add(1, std::memory_order_relaxed);
+    }
+    // Release: publish that this thread is done
+    done.store(true, std::memory_order_release);
+}
+
+// ============================================================================
+// EXTENSION 4: Double-Checked Locking Pattern
+// ============================================================================
+
+class Singleton {
+    static std::atomic<Singleton*> instance;
+    static std::mutex mtx;
+    
+    Singleton() = default;
+    
+public:
+    static Singleton* get_instance() {
+        // First check (relaxed) - fast path for already-initialized case
+        Singleton* tmp = instance.load(std::memory_order_acquire);
+        
+        if (tmp == nullptr) {
+            std::lock_guard<std::mutex> lock(mtx);
+            // Second check - only one thread initializes
+            tmp = instance.load(std::memory_order_relaxed);
+            if (tmp == nullptr) {
+                tmp = new Singleton();
+                // Release ensures initialization is visible before pointer
+                instance.store(tmp, std::memory_order_release);
+            }
+        }
+        return tmp;
+    }
+};
+
+std::atomic<Singleton*> Singleton::instance{nullptr};
+std::mutex Singleton::mtx;
+
+// ============================================================================
+// EXTENSION 5: Wait/Notify (C++20) - Better than Spin-Wait
+// ============================================================================
+#if __cplusplus >= 202002L
+void producer_wait_notify() {
+    data = 300;
+    ready.store(true, std::memory_order_release);
+    ready.notify_one();  // Wake up waiting thread
+}
+
+void consumer_wait_notify() {
+    // Block until ready becomes true (much better than spinning!)
+    ready.wait(false, std::memory_order_acquire);
+    assert(data == 300);
+}
+#endif
+
+// ============================================================================
+// MAIN: Run Different Examples
+// ============================================================================
+
 int main() {
-    std::thread t1(producer);
-    std::thread t2(consumer);
-    t1.join();
-    t2.join();
+    std::cout << "=== Basic Release-Acquire Example ===\n";
+    {
+        std::thread t1(producer);
+        std::thread t2(consumer);
+        t1.join();
+        t2.join();
+        std::cout << "Basic test passed!\n\n";
+    }
+    
+    std::cout << "=== Multiple Data Items Example ===\n";
+    {
+        std::thread t1(producer_multi);
+        std::thread t2(consumer_multi);
+        t1.join();
+        t2.join();
+        std::cout << "\n";
+    }
+    
+    std::cout << "=== Sequential Consistency Example ===\n";
+    {
+        std::thread t1(producer_seq_cst);
+        std::thread t2(consumer_seq_cst);
+        t1.join();
+        t2.join();
+        std::cout << "Seq-cst test passed!\n\n";
+    }
+    
+    std::cout << "=== Relaxed Ordering with Counter ===\n";
+    {
+        std::vector<std::thread> threads;
+        for (int i = 0; i < 10; ++i) {
+            threads.emplace_back(increment_worker);
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+        std::cout << "Final counter: " << counter.load() << "\n\n";
+    }
+    
+    std::cout << "=== Singleton Pattern ===\n";
+    {
+        std::vector<std::thread> threads;
+        for (int i = 0; i < 5; ++i) {
+            threads.emplace_back([]() {
+                Singleton* s = Singleton::get_instance();
+                std::cout << "Instance address: " << s << "\n";
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+    }
+    
+    return 0;
 }
 ```
+
+**Key Memory Ordering Concepts:**
+
+1. **`memory_order_relaxed`**: No synchronization, only atomicity
+2. **`memory_order_acquire`**: Prevents reads/writes from moving before this operation
+3. **`memory_order_release`**: Prevents reads/writes from moving after this operation
+4. **`memory_order_seq_cst`**: Total global ordering (default, slowest)
+
+**When to use what:**
+- Release-Acquire: Producer-consumer patterns, publishing data
+- Relaxed: Independent counters, flags where order doesn't matter
+- Seq-cst: When you need strongest guarantees and performance isn't critical
 
 **Key insight**: Release-store synchronizes with acquire-load, creating a happens-before relationship.
 
