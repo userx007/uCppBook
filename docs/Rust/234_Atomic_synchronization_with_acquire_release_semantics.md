@@ -562,3 +562,463 @@ fn main() {
 - When code clarity > raw performance
 
 Rust's philosophy: make the safe thing easy (`Mutex`) and the fast thing explicit (`Atomic` + `unsafe`).
+
+
+# Sequence diagrams for the key concurrency patterns:
+
+```
+================================================================================
+1. BASIC RELEASE-ACQUIRE PATTERN (Same for C++ and Rust)
+================================================================================
+
+Producer Thread              Memory/CPU               Consumer Thread
+     |                           |                           |
+     |  data = 100               |                           |
+     |  (non-atomic write)       |                           |
+     |-------------------------->|                           |
+     |                           |                           |
+     | ready.store(true,Release) |                           |
+     |==========================>|                           |
+     |         |                 |  <-- Synchronizes-With    |
+     |         |                 |                           |
+     |         |                 |   ready.load(Acquire)     |
+     |         |                 |<==========================|
+     |         |                 |         |                 |
+     |         |                 |         | (returns true)  |
+     |         |                 |         |                 |
+     |         |                 |    assert(data == 100)    |
+     |         |                 |<--------------------------|
+     |         |                 |         ✓                 |
+     |         |                 |                           |
+
+Legend:
+  -----> Normal operation
+  ====> Release/Acquire synchronization point
+  
+Key Guarantee: All writes before Release are visible after Acquire
+
+
+================================================================================
+2. MULTIPLE DATA ITEMS (Producer-Consumer)
+================================================================================
+
+Producer                     Memory                    Consumer
+    |                          |                           |
+    |  value1 = 42             |                           |
+    |------------------------->|                           |
+    |  value2 = 84             |                           |
+    |------------------------->|                           |
+    |  value3 = 3.14           |                           |
+    |------------------------->|                           |
+    |                          |                           |
+    |  ready.store(true,       |                           |
+    |    Release)              |                           |
+    |=========================>|                           |
+    |                          |   <-- Synchronization     |
+    |                          |                           |
+    |                          |   ready.load(Acquire)     |
+    |                          |<==========================|
+    |                          |         |                 |
+    |                          |    (spins until true)     |
+    |                          |         |                 |
+    |                          |    Read value1 ✓          |
+    |                          |<--------------------------|
+    |                          |    Read value2 ✓          |
+    |                          |<--------------------------|
+    |                          |    Read value3 ✓          |
+    |                          |<--------------------------|
+    |                          |                           |
+
+Key: Single Release/Acquire pair synchronizes ALL preceding writes
+
+
+================================================================================
+3. RELAXED ORDERING (Independent Operations)
+================================================================================
+
+Thread 1        Thread 2        Thread 3        Atomic Counter
+    |               |               |                    |
+    |  fetch_add(1, Relaxed)        |                    |
+    |---------------------------------------------->| +1 |
+    |               |               |               |    |
+    |               |  fetch_add(1, Relaxed)        |    |
+    |               |------------------------------>| +1 |
+    |               |               |               |    |
+    |               |               |  fetch_add(1, |    |
+    |               |               |    Relaxed)   |    |
+    |               |               |-------------->| +1 |
+    |               |               |               |    |
+    |  fetch_add(1, Relaxed)        |               |    |
+    |---------------------------------------------->| +1 |
+    |               |               |               |    |
+
+Note: Operations can appear in ANY order from different threads' perspectives
+      No synchronization between threads - only final value matters
+      Each operation is atomic, but no ordering guarantees
+
+
+================================================================================
+4. COMPARE-AND-SWAP / COMPARE-EXCHANGE (Lock-Free Algorithm)
+================================================================================
+
+Thread A                    Atomic Value (5)              Thread B
+    |                           |                           |
+    |  current = load(5)        |                           |
+    |<--------------------------|                           |
+    |                           |   current = load(5)       |
+    |                           |-------------------------->|
+    |  CAS(5 -> 6, Success)     |                           |
+    |==========================>|                           |
+    |         ✓                 | (value now 6)             |
+    |                           |                           |
+    |                           |   CAS(5 -> 7, Fail)       |
+    |                           |<==========================|
+    |                           |          NOK              |
+    |                           |   (5 != 6, retry)         |
+    |                           |                           |
+    |                           |   current = load(6)       |
+    |                           |-------------------------->|
+    |                           |   CAS(6 -> 7, Success)    |
+    |                           |<==========================|
+    |                           |         OK                |
+    |                           | (value now 7)             |
+
+CAS = Compare-And-Swap (C++) / compare_exchange (Rust)
+Only succeeds if current value matches expected value
+
+
+================================================================================
+5. C++ vs RUST: NON-ATOMIC DATA HANDLING
+================================================================================
+
+C++ Approach:
+-------------
+Thread 1                    Regular Variable              Thread 2
+    |                      (int data = 0)                     |
+    |                           |                             |
+    |  data = 100               |                             |
+    |  (direct write)           |                             |
+    |-------------------------->|                             |
+    |                           |                             |
+    |  flag.store(Release) =====|===> Synchronization         |
+    |                           |                             |
+    |                           |     flag.load(Acquire)      |
+    |                           |<============================|
+    |                           |                             |
+    |                           |     read data (safe)        |
+    |                           |---------------------------->|
+    
+    ✓ Direct access to non-atomic data
+    ✓ Programmer ensures safety via Release/Acquire
+
+
+Rust Approach (with UnsafeCell):
+---------------------------------
+Thread 1                    UnsafeCell<T>                 Thread 2
+    |                           |                             |
+    |  unsafe {                 |                             |
+    |    *data.get() = 100      |                             |
+    |  }                        |                             |
+    |-------------------------->|                             |
+    |                           |                             |
+    |  ready.store(Release) ====|===> Synchronization         |
+    |                           |                             |
+    |                           |     ready.load(Acquire)     |
+    |                           |<============================|
+    |                           |                             |
+    |                           |     unsafe {                |
+    |                           |       read *data.get()      |
+    |                           |     }                       |
+    |                           |---------------------------->|
+
+    ✓ UnsafeCell required for interior mutability
+    ✓ unsafe blocks mark dangerous operations
+    ✓ Compiler can't verify safety - programmer's responsibility
+
+
+Rust Approach (with Mutex - PREFERRED):
+----------------------------------------
+Thread 1                    Mutex<T>                      Thread 2
+    |                           |                             |
+    |  lock()                   |                             |
+    |==========================>|                             |
+    |  (acquired)               |                             |
+    |                           |                             |
+    |  *guard = 100             |                             |
+    |-------------------------->|                             |
+    |                           |                             |
+    |  drop(guard)              |                             |
+    |  (auto-unlock)            |                             |
+    |<==========================|                             |
+    |                           |                             |
+    |                           |     lock()                  |
+    |                           |<============================|
+    |                           |     (acquired)              |
+    |                           |                             |
+    |                           |     read *guard             |
+    |                           |---------------------------->|
+    |                           |                             |
+    |                           |     drop(guard)             |
+    |                           |     (auto-unlock)           |
+    |                           |============================>|
+
+    ✓ No unsafe needed
+    ✓ Compiler enforces correct usage
+    ✓ Automatic RAII unlock on scope exit
+
+
+================================================================================
+6. DOUBLE-CHECKED LOCKING PATTERN (Singleton)
+================================================================================
+
+Thread A              Singleton Instance              Thread B
+    |                     (nullptr)                       |
+    |                         |                           |
+    | load(Acquire)           |                           |
+    |<------------------------|                           |
+    | (nullptr)               |                           |
+    |                         |    load(Acquire)          |
+    |                         |-------------------------->|
+    |                         |    (nullptr)              |
+    | Lock mutex              |                           |
+    |==========>              |                           |
+    |   load(Relaxed)         |                           |
+    |<------------------------|                           |
+    |   (still nullptr)       |                           |
+    |                         |                           |
+    |   new Singleton()       |                           |
+    |---------------------    |                           |
+    |                    |    |                           |
+    |   store(Release) <-     |                           |
+    |========================>|                           |
+    | Unlock mutex            |                           |
+    |<=========               | (instance created)        |
+    |                         |                           |
+    |                         |    load(Acquire)          |
+    |                         |-------------------------->|
+    |                         |    (found instance!)      |
+    |                         |    return it              |
+    |                         |<--------------------------|
+    |                         |                           |
+    
+Fast path: Acquire load sees initialized instance, no locking needed
+Slow path: First thread locks, initializes, stores with Release
+
+
+================================================================================
+7. SEQUENTIAL CONSISTENCY (Total Order)
+================================================================================
+
+Thread 1        Thread 2        Global Sequential Order
+    |               |                   |
+    | x.store(1,    |                   | 1. x = 1 (T1)
+    |   SeqCst) ====|==================>|
+    |               |                   |
+    |               | y.store(2,        | 2. y = 2 (T2)
+    |               |   SeqCst) ========|=>
+    |               |                   |
+    | a = y.load(   |                   | 3. a = load y (T1)
+    |   SeqCst)     |                   |    = 2 or 0
+    |<==============|===================|
+    |               |                   |
+    |               | b = x.load(       | 4. b = load x (T2)
+    |               |   SeqCst)         |    = 1
+    |               |<==================|==
+    |               |                   |
+
+With SeqCst: IMPOSSIBLE to have a=0 and b=0 simultaneously
+All threads agree on same total order of operations
+
+With Relaxed: a=0 and b=0 IS POSSIBLE (no total order guarantee)
+
+
+================================================================================
+8. FETCH OPERATIONS (Read-Modify-Write)
+================================================================================
+
+Thread A            Atomic Counter           Thread B
+    |                   (0)                      |
+    |                    |                       |
+    | fetch_add(5) ======|==> [Read: 0]          |
+    |     returns 0      |    [Write: 5]         |
+    |<===================|                       |
+    |                    |                       |
+    |                    |    fetch_add(3) ======|
+    |                    |    returns 5          |
+    |                    |    [Read: 5]          |
+    |                    |    [Write: 8] <=======|
+    |                    |                       |
+    | fetch_sub(2) ======|==> [Read: 8]          |
+    |     returns 8      |    [Write: 6]         |
+    |<===================|                       |
+    |                    |                       |
+
+All fetch_* operations are atomic Read-Modify-Write
+Return the OLD value before modification
+Cannot be interrupted by other threads
+
+
+================================================================================
+9. MEMORY ORDERING HIERARCHY (Strength)
+================================================================================
+
+   Relaxed      Acquire/Release       SeqCst
+  (Weakest)        (Medium)         (Strongest)
+    |                 |                  |
+    |                 |                  |
+    v                 v                  v
+┌─────────────┐  ┌──────────────┐  ┌──────────────┐
+│ Atomicity   │  │ Atomicity    │  │ Atomicity    │
+│ only        │  │ +            │  │ +            │
+│             │  │ Happens-     │  │ Happens-     │
+│ No          │  │ Before for   │  │ Before for   │
+│ ordering    │  │ paired ops   │  │ paired ops   │
+│ guarantees  │  │              │  │ +            │
+│             │  │              │  │ Total global │
+│             │  │              │  │ ordering     │
+└─────────────┘  └──────────────┘  └──────────────┘
+    
+Use case:        Use case:         Use case:
+- Counters       - Locks           - Complex
+- Flags          - Producer/       - algorithms
+  (no deps)        Consumer        - When unsure
+
+Performance:     Performance:      Performance:
+  Fastest          Medium            Slowest
+
+
+================================================================================
+10. RUST ARC (Atomic Reference Counting)
+================================================================================
+
+Thread 1                Arc<T>                Thread 2
+    |                  [count=1]                  |
+    |                     |                       |
+    |  clone() =====>  [count=2] <===== clone()   |
+    |                     |                       |
+    |  use data           |           use data    |
+    |<--------------------|---------------------->|
+    |                     |                       |
+    |  drop() ======>  [count=1] <===== drop()    |
+    |                     |                       |
+    |                  [count=0]                  |
+    |              (deallocate data)              |
+    |                     X                       |
+
+Arc uses atomic operations internally for thread-safe ref counting
+Last thread to drop releases the memory
+Similar to C++ std::shared_ptr but always atomic
+
+
+================================================================================
+11. HAPPENS-BEFORE RELATIONSHIPS
+================================================================================
+
+Sequential Execution:
+--------------------
+    A
+    ↓ (happens-before)
+    B
+    ↓ (happens-before)
+    C
+
+All operations see consistent order
+
+
+Thread Synchronization:
+-----------------------
+Thread 1               Thread 2
+    A                      D
+    ↓                      ↑
+    B                      E
+    ↓                      ↑
+    C (Release) =========> F (Acquire)
+       (synchronizes-with)
+       
+Happens-before chain:
+A → B → C → (sync) → F → E → D
+
+Thread 2 sees all effects of A, B, C after F
+
+
+Data Race (NO synchronization):
+-------------------------------
+Thread 1               Thread 2
+    A                      C
+    ↓                      ↓
+    B                      D
+    ↓                      ↓
+    X (no sync)            Y (no sync)
+    
+NO happens-before relationship between threads
+= DATA RACE = UNDEFINED BEHAVIOR
+
+
+================================================================================
+12. SPIN-WAIT vs WAIT/NOTIFY (C++20/Rust)
+================================================================================
+
+Spin-Wait (Busy Loop):
+----------------------
+Consumer Thread              CPU              
+    |                        |              
+    | while(!ready.load()) { | <-- Constantly checking
+    |----------------------->|
+    |   // burn CPU cycles   | <-- 100% CPU usage
+    |----------------------->|
+    |   // still false...    | <-- Wastes power
+    |----------------------->|
+    | }                      | <-- Finally true!
+    |                        |
+
+✗ High CPU usage
+✗ Power inefficient
+✓ Low latency (immediate response)
+
+
+Wait/Notify (Blocking):
+------------------------
+Consumer Thread          OS Scheduler          Producer Thread
+    |                        |                       |
+    | wait(false) =========> |                       |
+    |  (blocked)             |                       |
+    |                        | (thread sleeps)       |
+    |                        | 0% CPU usage          |
+    |                        |                       |
+    |                        |     store(true) +     |
+    |                        |     notify_one() <====|
+    |                        |<----------------------|
+    |  (woken up) <========= |                       |
+    | continue execution     |                       |
+    |----------------------->|                       |
+
+✓ No CPU waste
+✓ Power efficient
+✗ Small latency overhead (context switch)
+
+
+Hybrid Approach (Spin-then-Wait):
+----------------------------------
+    | for i in 0..1000 {          | <-- Spin briefly (fast path)
+    |   if ready { break }        |
+    | }                           |
+    |                             |
+    | if !ready {                 |
+    |   wait() -----------------> | <-- Fall back to blocking
+    | }                           |
+
+✓ Best of both worlds for moderate wait times
+
+```
+
+**Key Takeaways from the Diagrams:**
+
+1. **Release-Acquire**: Creates a "synchronizes-with" edge between threads
+2. **Relaxed**: No ordering, just atomicity - fastest but hardest to reason about
+3. **SeqCst**: Total global order - slowest but easiest to understand
+4. **C++ vs Rust**: Rust requires `unsafe` for non-atomic shared data, encouraging `Mutex`
+5. **CAS/Compare-Exchange**: Foundation of lock-free algorithms
+6. **Fetch operations**: Atomic read-modify-write in one step
+7. **Arc**: Rust's thread-safe reference counting
+8. **Happens-before**: The key relationship that prevents data races
+
