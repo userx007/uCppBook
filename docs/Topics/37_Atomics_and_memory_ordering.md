@@ -122,7 +122,7 @@ Specialized acquire for dependent operations (rarely used in practice).
 
 ## Acquire-Release Semantics Example
 
-These are the most common pattern for synchronization:
+These are the most common patterns for synchronization:
 
 ```cpp
 #include <atomic>

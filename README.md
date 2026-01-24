@@ -267,3 +267,5 @@
 [231. **Closure parameters**](docs/Rust/231_Closure_parameters.md)<br>
 [232. **Destructuring Explained**](docs/Rust/232_Destructuring_Explained.md)<br>
 [233. **Direct Iterator Usage vs `into_iter()` in Rust**](docs/Rust/233_Direct_Iterator_Usage_vs_into_iter.md)<br>
+[234. **Atomic synchronization with acquire-release semantics**](docs/Rust/234_Atomic_synchronization_with_acquire_release_semantics.md)<br>
+
