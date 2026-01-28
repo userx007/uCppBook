@@ -121,11 +121,8 @@ The common thread is that all these types provide efficient, zero-copy access to
 ## Key Takeaways from Examples
 
 **Lazy evaluation**: Ranges views don't compute until you iterate. The pipeline `filter | transform | take` only processes elements as needed.
-
 **Composability**: You can chain views with the pipe operator (`|`) for readable data transformations.
-
 **Zero-copy**: All views reference existing data rather than copying it, making them very efficient.
-
 **Type safety**: `std::span<T, N>` provides compile-time size checking.
 
 The code is ready to compile with C++20 (use `-std=c++20` flag). Try modifying the examples to experiment with different view combinations!

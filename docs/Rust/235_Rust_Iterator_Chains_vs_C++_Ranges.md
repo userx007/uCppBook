@@ -1,0 +1,992 @@
+# Detailed Comparison: Rust Iterator Chains vs. C++ Ranges
+
+## Core Philosophy Differences
+
+**Rust**: Iterators are consumed (moved) by default, encouraging a functional, immutable style.
+
+**C++**: Ranges are views over existing data, non-owning by default, allowing mutation through views.
+
+---
+
+## 1. Basic Filtering
+
+### Rust
+```rust
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    
+    // Filter even numbers
+    let evens: Vec<i32> = numbers
+        .iter()                              // Create iterator (borrows)
+        .filter(|&&n| n % 2 == 0)           // Lazy filter
+        .copied()                            // Convert &i32 to i32
+        .collect();                          // Eager: materialize to Vec
+    
+    println!("Evens: {:?}", evens);          // [2, 4, 6, 8, 10]
+    println!("Original: {:?}", numbers);     // Still accessible
+    
+    // Alternative: consume the vector
+    let evens: Vec<i32> = numbers
+        .into_iter()                         // Consumes/moves numbers
+        .filter(|&n| n % 2 == 0)
+        .collect();
+    
+    // println!("{:?}", numbers);            // ❌ Error: value moved
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    // Filter even numbers (lazy view)
+    auto evens = numbers | std::views::filter([](int n) { return n % 2 == 0; });
+    
+    std::cout << "Evens: ";
+    for (int n : evens) {
+        std::cout << n << " ";               // 2 4 6 8 10
+    }
+    std::cout << "\n";
+    
+    std::cout << "Original still accessible: ";
+    for (int n : numbers) {
+        std::cout << n << " ";               // ✅ Still accessible
+    }
+    std::cout << "\n";
+    
+    // To materialize to a new vector
+    std::vector<int> evens_vec(evens.begin(), evens.end());
+    // Or with ranges::to (C++23)
+    // auto evens_vec = evens | std::ranges::to<std::vector>();
+}
+```
+
+**Key Differences:**
+- Rust: Must explicitly call `.iter()` or `.into_iter()`. Use `.collect()` to materialize.
+- C++: Views are created directly. Original container always accessible (unless moved).
+- Rust: Iterator pattern distinguishes between borrowing (`.iter()`) and consuming (`.into_iter()`).
+- C++: Views always borrow; explicit copy needed for ownership.
+
+---
+
+## 2. Transformation (Map/Transform)
+
+### Rust
+```rust
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    
+    // Square each number
+    let squared: Vec<i32> = numbers
+        .iter()
+        .map(|&n| n * n)                     // Transform
+        .collect();
+    
+    println!("Squared: {:?}", squared);      // [1, 4, 9, 16, 25]
+    
+    // Transform to different type
+    let as_strings: Vec<String> = numbers
+        .iter()
+        .map(|&n| n.to_string())
+        .collect();
+    
+    println!("Strings: {:?}", as_strings);   // ["1", "2", "3", "4", "5"]
+    
+    // Chaining map and filter
+    let result: Vec<i32> = numbers
+        .iter()
+        .map(|&n| n * 2)                     // Double
+        .filter(|&n| n > 5)                  // Keep if > 5
+        .collect();
+    
+    println!("Doubled > 5: {:?}", result);   // [6, 8, 10]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <string>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    // Square each number (lazy view)
+    auto squared = numbers | std::views::transform([](int n) { return n * n; });
+    
+    std::cout << "Squared: ";
+    for (int n : squared) {
+        std::cout << n << " ";               // 1 4 9 16 25
+    }
+    std::cout << "\n";
+    
+    // Transform to different type
+    auto as_strings = numbers | std::views::transform([](int n) { 
+        return std::to_string(n); 
+    });
+    
+    std::cout << "Strings: ";
+    for (const auto& s : as_strings) {
+        std::cout << s << " ";               // 1 2 3 4 5
+    }
+    std::cout << "\n";
+    
+    // Chaining transform and filter
+    auto result = numbers
+        | std::views::transform([](int n) { return n * 2; })
+        | std::views::filter([](int n) { return n > 5; });
+    
+    std::cout << "Doubled > 5: ";
+    for (int n : result) {
+        std::cout << n << " ";               // 6 8 10
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: `map` vs. C++: `transform` (same concept, different names)
+- Rust: Always need `.collect()` to materialize; iteration happens then
+- C++: Views iterate lazily; materialization requires explicit construction
+- Both: Support type transformations seamlessly
+
+---
+
+## 3. Taking and Dropping Elements
+
+### Rust
+```rust
+fn main() {
+    let numbers: Vec<i32> = (1..=10).collect();
+    
+    // Take first 5
+    let first_five: Vec<i32> = numbers
+        .iter()
+        .take(5)
+        .copied()
+        .collect();
+    
+    println!("First 5: {:?}", first_five);           // [1, 2, 3, 4, 5]
+    
+    // Skip first 5
+    let last_five: Vec<i32> = numbers
+        .iter()
+        .skip(5)
+        .copied()
+        .collect();
+    
+    println!("Last 5: {:?}", last_five);             // [6, 7, 8, 9, 10]
+    
+    // Pagination: skip and take
+    let page_size = 3;
+    let page = 2;
+    let page_items: Vec<i32> = numbers
+        .iter()
+        .skip(page * page_size)
+        .take(page_size)
+        .copied()
+        .collect();
+    
+    println!("Page 2: {:?}", page_items);            // [7, 8, 9]
+    
+    // take_while and skip_while
+    let take_small: Vec<i32> = numbers
+        .iter()
+        .take_while(|&&n| n < 6)
+        .copied()
+        .collect();
+    
+    println!("Take while < 6: {:?}", take_small);    // [1, 2, 3, 4, 5]
+    
+    let skip_small: Vec<i32> = numbers
+        .iter()
+        .skip_while(|&&n| n <= 5)
+        .copied()
+        .collect();
+    
+    println!("Skip while <= 5: {:?}", skip_small);   // [6, 7, 8, 9, 10]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    // Take first 5
+    auto first_five = numbers | std::views::take(5);
+    
+    std::cout << "First 5: ";
+    for (int n : first_five) {
+        std::cout << n << " ";                       // 1 2 3 4 5
+    }
+    std::cout << "\n";
+    
+    // Drop first 5
+    auto last_five = numbers | std::views::drop(5);
+    
+    std::cout << "Last 5: ";
+    for (int n : last_five) {
+        std::cout << n << " ";                       // 6 7 8 9 10
+    }
+    std::cout << "\n";
+    
+    // Pagination
+    int page_size = 3;
+    int page = 2;
+    auto page_items = numbers 
+        | std::views::drop(page * page_size)
+        | std::views::take(page_size);
+    
+    std::cout << "Page 2: ";
+    for (int n : page_items) {
+        std::cout << n << " ";                       // 7 8 9
+    }
+    std::cout << "\n";
+    
+    // take_while and drop_while
+    auto take_small = numbers | std::views::take_while([](int n) { 
+        return n < 6; 
+    });
+    
+    std::cout << "Take while < 6: ";
+    for (int n : take_small) {
+        std::cout << n << " ";                       // 1 2 3 4 5
+    }
+    std::cout << "\n";
+    
+    auto skip_small = numbers | std::views::drop_while([](int n) { 
+        return n <= 5; 
+    });
+    
+    std::cout << "Drop while <= 5: ";
+    for (int n : skip_small) {
+        std::cout << n << " ";                       // 6 7 8 9 10
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: `take`/`skip` vs. C++: `take`/`drop`
+- Rust: `skip_while` vs. C++: `drop_while`
+- Both: Have `take_while` with same name
+- Both: Support predicate-based operations
+
+---
+
+## 4. Reversing
+
+### Rust
+```rust
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    
+    // Reverse iteration
+    let reversed: Vec<i32> = numbers
+        .iter()
+        .rev()                               // Reverse iterator
+        .copied()
+        .collect();
+    
+    println!("Reversed: {:?}", reversed);    // [5, 4, 3, 2, 1]
+    
+    // Last N elements in original order
+    let last_three: Vec<i32> = numbers
+        .iter()
+        .rev()
+        .take(3)
+        .rev()                               // Reverse again
+        .copied()
+        .collect();
+    
+    println!("Last 3: {:?}", last_three);    // [3, 4, 5]
+    
+    // Reverse filtered elements
+    let even_reversed: Vec<i32> = numbers
+        .iter()
+        .filter(|&&n| n % 2 == 0)
+        .rev()
+        .copied()
+        .collect();
+    
+    println!("Even reversed: {:?}", even_reversed);  // [4, 2]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    // Reverse iteration
+    auto reversed = numbers | std::views::reverse;
+    
+    std::cout << "Reversed: ";
+    for (int n : reversed) {
+        std::cout << n << " ";               // 5 4 3 2 1
+    }
+    std::cout << "\n";
+    
+    // Last N elements in original order
+    auto last_three = numbers
+        | std::views::reverse
+        | std::views::take(3)
+        | std::views::reverse;
+    
+    std::cout << "Last 3: ";
+    for (int n : last_three) {
+        std::cout << n << " ";               // 3 4 5
+    }
+    std::cout << "\n";
+    
+    // Reverse filtered elements
+    auto even_reversed = numbers
+        | std::views::filter([](int n) { return n % 2 == 0; })
+        | std::views::reverse;
+    
+    std::cout << "Even reversed: ";
+    for (int n : even_reversed) {
+        std::cout << n << " ";               // 4 2
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: `.rev()` vs. C++: `std::views::reverse`
+- Rust: `.rev()` works on any `DoubleEndedIterator`
+- C++: `reverse` requires bidirectional range
+- Both: Can chain multiple reverses
+
+---
+
+## 5. Working with Infinite/Generated Sequences
+
+### Rust
+```rust
+fn main() {
+    // Infinite range
+    let first_ten_squares: Vec<i32> = (1..)          // Infinite iterator
+        .map(|n| n * n)
+        .take(10)                                     // MUST limit infinite
+        .collect();
+    
+    println!("First 10 squares: {:?}", first_ten_squares);
+    // [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+    
+    // Generate with repeat
+    let fives: Vec<i32> = std::iter::repeat(5)
+        .take(5)
+        .collect();
+    
+    println!("Five fives: {:?}", fives);             // [5, 5, 5, 5, 5]
+    
+    // Generate with closure
+    let mut counter = 0;
+    let generated: Vec<i32> = std::iter::from_fn(|| {
+        counter += 1;
+        if counter <= 5 {
+            Some(counter * 2)
+        } else {
+            None
+        }
+    }).collect();
+    
+    println!("Generated: {:?}", generated);          // [2, 4, 6, 8, 10]
+    
+    // Cycle (repeat infinitely)
+    let cycled: Vec<i32> = vec![1, 2, 3]
+        .into_iter()
+        .cycle()
+        .take(8)
+        .collect();
+    
+    println!("Cycled: {:?}", cycled);                // [1, 2, 3, 1, 2, 3, 1, 2]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    // Infinite range (iota)
+    auto first_ten_squares = std::views::iota(1)     // Infinite range
+        | std::views::transform([](int n) { return n * n; })
+        | std::views::take(10);                      // MUST limit infinite
+    
+    std::cout << "First 10 squares: ";
+    for (int n : first_ten_squares) {
+        std::cout << n << " ";
+    }
+    std::cout << "\n";
+    // 1 4 9 16 25 36 49 64 81 100
+    
+    // Repeat a single value
+    auto fives = std::views::repeat(5) | std::views::take(5);
+    
+    std::cout << "Five fives: ";
+    for (int n : fives) {
+        std::cout << n << " ";                       // 5 5 5 5 5
+    }
+    std::cout << "\n";
+    
+    // Generate with iota and transform
+    auto generated = std::views::iota(1, 6)          // [1, 6) range
+        | std::views::transform([](int n) { return n * 2; });
+    
+    std::cout << "Generated: ";
+    for (int n : generated) {
+        std::cout << n << " ";                       // 2 4 6 8 10
+    }
+    std::cout << "\n";
+    
+    // Note: C++ doesn't have built-in cycle view (yet)
+    // Would need custom implementation or use repeat with modulo
+}
+```
+
+**Key Differences:**
+- Rust: `(1..)` creates infinite range; C++: `std::views::iota(1)` creates infinite range
+- Rust: Has `.cycle()` for repeating sequences; C++ lacks built-in equivalent
+- Rust: `std::iter::from_fn` for custom generators; C++ would need custom range
+- Both: Require `.take()` to limit infinite sequences
+
+---
+
+## 6. Complex Chaining and Composition
+
+### Rust
+```rust
+fn main() {
+    let data = vec![15, 8, 23, 4, 42, 16, 11, 30, 7, 19];
+    
+    // Complex pipeline
+    let result: Vec<i32> = data
+        .iter()
+        .filter(|&&n| n % 2 == 0)            // Keep even
+        .map(|&n| n * n)                     // Square
+        .rev()                               // Reverse
+        .skip(2)                             // Skip first 2
+        .take(2)                             // Take next 2
+        .collect();
+    
+    println!("Result: {:?}", result);        // [1764, 16]
+    
+    // Breakdown:
+    // Original: [15, 8, 23, 4, 42, 16, 11, 30, 7, 19]
+    // After filter: [8, 4, 42, 16, 30]
+    // After map: [64, 16, 1764, 256, 900]
+    // After rev: [900, 256, 1764, 16, 64]
+    // After skip(2): [1764, 16, 64]
+    // After take(2): [1764, 16]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> data = {15, 8, 23, 4, 42, 16, 11, 30, 7, 19};
+    
+    // Complex pipeline
+    auto result = data
+        | std::views::filter([](int n) { return n % 2 == 0; })
+        | std::views::transform([](int n) { return n * n; })
+        | std::views::reverse
+        | std::views::drop(2)
+        | std::views::take(2);
+    
+    std::cout << "Result: ";
+    for (int n : result) {
+        std::cout << n << " ";               // 1764 16
+    }
+    std::cout << "\n";
+    
+    // Same breakdown as Rust
+}
+```
+
+**Key Differences:**
+- Nearly identical conceptually!
+- Rust: Uses `.` for method chaining
+- C++: Uses `|` for pipe operator
+- Rust: Must call `.collect()` to materialize
+- C++: Remains lazy until iteration
+
+---
+
+## 7. Flattening Nested Structures
+
+### Rust
+```rust
+fn main() {
+    let nested = vec![
+        vec![1, 2, 3],
+        vec![4, 5],
+        vec![6, 7, 8, 9]
+    ];
+    
+    // Flatten
+    let flattened: Vec<i32> = nested
+        .iter()
+        .flatten()
+        .copied()
+        .collect();
+    
+    println!("Flattened: {:?}", flattened);
+    // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    
+    // flat_map: map then flatten
+    let numbers = vec![1, 2, 3];
+    let repeated: Vec<i32> = numbers
+        .iter()
+        .flat_map(|&n| vec![n, n])           // Each n becomes [n, n]
+        .collect();
+    
+    println!("Repeated: {:?}", repeated);    // [1, 1, 2, 2, 3, 3]
+    
+    // Using flat_map for filtering with Option
+    let strings = vec!["1", "two", "3", "four", "5"];
+    let parsed: Vec<i32> = strings
+        .iter()
+        .flat_map(|s| s.parse::<i32>().ok()) // Returns Option<i32>
+        .collect();
+    
+    println!("Parsed: {:?}", parsed);        // [1, 3, 5]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <charconv>
+
+int main() {
+    std::vector<std::vector<int>> nested = {
+        {1, 2, 3},
+        {4, 5},
+        {6, 7, 8, 9}
+    };
+    
+    // Flatten (C++23)
+    auto flattened = nested | std::views::join;
+    
+    std::cout << "Flattened: ";
+    for (int n : flattened) {
+        std::cout << n << " ";
+    }
+    std::cout << "\n";
+    // 1 2 3 4 5 6 7 8 9
+    
+    // transform + join (equivalent to flat_map)
+    std::vector<int> numbers = {1, 2, 3};
+    auto repeated = numbers 
+        | std::views::transform([](int n) {
+            return std::vector{n, n};
+        })
+        | std::views::join;
+    
+    std::cout << "Repeated: ";
+    for (int n : repeated) {
+        std::cout << n << " ";               // 1 1 2 2 3 3
+    }
+    std::cout << "\n";
+    
+    // Filtering with optional-like behavior requires custom approach
+    std::vector<std::string> strings = {"1", "two", "3", "four", "5"};
+    
+    auto parsed = strings
+        | std::views::transform([](const std::string& s) -> std::vector<int> {
+            int value;
+            auto result = std::from_chars(s.data(), s.data() + s.size(), value);
+            if (result.ec == std::errc{}) {
+                return {value};
+            }
+            return {};
+        })
+        | std::views::join;
+    
+    std::cout << "Parsed: ";
+    for (int n : parsed) {
+        std::cout << n << " ";               // 1 3 5
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: `.flatten()` and `.flat_map()` vs. C++: `std::views::join`
+- Rust: Seamless integration with `Option` for filtering
+- C++: `join` is more low-level; filtering patterns require workarounds
+- Rust: `.flat_map()` is concise; C++: needs `transform` + `join`
+
+---
+
+## 8. Collecting/Materializing Results
+
+### Rust
+```rust
+use std::collections::{HashMap, HashSet};
+
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    
+    // Collect to Vec
+    let squared: Vec<i32> = numbers
+        .iter()
+        .map(|&n| n * n)
+        .collect();
+    
+    println!("Vec: {:?}", squared);
+    
+    // Collect to HashSet
+    let unique: HashSet<i32> = vec![1, 2, 2, 3, 3, 3]
+        .into_iter()
+        .collect();
+    
+    println!("Set: {:?}", unique);           // {1, 2, 3}
+    
+    // Collect to HashMap
+    let pairs = vec![(1, "one"), (2, "two"), (3, "three")];
+    let map: HashMap<i32, &str> = pairs
+        .into_iter()
+        .collect();
+    
+    println!("Map: {:?}", map);
+    
+    // Collect to String
+    let chars = vec!['h', 'e', 'l', 'l', 'o'];
+    let word: String = chars.into_iter().collect();
+    
+    println!("String: {}", word);            // "hello"
+    
+    // Partition: split into two collections
+    let (evens, odds): (Vec<i32>, Vec<i32>) = (1..=10)
+        .partition(|&n| n % 2 == 0);
+    
+    println!("Evens: {:?}", evens);          // [2, 4, 6, 8, 10]
+    println!("Odds: {:?}", odds);            // [1, 3, 5, 7, 9]
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <string>
+#include <iostream>
+#include <algorithm>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    // Collect to vector (manual or C++23 ranges::to)
+    auto squared = numbers 
+        | std::views::transform([](int n) { return n * n; });
+    
+    std::vector<int> squared_vec(squared.begin(), squared.end());
+    // Or with C++23: auto squared_vec = squared | std::ranges::to<std::vector>();
+    
+    std::cout << "Vec: ";
+    for (int n : squared_vec) std::cout << n << " ";
+    std::cout << "\n";
+    
+    // Collect to set
+    std::vector<int> with_dupes = {1, 2, 2, 3, 3, 3};
+    std::unordered_set<int> unique(with_dupes.begin(), with_dupes.end());
+    
+    std::cout << "Set: ";
+    for (int n : unique) std::cout << n << " ";
+    std::cout << "\n";
+    
+    // Collect to map
+    std::vector<std::pair<int, const char*>> pairs = {
+        {1, "one"}, {2, "two"}, {3, "three"}
+    };
+    std::map<int, const char*> map(pairs.begin(), pairs.end());
+    
+    std::cout << "Map: ";
+    for (const auto& [k, v] : map) {
+        std::cout << k << ":" << v << " ";
+    }
+    std::cout << "\n";
+    
+    // Collect to string
+    std::vector<char> chars = {'h', 'e', 'l', 'l', 'o'};
+    std::string word(chars.begin(), chars.end());
+    
+    std::cout << "String: " << word << "\n";
+    
+    // Partition (not a range adaptor, but algorithm)
+    std::vector<int> all_nums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    auto partition_point = std::ranges::partition(
+        all_nums, 
+        [](int n) { return n % 2 == 0; }
+    );
+    
+    std::cout << "Evens: ";
+    for (auto it = all_nums.begin(); it != partition_point; ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << "\nOdds: ";
+    for (auto it = partition_point; it != all_nums.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: Universal `.collect()` with type inference
+- C++: Constructor-based or `std::ranges::to` (C++23)
+- Rust: `.partition()` returns tuple of collections
+- C++: `std::ranges::partition` modifies in-place, returns iterator
+- Rust: More ergonomic collection API
+- C++: More explicit, sometimes verbose
+
+---
+
+## 9. Mutation Through Views/Iterators
+
+### Rust
+```rust
+fn main() {
+    let mut numbers = vec![1, 2, 3, 4, 5];
+    
+    // Mutate through iterator
+    numbers
+        .iter_mut()                          // Mutable iterator
+        .for_each(|n| *n *= 2);
+    
+    println!("Doubled: {:?}", numbers);      // [2, 4, 6, 8, 10]
+    
+    // Filter and mutate
+    numbers
+        .iter_mut()
+        .filter(|n| **n > 5)
+        .for_each(|n| *n += 100);
+    
+    println!("Modified: {:?}", numbers);     // [2, 4, 106, 108, 110]
+    
+    // Note: Can't use collect() with iter_mut() to create new Vec
+    // Must use for_each or explicit loop for mutation
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    // Mutate through view
+    auto view = numbers | std::views::all;
+    
+    for (int& n : view) {
+        n *= 2;
+    }
+    
+    std::cout << "Doubled: ";
+    for (int n : numbers) {
+        std::cout << n << " ";               // 2 4 6 8 10
+    }
+    std::cout << "\n";
+    
+    // Filter and mutate
+    auto filtered = numbers | std::views::filter([](int n) { return n > 5; });
+    
+    for (int& n : filtered) {
+        n += 100;
+    }
+    
+    std::cout << "Modified: ";
+    for (int n : numbers) {
+        std::cout << n << " ";               // 2 4 106 108 110
+    }
+    std::cout << "\n";
+    
+    // Can even mutate through reverse view
+    auto reversed = numbers | std::views::reverse;
+    for (int& n : reversed) {
+        n /= 2;
+    }
+    
+    std::cout << "After reverse mutation: ";
+    for (int n : numbers) {
+        std::cout << n << " ";               // 1 2 53 54 55
+    }
+    std::cout << "\n";
+}
+```
+
+**Key Differences:**
+- Rust: Requires `.iter_mut()` for mutation (explicit)
+- C++: Views allow mutation by default if underlying range is mutable
+- Rust: Borrow checker enforces safety at compile time
+- C++: Programmer must ensure view lifetime doesn't exceed container
+- Rust: More restrictive but safer
+- C++: More flexible but requires care
+
+---
+
+## 10. Error Handling in Chains
+
+### Rust
+```rust
+fn main() {
+    let strings = vec!["1", "2", "three", "4"];
+    
+    // Using filter_map to handle Result/Option
+    let parsed: Vec<i32> = strings
+        .iter()
+        .filter_map(|s| s.parse::<i32>().ok())  // Ignores errors
+        .collect();
+    
+    println!("Parsed (ignoring errors): {:?}", parsed);  // [1, 2, 4]
+    
+    // Collecting Result to propagate errors
+    let result: Result<Vec<i32>, _> = strings
+        .iter()
+        .map(|s| s.parse::<i32>())
+        .collect();
+    
+    match result {
+        Ok(nums) => println!("All parsed: {:?}", nums),
+        Err(e) => println!("Parse error: {}", e),
+        // Output: Parse error: invalid digit found in string
+    }
+    
+    // partition_map: separate successes and failures
+    use itertools::Itertools;  // External crate
+    
+    let (successes, failures): (Vec<i32>, Vec<_>) = strings
+        .iter()
+        .map(|s| s.parse::<i32>())
+        .partition_map(|r| match r {
+            Ok(n) => itertools::Either::Left(n),
+            Err(e) => itertools::Either::Right(e),
+        });
+    
+    println!("Successes: {:?}", successes);  // [1, 2, 4]
+    println!("Failures: {} errors", failures.len());
+}
+```
+
+### C++
+```cpp
+#include <ranges>
+#include <vector>
+#include <string>
+#include <charconv>
+#include <optional>
+#include <iostream>
+
+int main() {
+    std::vector<std::string> strings = {"1", "2", "three", "4"};
+    
+    // Using transform + filter to handle parsing
+    auto parse = [](const std::string& s) -> std::optional<int> {
+        int value;
+        auto result = std::from_chars(s.data(), s.data() + s.size(), value);
+        if (result.ec == std::errc{}) {
+            return value;
+        }
+        return std::nullopt;
+    };
+    
+    // Filter out parse failures
+    auto parsed = strings
+        | std::views::transform(parse)
+        | std::views::filter([](const auto& opt) { return opt.has_value(); })
+        | std::views::transform([](const auto& opt) { return *opt; });
+    
+    std::cout << "Parsed (ignoring errors): ";
+    for (int n : parsed) {
+        std::cout << n << " ";               // 1 2 4
+    }
+    std::cout << "\n";
+    
+    // C++ doesn't have built-in equivalent to Rust's Result collection
+    // Would need custom error handling logic
+    
+    // Manual partition approach
+    std::vector<int> successes;
+    std::vector<std::string> failures;
+    
+    for (const auto& s : strings) {
+        int value;
+        auto result = std::from_chars(s.data(), s.data() + s.size(), value);
+        if (result.ec == std::errc{}) {
+            successes.push_back(value);
+        } else {
+            failures.push_back(s);
+        }
+    }
+    
+    std::cout << "Successes: ";
+    for (int n : successes) std::cout << n << " ";
+    std::cout << "\nFailures: " << failures.size() << " errors\n";
+}
+```
+
+**Key Differences:**
+- Rust: `.filter_map()` is idiomatic for Option/Result handling
+- C++: Requires transform + filter + transform pattern for similar effect
+- Rust: Can `.collect::<Result<Vec<_>>>()` to propagate errors
+- C++: No built-in error propagation in ranges
+- Rust: Rich ecosystem (itertools) for advanced patterns
+- C++: More manual error handling required
+
+---
+
+## Summary Table
+
+| Feature | Rust | C++ |
+|---------|------|-----|
+| **Syntax** | Method chaining (`.`) | Pipe operator (`\|`) |
+| **Default behavior** | Consumes/moves values | Views (non-owning references) |
+| **Laziness** | Lazy until `.collect()` | Lazy until iteration |
+| **Mutation** | Requires `.iter_mut()` | Allowed if underlying is mutable |
+| **Filter** | `.filter()` | `std::views::filter` |
+| **Transform** | `.map()` | `std::views::transform` |
+| **Take** | `.take()` | `std::views::take` |
+| **Drop/Skip** | `.skip()` | `std::views::drop` |
+| **Reverse** | `.rev()` | `std::views::reverse` |
+| **Flatten** | `.flatten()`, `.flat_map()` | `std::views::join` |
+| **Infinite** | `(1..)`, `.cycle()` | `std::views::iota()`, `std::views::repeat()` |
+| **Collect** | `.collect()` (universal) | Constructors / `std::ranges::to` (C++23) |
+| **Error handling** | `.filter_map()`, `Result` collection | Manual with `std::optional` |
+| **Memory safety** | Enforced by borrow checker | Programmer responsibility |
+
+Both provide powerful, expressive APIs for data transformation. Rust emphasizes safety and ownership, while C++ provides flexibility with the expectation of careful usage.
