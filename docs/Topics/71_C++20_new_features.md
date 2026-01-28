@@ -694,6 +694,31 @@ int main() {
 Projections allow you to specify how to access the value to compare without transforming the data:
 
 ```cpp
+//Most std::ranges algorithms accept this pattern:
+ranges::algorithm(range, comp = {}, proj = {});
+std::ranges::sort(people, {}, &Person::age); // default std::ranges::less
+auto youngest = std::ranges::min(people, {}, &Person::age);
+auto it = std::ranges::find(people, 42, &Person::age);
+auto seniors = std::ranges::count_if(
+    people,
+    [](int age) { return age >= 65; },
+    &Person::age
+);
+```
+* `comp` → how to compare (e.g. `<`, `>`)
+* `proj` → how to extract the comparison key
+
+```cpp
+std::ranges::sort(v, {}, [](const Person& p) { return p.age; });
+std::ranges::sort(v, {}, &Person::age);
+std::ranges::sort(v, {}, &Person::get_age);
+// All of these are valid as long as:
+// proj(element) -> comparable value
+```
+
+**Full example:**
+
+```cpp
 #include <ranges>
 #include <algorithm>
 #include <vector>
@@ -730,6 +755,29 @@ int main() {
     }
 }
 ```
+
+##### Projections vs transform
+
+###### Transform (bad for sorting)
+
+```cpp
+auto ages = people
+  | std::views::transform(&Person::age);
+
+std::ranges::sort(ages); // doesn't sort people!
+```
+
+This creates a **view of values**, not a rearrangement of the original range.
+
+###### Projection (correct)
+
+```cpp
+std::ranges::sort(people, {}, &Person::age);
+```
+
+* No copying
+* No intermediate range
+* Original container reordered
 
 #### 8. Working with Raw Arrays and C-Style Strings
 
