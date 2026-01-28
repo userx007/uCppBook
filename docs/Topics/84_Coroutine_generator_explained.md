@@ -365,24 +365,23 @@ gen.next()
 ### Timeline of Execution
 
 ```
-Time ──────────────────────────────────────────────────────────►
+Time ────────────────────────────────────────────────────────────────►
 
-Call counter(5)    next()  value()  next()  value()  ...  next()
-     │              │        │        │        │            │
-     ▼              ▼        ▼        ▼        ▼            ▼
-┌────┴───┐  ┌───────┴────┐   │   ┌────┴────┐   │      ┌─────┴─────┐
-│ Create │  │ Resume to  │   │   │ Resume  │   │      │ Resume to │
-│ & Init │  │ co_yield 0 │   │   │ to      │   │      │ loop end  │
-│ Suspend│  │ Suspend    │   │   │co_yield │   │      │ Done!     │
-└────────┘  └────────────┘   │   │ 1       │   │      └───────────┘
-                             │   │ Suspend │   │
-           Read current=0  ──┘   └─────────┘   │
-                                               │
-                               Read current=1 ─┘
+Call counter(5)    next()  value()    next()    value()  ...  next()
+     │              │        │          │         │            │
+     ▼              ▼        ▼          ▼         ▼            ▼
+┌────┴───┐  ┌───────┴────┐   │   ┌──────┴─────┐   │      ┌─────┴─────┐
+│ Create │  │ Resume to  │   │   │ Resume to  │   │      │ Resume to │
+│ & Init │  │ co_yield 0 │   │   │ co_yield 1 │   │      │ loop end  │
+│ Suspend│  │ Suspend    │   │   │ Suspend    │   │      │ Done!     │
+└────────┘  └────────────┘   │   └────────────┘   │      └───────────┘
+                             │                    │   
+           Read current=0  ──┘  Read current=1  ──┘      
+                                               
 
-[SUSP]     [SUSP]             [SUSP]           [DONE]
-  ↑          ↑                  ↑                ↑
-  │          │                  │                │
-  └──────────┴──────────────────┴────────────────┘
+[SUSP]     [SUSP]              [SUSP]                        [DONE]
+  ↑          ↑                   ↑                             ↑
+  │          │                   │                             │
+  └──────────┴───────────────────┴─────────────────────────────┘
             Coroutine State Transitions
 ```
