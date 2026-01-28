@@ -1,46 +1,48 @@
 # Comprehensive guide to C++23 features with working examples
 
-**Core Language Features:**
+## Major Features
+
+[**Core Language Features:**](#core-language-features)
 - **`std::print`/`std::println`**: Modern formatted output replacing iostream for common cases
 - **`std::expected<T, E>`**: Railway-oriented error handling without exceptions
 - **Multidimensional `operator[]`**: Natural syntax for matrices like `m[i, j]`
 - **`if consteval`**: Conditional code for compile-time vs runtime contexts
 - **Deducing `this`**: Explicit object parameters for better CRTP and forwarding
 
-**Library Enhancements:**
+[**Library Enhancements:**](#library-enhancements)
 - **`std::mdspan`**: Non-owning multidimensional array views
 - **`std::stacktrace`**: Built-in stack trace capture for debugging
 - **String improvements**: `contains()` method for easier substring checks
 - **`std::to_underlying`**: Clean enum to integer conversion
 - **`std::unreachable()`**: Optimization hint for impossible code paths
 
-**Ranges & Views:**
+[**Ranges & Views:**](#ranges-and-views)
 - **`std::ranges::to<>`**: Direct conversion from ranges to containers
 - **New views**: `zip`, `slide`, `chunk`, `enumerate`, `cartesian_product`
 
-**Other Improvements:**
+[**Other Improvements:**](#other-improvements)
 - **`constexpr` for `<cmath>`**: Compile-time math computations
 - **Monadic operations** for `std::optional`: `and_then`, `transform`, `or_else`
 - **Size literal suffix** `uz`/`z` for `size_t`
 - **`#warning` directive**: Standard warning messages
 
-**Containers & Data Structures:**
+[**Containers & Data Structures:**](#containers-and-data-structures)
 - **`std::flat_map` / `std::flat_set`**: Contiguous memory containers with better cache locality than tree-based containers
 
-**Coroutines:**
+[**Coroutines:**](#coroutines)
 - **`std::generator`**: Lazy sequence generation with `co_yield`, perfect for Fibonacci sequences and infinite streams
 
-**Formatting:**
+[**Formatting:**](#formatting)
 - **`std::format` improvements**: Direct range formatting, nested container support, escaped string formatting
 
-**Range Views (the big batch!):**
+[**Range Views (the big batch!):**](#range-views)
 - **`std::views::zip` / `zip_transform`**: Combine multiple ranges element-wise
 - **`std::views::slide` / `adjacent`**: Sliding windows and adjacent element pairing
 - **`std::views::chunk` / `chunk_by`**: Split ranges into fixed-size or predicate-based chunks
 - **`std::views::enumerate`**: Python-style index + value iteration
 - **`std::views::cartesian_product`**: Generate all combinations across multiple ranges
 
-**Language Features:**
+[**Language Features:**](#language-features)
 - **Relaxed `constexpr`**: Now supports `std::vector`, `std::string` at compile-time
 - **`static operator()` and `operator[]`**: Zero-size function objects
 - **`auto(x)` / `auto{x}`**: Explicit decay-copy for perfect forwarding scenarios
@@ -795,7 +797,8 @@ void demo_elifdef() {
 
 ---
 
-# C++23 Core Language Features: A Detailed Guide
+## Core Language Features
+[Back to top](#major-features)
 
 ## 1. `std::print` and `std::println` - Modern Formatted Output
 
@@ -863,8 +866,6 @@ std::cout << "Name: " << name << ", Age: " << age << std::endl;
 // New way (more readable, faster)
 std::println("Name: {}, Age: {}", name, age);
 ```
-
----
 
 ## 2. `std::expected<T, E>` - Railway-Oriented Error Handling
 
@@ -982,8 +983,6 @@ if (config) {
 }
 ```
 
----
-
 ## 3. Multidimensional `operator[]` - Natural Matrix Syntax
 
 C++23 allows `operator[]` to accept multiple arguments, enabling natural multidimensional indexing syntax.
@@ -1073,8 +1072,6 @@ m(i, j) = value;
 // C++23: Direct and natural
 m[i, j] = value;
 ```
-
----
 
 ## 4. `if consteval` - Compile-Time Context Detection
 
@@ -1208,7 +1205,7 @@ constexpr int check_runtime(int x) {
 }
 ```
 
----
+
 
 ## 5. Deducing `this` - Explicit Object Parameters
 
@@ -1385,8 +1382,6 @@ public:
 };
 ```
 
----
-
 ## Summary: Key Points to Remember
 
 ### `std::print` / `std::println`
@@ -1422,7 +1417,8 @@ public:
 
 ---
 
-# C++23 Library Enhancements: A Detailed Guide
+## Library Enhancements
+[Back to top](#major-features)
 
 ## 1. `std::mdspan` - Multidimensional Array Views
 
@@ -1786,8 +1782,6 @@ public:
 };
 ```
 
----
-
 ## Summary: Quick Reference
 
 ### `std::mdspan`
@@ -1823,7 +1817,8 @@ public:
 
 ---
 
-# C++23 Ranges & Views: Comprehensive Guide
+## Ranges And Views
+[Back to top](#major-features)
 
 ## Overview
 
@@ -2121,7 +2116,9 @@ auto result = data
 
 ---
 
-# C++23 Other Improvements: Detailed Guide
+# Other Improvements
+[Back to top](#major-features)
+
 
 ## 1. `constexpr` for `<cmath>` Functions
 
@@ -2172,7 +2169,6 @@ constexpr double result = physics_calc();  // Computed at compile time
 - **Optimization**: Enables better compiler optimizations
 - **Type safety**: Compile-time validation of mathematical operations
 
----
 
 ## 2. Monadic Operations for `std::optional`
 
@@ -2280,7 +2276,6 @@ auto user = get_config("user_settings")
 - **Composability**: Easy to build complex pipelines
 - **Safety**: Automatic null handling throughout the chain
 
----
 
 ## 3. Size Literal Suffix `uz` and `z`
 
@@ -2355,8 +2350,6 @@ for (size_t i = v.size(); i > 0uz; ) {
     std::cout << v[i] << '\n';
 }
 ```
-
----
 
 ## 4. `#warning` Directive
 
@@ -2475,9 +2468,10 @@ Emits a compiler warning with a custom message during compilation.
    - Use for deprecation notices, TODOs, and configuration alerts
    - Helpful for development reminders and build validation
 
-   ---
+---
 
-   # C++23: `std::flat_map` and `std::flat_set`
+## Containers and Data Structures
+[Back to top](#major-features)
 
 ## Overview
 
@@ -2815,7 +2809,8 @@ public:
 
 ---
 
-# C++23 Coroutines: `std::generator`
+## Coroutines
+[Back to top](#major-features)
 
 ## Overview
 
@@ -3192,7 +3187,8 @@ int main() {
 
 ---
 
-# C++23 `std::format` Improvements
+## Formatting
+[Back to top](#major-features)
 
 ## Overview
 
@@ -3560,7 +3556,8 @@ int main() {
 
 ---
 
-# C++23 Range Views: A Comprehensive Guide
+## Range Views
+[Back to top](#major-features)
 
 C++23 significantly expands the ranges library introduced in C++20, adding powerful new view adaptors that make working with sequences more expressive and efficient. Let's explore each of these new views in detail.
 
@@ -4039,7 +4036,9 @@ auto result = data
 
 ---
 
-# C++23 Language Features: A Detailed Guide
+
+## Language Features
+[Back to top](#major-features)
 
 ## 1. Relaxed `constexpr` - Compile-Time Containers
 
@@ -4109,7 +4108,6 @@ static_assert(validate_config(), "Invalid configuration");
 - **Compile-time validation** of data structures
 - **Template metaprogramming** becomes more readable
 
----
 
 ## 2. `static operator()` and `operator[]` - Zero-Size Function Objects
 
@@ -4193,7 +4191,6 @@ void process(std::vector<int>& data) {
 - **Clearer intent** - explicitly stateless
 - **Improved lambda semantics** for pure functions
 
----
 
 ## 3. `auto(x)` and `auto{x}` - Explicit Decay-Copy
 
@@ -4285,7 +4282,6 @@ void safe_copy(const T& source, T& dest) {
 - **Safer forwarding** in async contexts
 - **Clearer intent** in generic code
 
----
 
 ## 4. `#elifdef` / `#elifndef` - Cleaner Preprocessor Conditionals
 
@@ -4379,8 +4375,6 @@ const char* get_accelerator() {
 - **Improved readability** - less visual noise
 - **Consistency** with `#ifdef`/`#ifndef` patterns
 - **Reduced errors** - simpler syntax means fewer typos
-
----
 
 ## Summary: Key Takeaways
 
