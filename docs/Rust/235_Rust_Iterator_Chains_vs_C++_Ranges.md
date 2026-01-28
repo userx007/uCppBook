@@ -777,29 +777,109 @@ int main() {
 ## 9. Mutation Through Views/Iterators
 
 ### Rust
+
 ```rust
 fn main() {
     let mut numbers = vec![1, 2, 3, 4, 5];
     
-    // Mutate through iterator
+    // Example 1: Just iter_mut + for_each (no filter)
     numbers
-        .iter_mut()                          // Mutable iterator
-        .for_each(|n| *n *= 2);
+        .iter_mut()           // yields &mut i32
+        .for_each(|n| {       // n: &mut i32
+            *n *= 2;          // *n: i32 (dereference once)
+        });
     
-    println!("Doubled: {:?}", numbers);      // [2, 4, 6, 8, 10]
+    println!("Doubled: {:?}", numbers);  // [2, 4, 6, 8, 10]
     
-    // Filter and mutate
+    // Example 2: iter_mut + filter + for_each
+    numbers
+        .iter_mut()           // yields &mut i32
+        .filter(|n| {         // n: &&mut i32 (filter takes &Item)
+            **n > 5           // **n: i32 (dereference twice to get value)
+        })
+        .for_each(|n| {       // n: &mut i32 (after filter, back to Item)
+            *n += 100;        // *n: i32 (dereference once)
+        });
+    
+    println!("Modified: {:?}", numbers);  // [2, 4, 106, 108, 110]
+    
+    // Example 3: Explicitly showing types with type annotations
     numbers
         .iter_mut()
-        .filter(|n| **n > 5)
-        .for_each(|n| *n += 100);
-    
-    println!("Modified: {:?}", numbers);     // [2, 4, 106, 108, 110]
-    
+        .filter(|n: &&mut i32| **n > 5)      // Explicit: n is &&mut i32
+        .for_each(|n: &mut i32| *n += 100);  // Explicit: n is &mut i32
+
     // Note: Can't use collect() with iter_mut() to create new Vec
     // Must use for_each or explicit loop for mutation
+    // Reason: collect() consumes the iterator and creates a NEW collection,
+    // but iter_mut() is meant to modify the EXISTING collection in-place
 }
 ```
+
+**Key highlights:**
+
+1. **Double dereference explanation**: `**n` in the filter is necessary because:
+   - `n` has type `&&mut i32` (reference to a mutable reference)
+   - First `*` gives `&mut i32`
+   - Second `*` gives `i32` value for comparison
+
+2. **Single dereference after filter**: After `.filter()`, the closure in `.for_each()` receives `&mut i32` directly, so only one `*` is needed to mutate
+
+3. **Why iter_mut() exists**: Explicitly signals mutation intent and satisfies Rust's borrow checker
+
+4. **Why collect() doesn't work**: It would try to consume and create a new collection, which conflicts with the purpose of in-place mutation
+
+
+**Visual Type Flow**
+
+```
+numbers.iter_mut()
+    ↓
+Iterator yields: &mut i32
+    ↓
+.filter(|n| ...)
+    ↓
+filter takes reference to Item: &(&mut i32) = &&mut i32
+    ↓
+Inside filter closure: n is &&mut i32
+    ↓
+.for_each(|n| ...)
+    ↓
+for_each receives Item directly: &mut i32
+    ↓
+Inside for_each closure: n is &mut i32
+```
+
+
+**Why the Extra Reference in filter()?**
+
+The `filter()` method signature is:
+```rust
+fn filter<P>(self, predicate: P) -> Filter<Self, P>
+where
+    P: FnMut(&Self::Item) -> bool
+    //      ^
+    //      Notice: takes a REFERENCE to Item
+```
+So when `Item = &mut i32`, the predicate receives `&(&mut i32)` = `&&mut i32`
+This design allows `filter()` to work without consuming/moving the items:
+
+```rust
+// If filter took ownership: P: FnMut(Self::Item) -> bool
+// Then for &mut i32, it would need to take &mut i32 by value,
+// which would be problematic for borrowing rules
+
+// By taking a reference: P: FnMut(&Self::Item) -> bool
+// It can peek at the value without taking ownership
+```
+
+**Summary**
+
+1. `iter_mut()` returns `&mut i32`
+2. `filter()` takes `&n` (reference to the item), hence `&&mut i32`
+3. Inside filter: need `**n` to get the actual `i32` value
+4. After filter: back to `&mut i32`, need `*n` to mutate
+
 
 ### C++
 ```cpp
