@@ -794,7 +794,10 @@ fn main() {
     // Example 2: iter_mut + filter + for_each
     numbers
         .iter_mut()           // yields &mut i32
+                              // explicitly request mutable iterator
+
         .filter(|n| {         // n: &&mut i32 (filter takes &Item)
+                              // .. must understand &&mut i32
             **n > 5           // **n: i32 (dereference twice to get value)
         })
         .for_each(|n| {       // n: &mut i32 (after filter, back to Item)
@@ -880,6 +883,19 @@ This design allows `filter()` to work without consuming/moving the items:
 3. Inside filter: need `**n` to get the actual `i32` value
 4. After filter: back to `&mut i32`, need `*n` to mutate
 
+**Complete Comparison Table**
+
+| Aspect | C++ Ranges | Rust Iterators |
+|--------|-----------|----------------|
+| **Predicate signature** | `[](int n)` - by value | `\|n\|` receives `&&mut T` in filter |
+| **Dereference count** | 0 in predicate, 0 in loop | 2 in filter (`**n`), 1 in for_each (`*n`) |
+| **Mutation signaling** | Use `int&` in loop | Require `.iter_mut()` |
+| **Safety** | Runtime (UB if misused) | Compile-time (borrow checker) |
+| **Simplicity** | More intuitive syntax | More explicit semantics |
+| **Lifetime tracking** | Manual | Automatic |
+| **Learning curve** | Easier to start | Steeper but safer |
+
+
 
 ### C++
 ```cpp
@@ -888,55 +904,102 @@ This design allows `filter()` to work without consuming/moving the items:
 #include <iostream>
 
 int main() {
+    // Create a vector of integers
     std::vector<int> numbers = {1, 2, 3, 4, 5};
     
-    // Mutate through view
+    // === Example 1: Mutate through a basic view ===
+    // std::views::all creates a ref_view - a non-owning view over the container
+    // The view acts as a lightweight reference, not a copy
     auto view = numbers | std::views::all;
     
+    // When we iterate with int& (reference), we can mutate the original elements
+    // The view provides direct access to the underlying container's elements
     for (int& n : view) {
-        n *= 2;
+        n *= 2;  // Modifies the actual elements in 'numbers' vector
     }
     
     std::cout << "Doubled: ";
-    for (int n : numbers) {
-        std::cout << n << " ";               // 2 4 6 8 10
+    for (int n : numbers) {  // Print by value (copy) - const iteration
+        std::cout << n << " ";  // Output: 2 4 6 8 10
     }
     std::cout << "\n";
     
-    // Filter and mutate
+    // === Example 2: Filter and mutate ===
+    // std::views::filter creates a filter_view that only exposes elements matching the predicate
+    // IMPORTANT: The lambda takes 'int n' by value (copy) for the predicate check
+    // This is non-mutating - it's just checking if n > 5
+    // You could write `[](const int& n)` but it's unnecessary for small types
     auto filtered = numbers | std::views::filter([](int n) { return n > 5; });
-    
-    for (int& n : filtered) {
-        n += 100;
+    //                                               ^^^^^ 
+    //                                               By value - just for testing
+
+    // However, when we iterate over the filtered view with int& (reference),
+    // we CAN mutate the underlying elements that passed the filter
+    // Only elements where n > 5 will be modified (which are 6, 8, 10 from previous doubling)
+    for (int& n : filtered) { // Reference here allows mutation
+        n += 100;  // Modifies: 6->106, 8->108, 10->110 in the original vector
     }
     
     std::cout << "Modified: ";
     for (int n : numbers) {
-        std::cout << n << " ";               // 2 4 106 108 110
+        std::cout << n << " ";  // Output: 2 4 106 108 110
     }
     std::cout << "\n";
     
-    // Can even mutate through reverse view
+    // === Example 3: Mutate through reverse view ===
+    // std::views::reverse creates a reverse_view that iterates backwards
+    // This demonstrates that views can transform iteration order while still
+    // allowing mutation of the underlying elements
     auto reversed = numbers | std::views::reverse;
+    
+    // Iterating from back to front: 110, 108, 106, 4, 2
+    // Each element is divided by 2
     for (int& n : reversed) {
-        n /= 2;
+        n /= 2;  // 110->55, 108->54, 106->53, 4->2, 2->1
     }
     
     std::cout << "After reverse mutation: ";
-    for (int n : numbers) {
-        std::cout << n << " ";               // 1 2 53 54 55
+    for (int n : numbers) {  // Print in original forward order
+        std::cout << n << " ";  // Output: 1 2 53 54 55
     }
     std::cout << "\n";
+    
+    // === Key Takeaways ===
+    // 1. Views are non-owning: they don't copy data, just provide access
+    // 2. Views support mutation when you iterate with references (int&)
+    // 3. The predicate in filter() doesn't need to take a reference because
+    //    it's only reading values to test the condition
+    // 4. Mutations through views directly affect the original container
+    // 5. Multiple views can be chained and still allow mutation
+    // 6. DANGER: The view lifetime must not exceed the container's lifetime!
 }
 ```
 
+**In C++ Mutation is Always Allowed (If Underlying is Mutable)**
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};  // Mutable vector
+
+// ALL of these allow mutation through iteration:
+auto view1 = numbers | std::views::all;
+auto view2 = numbers | std::views::filter([](int n) { return n > 2; });
+auto view3 = numbers | std::views::reverse;
+auto view4 = numbers | std::views::take(3);
+
+// Just use int& when iterating:
+for (int& n : view1) { n *= 2; }  // ✅ Works
+for (int& n : view2) { n += 1; }  // ✅ Works
+for (int& n : view3) { n -= 1; }  // ✅ Works
+for (int& n : view4) { n = 0; }   // ✅ Works
+```
+
 **Key Differences:**
-- Rust: Requires `.iter_mut()` for mutation (explicit)
-- C++: Views allow mutation by default if underlying range is mutable
+- Rust: Requires `.iter_mut()` for mutation (explicit to signal mutation intent)
+- C++: Views allow mutation by default if underlying range is mutable using `int&` in the loop
 - Rust: Borrow checker enforces safety at compile time
 - C++: Programmer must ensure view lifetime doesn't exceed container
 - Rust: More restrictive but safer
-- C++: More flexible but requires care
+- C++: More flexible, trusts the programmer; Rust enforces safety at compile time
 
 ---
 
