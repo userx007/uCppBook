@@ -270,5 +270,11 @@
 [234. **Atomic synchronization with acquire-release semantics**](docs/Rust/234_Atomic_synchronization_with_acquire_release_semantics.md)<br>
 [235. **Detailed Comparison Rust Iterator Chains vs. C++ Ranges**](docs/Rust/235_Rust_Iterator_Chains_vs_C++_Ranges.md)<br>
 
+---
+
+# Hints and Tricks
+
+[301. **Hints and tricks**](docs/Rust/301_Hints_to_remember.md)<br>
+
 
 

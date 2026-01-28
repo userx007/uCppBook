@@ -1008,43 +1008,195 @@ for (int& n : view4) { n = 0; }   // ✅ Works
 ### Rust
 ```rust
 fn main() {
+    // Vector of string slices - some are valid numbers, some are not
     let strings = vec!["1", "2", "three", "4"];
     
-    // Using filter_map to handle Result/Option
+    // === APPROACH 1: Ignore errors using filter_map ===
+    // filter_map combines map + filter in one operation
+    // It's perfect for Option/Result types where you want to ignore failures
     let parsed: Vec<i32> = strings
-        .iter()
-        .filter_map(|s| s.parse::<i32>().ok())  // Ignores errors
-        .collect();
+        .iter()                                  // Iterator over &str
+        .filter_map(|s| s.parse::<i32>().ok())   // parse() returns Result<i32, ParseIntError>
+                                                 // .ok() converts Result to Option:
+                                                 //   Ok(value) -> Some(value)
+                                                 //   Err(_) -> None
+                                                 // filter_map automatically filters out None values
+                                                 // and unwraps Some values
+        .collect();                              // Collect the successful parses into Vec<i32>
     
     println!("Parsed (ignoring errors): {:?}", parsed);  // [1, 2, 4]
+    // "three" was silently ignored
     
-    // Collecting Result to propagate errors
+    // === APPROACH 2: Propagate errors (fail fast) ===
+    // This approach stops at the FIRST error encountered
     let result: Result<Vec<i32>, _> = strings
         .iter()
-        .map(|s| s.parse::<i32>())
-        .collect();
+        .map(|s| s.parse::<i32>())               // Returns Iterator<Item = Result<i32, ParseIntError>>
+                                                 // Each element is a Result, not unwrapped
+        .collect();                              // collect() is smart! When collecting Result items,
+                                                 // it returns Result<Vec<T>, E>
+                                                 // If ANY element is Err, entire result is Err
+                                                 // This is called "transpose" or "short-circuiting"
     
     match result {
         Ok(nums) => println!("All parsed: {:?}", nums),
         Err(e) => println!("Parse error: {}", e),
         // Output: Parse error: invalid digit found in string
+        // Fails on "three" - subsequent elements ("4") are never processed
     }
     
-    // partition_map: separate successes and failures
-    use itertools::Itertools;  // External crate
+    // === APPROACH 3: Separate successes and failures ===
+    // Sometimes you want BOTH the successes AND the errors
+    // This requires the itertools crate (add to Cargo.toml: itertools = "0.12")
+    use itertools::Itertools;  // External crate providing extra iterator methods
     
+    // partition_map splits an iterator into two collections based on Either type
     let (successes, failures): (Vec<i32>, Vec<_>) = strings
         .iter()
-        .map(|s| s.parse::<i32>())
-        .partition_map(|r| match r {
-            Ok(n) => itertools::Either::Left(n),
-            Err(e) => itertools::Either::Right(e),
-        });
+        .map(|s| s.parse::<i32>())               // Returns Iterator<Item = Result<i32, ParseIntError>>
+        .partition_map(|r| match r {             // partition_map processes ALL elements
+            Ok(n) => itertools::Either::Left(n), // Successful parses go to the Left (first tuple element)
+            Err(e) => itertools::Either::Right(e), // Errors go to the Right (second tuple element)
+        });                                      // Returns tuple: (Vec<Left>, Vec<Right>)
     
-    println!("Successes: {:?}", successes);  // [1, 2, 4]
-    println!("Failures: {} errors", failures.len());
+    println!("Successes: {:?}", successes);      // [1, 2, 4]
+    println!("Failures: {} errors", failures.len()); // 1 error (from "three")
+    
+    // You could also print the actual error:
+    // for err in failures {
+    //     println!("Error detail: {}", err);
+    // }
 }
 ```
+
+#### Extended Explanation: Three Error Handling Patterns
+
+##### Pattern 1: `filter_map` - Silent Failure (Ignore Errors)
+
+```rust
+// Type transformations:
+strings.iter()                      // Iterator<Item = &str>
+    ↓
+.filter_map(|s| s.parse::<i32>().ok())
+    ↓                    ↓
+    parse() returns      .ok() converts to Option
+    Result<i32, E>      Some(i32) or None
+    ↓
+filter_map keeps only Some, unwraps them
+    ↓
+Iterator<Item = i32>
+    ↓
+.collect()              // Vec<i32>
+```
+
+**When to use:**
+- You expect some failures and want to skip them
+- Errors don't need to be logged or handled
+- Example: parsing user input where invalid entries are acceptable
+
+**Key method:** `filter_map` = `map` + `filter` + automatic `unwrap` of `Some`
+
+##### Pattern 2: `collect::<Result<Vec<_>, _>>` - Fail Fast
+
+```rust
+// Type transformations:
+strings.iter()                      // Iterator<Item = &str>
+    ↓
+.map(|s| s.parse::<i32>())
+    ↓
+Iterator<Item = Result<i32, ParseIntError>>
+    ↓
+.collect()                          // Smart collect!
+    ↓
+Result<Vec<i32>, ParseIntError>    // Entire collection wrapped in Result
+
+// If ANY element is Err, entire Result is Err
+// If ALL elements are Ok, Result contains Vec of all values
+```
+
+**How `collect()` is "smart":**
+```rust
+// collect() uses the FromIterator trait
+// There's a special implementation:
+impl<T, E> FromIterator<Result<T, E>> for Result<Vec<T>, E> {
+    // If any Result is Err, returns Err immediately
+    // Otherwise, collects all Ok values into Vec
+}
+```
+
+**When to use:**
+- All inputs must be valid for processing to continue
+- You want to report the first error encountered
+- Example: configuration file parsing where one bad line invalidates everything
+
+##### Pattern 3: `partition_map` - Collect Both Successes and Failures
+
+```rust
+// Type transformations:
+strings.iter()                      // Iterator<Item = &str>
+    ↓
+.map(|s| s.parse::<i32>())
+    ↓
+Iterator<Item = Result<i32, ParseIntError>>
+    ↓
+.partition_map(|r| match r {
+    Ok(n) => Either::Left(n),       // Tag successes as Left
+    Err(e) => Either::Right(e),     // Tag failures as Right
+})
+    ↓
+(Vec<i32>, Vec<ParseIntError>)     // Two separate collections
+```
+
+**When to use:**
+- You need to process valid data AND handle/report all errors
+- Want to show which specific items failed
+- Example: bulk data import where you want to import valid rows and report invalid ones
+
+#### Comparison Table
+
+| Pattern | Returns | On Error | Use Case |
+|---------|---------|----------|----------|
+| `filter_map(_.ok())` | `Vec<T>` | Silently skips | Optional/best-effort parsing |
+| `collect::<Result<>>` | `Result<Vec<T>, E>` | Stops at first error | All-or-nothing validation |
+| `partition_map` | `(Vec<T>, Vec<E>)` | Collects all errors | Bulk processing with error reporting |
+
+#### Additional Example: Extending Pattern 1
+
+```rust
+fn main() {
+    let strings = vec!["1", "2", "three", "4", "five", "6"];
+    
+    // filter_map with logging
+    let parsed: Vec<i32> = strings
+        .iter()
+        .filter_map(|s| {
+            match s.parse::<i32>() {
+                Ok(n) => Some(n),           // Keep successful parse
+                Err(e) => {
+                    eprintln!("Failed to parse '{}': {}", s, e); // Log error
+                    None                    // Filter out the error
+                }
+            }
+        })
+        .collect();
+    
+    println!("Parsed: {:?}", parsed);  // [1, 2, 4, 6]
+    // Stderr shows: 
+    // Failed to parse 'three': invalid digit found in string
+    // Failed to parse 'five': invalid digit found in string
+}
+```
+
+#### Key Rust Concepts Demonstrated
+
+1. **`Result<T, E>` type**: Rust's standard way to handle operations that can fail
+2. **`.ok()` method**: Converts `Result` to `Option`, discarding error information
+3. **`collect()` magic**: Can collect into different types based on context
+4. **`Either` type**: From itertools, represents a value that can be one of two types
+5. **Zero-cost abstractions**: All these iterator chains compile to efficient code
+
+This demonstrates Rust's philosophy: make error handling explicit, provide tools for different strategies, and catch mistakes at compile time!
+
 
 ### C++
 ```cpp
