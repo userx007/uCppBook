@@ -75,17 +75,17 @@
 
 ## Concepts
 
-## Overview
+### Overview
 
 C++20 Concepts are a major language feature that allows you to specify **constraints on template parameters** in a clear, readable way. They provide compile-time validation of template arguments, replacing cryptic SFINAE (Substitution Failure Is Not An Error) techniques with explicit requirements. Concepts make templates more robust, improve error messages, and serve as documentation for what types a template can accept.
 
-## Why Concepts Matter
+### Why Concepts Matter
 
 Before C++20, template errors were notoriously difficult to understand. If you passed an invalid type to a template, you'd get pages of error messages from deep within the template instantiation. Concepts solve this by checking requirements upfront and providing clear error messages.
 
-## Basic Syntax
+### Basic Syntax
 
-### Defining a Concept
+#### Defining a Concept
 
 A concept is a named set of requirements:
 
@@ -107,7 +107,7 @@ concept Addable = requires(T a, T b) {
 };
 ```
 
-### Using Concepts
+#### Using Concepts
 
 There are several ways to apply concepts to templates:
 
@@ -137,7 +137,7 @@ T subtract(T a, T b) requires Integral<T> {
 }
 ```
 
-## Standard Library Concepts
+### Standard Library Concepts
 
 C++20 provides many built-in concepts in the `<concepts>` header:
 
@@ -182,7 +182,7 @@ int main() {
 }
 ```
 
-## Requires Expressions
+### Requires Expressions
 
 The `requires` expression allows you to specify detailed requirements:
 
@@ -214,9 +214,9 @@ concept Comparable = requires(T a, T b) {
 };
 ```
 
-## Practical Examples
+### Practical Examples
 
-### Example 1: Safe Numeric Operations
+#### Example 1: Safe Numeric Operations
 
 ```cpp
 #include <concepts>
@@ -242,7 +242,7 @@ int main() {
 }
 ```
 
-### Example 2: Generic Printable Type
+#### Example 2: Generic Printable Type
 
 ```cpp
 #include <concepts>
@@ -276,7 +276,7 @@ int main() {
 }
 ```
 
-### Example 3: Concept Composition
+#### Example 3: Concept Composition
 
 ```cpp
 #include <concepts>
@@ -311,7 +311,7 @@ int main() {
 }
 ```
 
-### Example 4: Iterator Concepts
+#### Example 4: Iterator Concepts
 
 ```cpp
 #include <concepts>
@@ -348,7 +348,7 @@ int main() {
 }
 ```
 
-### Example 5: Custom Concept with Complex Requirements
+#### Example 5: Custom Concept with Complex Requirements
 
 ```cpp
 #include <concepts>
@@ -401,9 +401,9 @@ int main() {
 }
 ```
 
-## Advanced Features
+### Advanced Features
 
-### Subsumption
+#### Subsumption
 
 Concepts can be more or less specific. The compiler uses **subsumption** to choose the most specific overload:
 
@@ -435,7 +435,7 @@ int main() {
 }
 ```
 
-## Benefits of Concepts
+### Benefits of Concepts
 
 1. **Better Error Messages**: Clear, readable compile-time errors
 2. **Self-Documenting**: Concepts serve as documentation for template requirements
@@ -443,7 +443,7 @@ int main() {
 4. **Type Safety**: Catch errors at template definition, not instantiation
 5. **Readability**: Much clearer than SFINAE or `enable_if`
 
-## Common Standard Library Concepts
+### Common Standard Library Concepts
 
 From `<concepts>`:
 - `std::same_as` - types are identical
@@ -465,9 +465,8 @@ From `<iterator>`:
 - `std::random_access_iterator`
 - `std::contiguous_iterator`
 
----
 
-## Key Takeaways
+### Key Takeaways
 
 - **Concepts constrain template parameters** with named requirements instead of SFINAE
 - **Define concepts** using `concept` keyword with type traits, requires expressions, or other concepts
@@ -486,7 +485,7 @@ From `<iterator>`:
 
 C++20 Ranges is a revolutionary library that fundamentally changes how we work with sequences of data in C++. It provides a more composable, expressive, and efficient way to process collections compared to traditional STL algorithms.
 
-## What Are Ranges?
+### What Are Ranges?
 
 A **range** is any object that you can iterate over. It's a generalization of the concept of "a pair of iterators." More formally, a range is anything that has a `begin()` and `end()` (or can be used with `std::ranges::begin()` and `std::ranges::end()`).
 
@@ -505,9 +504,9 @@ int main() {
 }
 ```
 
-## Key Components of Ranges
+### Key Components of Ranges
 
-### 1. Range Concepts
+#### 1. Range Concepts
 
 C++20 introduces several concepts to classify ranges:
 
@@ -529,7 +528,7 @@ static_assert(std::ranges::random_access_range<std::vector<int>>);
 static_assert(!std::ranges::random_access_range<std::list<int>>);
 ```
 
-### 2. Range Algorithms
+#### 2. Range Algorithms
 
 Range algorithms are improved versions of STL algorithms that work directly on ranges rather than iterator pairs:
 
@@ -560,7 +559,7 @@ int main() {
 }
 ```
 
-### 3. Views (Range Adapters)
+#### 3. Views (Range Adapters)
 
 Views are the most powerful feature of ranges. They are **lazy-evaluated** range adaptors that transform ranges without copying data:
 
@@ -587,7 +586,7 @@ int main() {
 }
 ```
 
-### 4. Common View Adaptors
+#### 4. Common View Adaptors
 
 Here's a comprehensive example showing various view adaptors:
 
@@ -636,7 +635,7 @@ int main() {
 }
 ```
 
-### 5. Composition and Piping
+#### 5. Composition and Piping
 
 The pipe operator `|` allows elegant composition:
 
@@ -662,7 +661,7 @@ int main() {
 }
 ```
 
-### 6. Generating Ranges
+#### 6. Generating Ranges
 
 C++20 provides views for generating sequences:
 
@@ -688,7 +687,7 @@ int main() {
 }
 ```
 
-### 7. Projections
+#### 7. Projections
 
 Projections allow you to specify how to access the value to compare without transforming the data:
 
@@ -730,7 +729,7 @@ int main() {
 }
 ```
 
-### 8. Working with Raw Arrays and C-Style Strings
+#### 8. Working with Raw Arrays and C-Style Strings
 
 Ranges work seamlessly with C-style arrays:
 
@@ -751,7 +750,7 @@ int main() {
 }
 ```
 
-### 9. Materialization: Converting Views to Containers
+#### 9. Materialization: Converting Views to Containers
 
 Views are lazy, but sometimes you need to store the results:
 
@@ -779,7 +778,7 @@ int main() {
 }
 ```
 
-### 10. Real-World Example: Data Processing Pipeline
+#### 10. Real-World Example: Data Processing Pipeline
 
 ```cpp
 #include <ranges>
@@ -833,7 +832,7 @@ int main() {
 }
 ```
 
-## Benefits of Ranges
+### Benefits of Ranges
 
 1. **Composability**: Chain operations naturally with the pipe operator
 2. **Lazy Evaluation**: Views don't compute until you iterate, saving memory and CPU
@@ -842,7 +841,7 @@ int main() {
 5. **Zero-Cost Abstraction**: Optimized to perform as well as hand-written loops
 6. **Projections**: Avoid creating temporary transformed containers
 
-## Performance Considerations
+### Performance Considerations
 
 ```cpp
 #include <ranges>
@@ -869,11 +868,11 @@ int main() {
 }
 ```
 
-## Summary
+### Summary
 
 C++20 Ranges revolutionize C++ by providing a modern, functional approach to working with sequences. Views enable lazy evaluation and composition, range algorithms are safer and more convenient than iterator-based algorithms, and the pipe operator creates readable data processing pipelines.
 
-## Key Things to Remember
+### Key Things to Remember
 
 1. **Ranges are anything with begin/end** - vectors, arrays, lists, even views themselves
 2. **Views are lazy** - they don't compute anything until you iterate over them
@@ -892,7 +891,7 @@ C++20 Ranges revolutionize C++ by providing a modern, functional approach to wor
 
 C++20 coroutines represent a fundamental shift in how C++ handles asynchronous programming and generator-style code. A coroutine is a function that can suspend its execution and later resume from where it left off, maintaining its state between suspensions.
 
-## What Makes a Function a Coroutine?
+### What Makes a Function a Coroutine?
 
 A function becomes a coroutine when it uses at least one of these keywords:
 
@@ -900,9 +899,9 @@ A function becomes a coroutine when it uses at least one of these keywords:
 - **`co_yield`** - suspends execution and produces a value
 - **`co_return`** - completes the coroutine and optionally returns a value
 
-## Core Components
+### Core Components
 
-### The Promise Type
+#### The Promise Type
 
 Every coroutine has an associated promise type that controls its behavior. The promise object is created when the coroutine starts and manages the coroutine's lifecycle.
 
@@ -969,7 +968,7 @@ int main() {
 }
 ```
 
-## co_yield - Generators
+### co_yield - Generators
 
 `co_yield` is perfect for creating sequences of values without computing them all at once:
 
@@ -996,7 +995,7 @@ int main() {
 }
 ```
 
-## co_await - Asynchronous Operations
+### co_await - Asynchronous Operations
 
 `co_await` enables you to write asynchronous code that looks synchronous:
 
@@ -1047,7 +1046,7 @@ Task example_async() {
 }
 ```
 
-## co_return - Returning Values
+### co_return - Returning Values
 
 `co_return` completes the coroutine execution:
 
@@ -1087,7 +1086,7 @@ Result<int> compute() {
 }
 ```
 
-## Practical Example: Range Generator
+### Practical Example: Range Generator
 
 ```cpp
 Generator<int> range(int start, int end, int step = 1) {
@@ -1107,30 +1106,30 @@ int main() {
 }
 ```
 
-## Key Concepts
+### Key Concepts
 
-### Suspend Points
+#### Suspend Points
 
 A coroutine can suspend at three points:
 1. **Initial suspend** - right after creation (controlled by `initial_suspend()`)
 2. **Yield/await points** - when using `co_yield` or `co_await`
 3. **Final suspend** - just before destruction (controlled by `final_suspend()`)
 
-### Coroutine Handle
+#### Coroutine Handle
 
 `std::coroutine_handle<>` is used to control coroutine execution:
 - `resume()` - continue execution
 - `done()` - check if coroutine has finished
 - `destroy()` - clean up the coroutine
 
-### Awaitables
+#### Awaitables
 
 An awaitable type must provide three methods:
 - `await_ready()` - returns true if the result is already available
 - `await_suspend()` - called when suspending (can schedule resumption)
 - `await_resume()` - called when resuming (returns the result)
 
-## Benefits and Use Cases
+### Benefits and Use Cases
 
 **Benefits:**
 - Write asynchronous code that reads like synchronous code
@@ -1145,7 +1144,7 @@ An awaitable type must provide three methods:
 - Parser implementations
 - Async network programming
 
-## Things to Remember
+### Things to Remember
 
 - **A function is a coroutine if it uses `co_await`, `co_yield`, or `co_return`**
 - **The promise type controls coroutine behavior and lifecycle**
@@ -1164,11 +1163,11 @@ An awaitable type must provide three methods:
 
 ## Three Way Comparison
 
-## Overview
+### Overview
 
 The spaceship operator `<=>`, introduced in C++20, is a three-way comparison operator that performs a single comparison and returns a result indicating whether the left operand is less than, equal to, or greater than the right operand. This revolutionary feature simplifies comparison operations and reduces boilerplate code significantly.
 
-## Why the Spaceship Operator?
+### Why the Spaceship Operator?
 
 Before C++20, implementing all comparison operators for a class required writing up to six separate operators: `==`, `!=`, `<`, `<=`, `>`, and `>=`. This was tedious, error-prone, and required careful maintenance to ensure consistency.
 
@@ -1207,11 +1206,11 @@ public:
 };
 ```
 
-## Return Types of Three-Way Comparison
+### Return Types of Three-Way Comparison
 
 The spaceship operator returns one of three ordering types from the `<compare>` header:
 
-### 1. `std::strong_ordering`
+#### 1. `std::strong_ordering`
 For types with total ordering where equivalent values are indistinguishable (like integers).
 
 Possible values:
@@ -1219,7 +1218,7 @@ Possible values:
 - `std::strong_ordering::equal`
 - `std::strong_ordering::greater`
 
-### 2. `std::weak_ordering`
+#### 2. `std::weak_ordering`
 For types where equivalent values might not be identical (like case-insensitive strings).
 
 Possible values:
@@ -1227,7 +1226,7 @@ Possible values:
 - `std::weak_ordering::equivalent`
 - `std::weak_ordering::greater`
 
-### 3. `std::partial_ordering`
+#### 3. `std::partial_ordering`
 For types where not all values are comparable (like floating-point with NaN).
 
 Possible values:
@@ -1236,9 +1235,9 @@ Possible values:
 - `std::partial_ordering::greater`
 - `std::partial_ordering::unordered`
 
-## Basic Usage
+### Basic Usage
 
-### Simple Example with Default Spaceship Operator
+#### Simple Example with Default Spaceship Operator
 
 ```cpp
 #include <compare>
@@ -1267,7 +1266,7 @@ int main() {
 }
 ```
 
-### Custom Implementation
+#### Custom Implementation
 
 ```cpp
 #include <compare>
@@ -1292,9 +1291,9 @@ public:
 };
 ```
 
-## Advanced Examples
+### Advanced Examples
 
-### Mixed-Type Comparisons
+#### Mixed-Type Comparisons
 
 ```cpp
 #include <compare>
@@ -1321,7 +1320,7 @@ int main() {
 }
 ```
 
-### Handling Non-Comparable Members
+#### Handling Non-Comparable Members
 
 ```cpp
 #include <compare>
@@ -1359,7 +1358,7 @@ public:
 };
 ```
 
-### Lexicographic Comparison with Tie
+#### Lexicographic Comparison with Tie
 
 ```cpp
 #include <compare>
@@ -1384,7 +1383,7 @@ public:
 };
 ```
 
-## Compiler-Generated Comparisons
+### Compiler-Generated Comparisons
 
 When you use `= default`, the compiler generates comparisons member-by-member in declaration order:
 
@@ -1400,9 +1399,9 @@ struct Book {
 };
 ```
 
-## Important Behavior Notes
+### Important Behavior Notes
 
-### Operator `==` and `<=>`
+#### Operator `==` and `<=>`
 
 For optimal performance, explicitly default both operators:
 
@@ -1413,7 +1412,7 @@ bool operator==(const MyClass&) const = default;  // More efficient for equality
 
 If you only provide `<=>`, the compiler can synthesize `==` from it, but it's less efficient as it performs a three-way comparison instead of a simple equality check.
 
-### Rewritten Expressions
+#### Rewritten Expressions
 
 The compiler automatically rewrites comparison expressions:
 
@@ -1431,7 +1430,7 @@ p1 == p2  // uses operator==
 p1 != p2  // becomes: !(p1 == p2)
 ```
 
-### Symmetry
+#### Symmetry
 
 The compiler also considers reversed argument order:
 
@@ -1440,7 +1439,7 @@ Distance d(100.0);
 bool b = 75.0 < d;  // Compiler tries: d > 75.0
 ```
 
-## Practical Example: Complete Class
+### Practical Example: Complete Class
 
 ```cpp
 #include <compare>
@@ -1481,7 +1480,7 @@ int main() {
 }
 ```
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 - **Spaceship operator `<=>` returns ordering**: `strong_ordering`, `weak_ordering`, or `partial_ordering`
 - **Use `= default` for automatic generation**: Compiler generates all six comparison operators from `<=>` and `==`
@@ -1500,11 +1499,11 @@ int main() {
 
 C++20 modules represent one of the most significant changes to the C++ compilation model since the language's inception. They provide a modern alternative to the traditional header file system, offering faster compilation times, better encapsulation, and cleaner separation of interfaces from implementation.
 
-## What Are Modules?
+### What Are Modules?
 
 Modules are a new way to organize and share code in C++. Unlike header files that use textual inclusion with `#include`, modules are compiled once into a binary format that can be efficiently imported by other translation units. This eliminates many problems associated with the preprocessor-based header system.
 
-## Key Advantages Over Headers
+### Key Advantages Over Headers
 
 **Faster Compilation**: Modules are parsed once and stored in a binary format. When you import a module, the compiler loads this pre-processed representation instead of re-parsing text files repeatedly.
 
@@ -1516,9 +1515,9 @@ Modules are a new way to organize and share code in C++. Unlike header files tha
 
 **Elimination of Include Guards**: No more need for header guards or `#pragma once`.
 
-## Basic Module Syntax
+### Basic Module Syntax
 
-### Creating a Module
+#### Creating a Module
 
 Here's a simple module that exports a function:
 
@@ -1540,7 +1539,7 @@ int internal_helper() {
 }
 ```
 
-### Importing and Using a Module
+#### Importing and Using a Module
 
 ```cpp
 // main.cpp
@@ -1556,11 +1555,11 @@ int main() {
 }
 ```
 
-## Module Interface vs Implementation
+### Module Interface vs Implementation
 
 You can separate the interface (what's exported) from the implementation:
 
-### Module Interface Unit
+#### Module Interface Unit
 
 ```cpp
 // calculator.cppm or calculator.ixx
@@ -1578,7 +1577,7 @@ private:
 export double compute_average(int* values, int count);
 ```
 
-### Module Implementation Unit
+#### Module Implementation Unit
 
 ```cpp
 // calculator.cpp
@@ -1610,7 +1609,7 @@ double compute_average(int* values, int count) {
 }
 ```
 
-## Module Partitions
+### Module Partitions
 
 Large modules can be split into partitions for better organization:
 
@@ -1664,7 +1663,7 @@ int main() {
 }
 ```
 
-## The Global Module Fragment
+### The Global Module Fragment
 
 Sometimes you need to include traditional headers (especially for macros or to interface with legacy code). The global module fragment allows this:
 
@@ -1699,7 +1698,7 @@ FileReader::FileReader(const std::string& filename) {
 // ... rest of implementation
 ```
 
-## Private Module Fragment
+### Private Module Fragment
 
 For single-file modules, you can include implementation details after the interface:
 
@@ -1721,7 +1720,7 @@ static void internal_function() {
 }
 ```
 
-## Importing Standard Library
+### Importing Standard Library
 
 C++20 allows importing standard library headers as modules:
 
@@ -1741,7 +1740,7 @@ int main() {
 }
 ```
 
-## Real-World Example: A Logging Module
+### Real-World Example: A Logging Module
 
 ```cpp
 // logger.cppm
@@ -1809,7 +1808,7 @@ int main() {
 }
 ```
 
-## Comparison: Headers vs Modules
+### Comparison: Headers vs Modules
 
 **With Traditional Headers:**
 ```cpp
@@ -1837,7 +1836,7 @@ export int add(int a, int b) {
 }
 ```
 
-## Compilation Considerations
+### Compilation Considerations
 
 Module compilation typically requires two phases:
 
@@ -1855,7 +1854,7 @@ g++ -std=c++20 -fmodules-ts main.cpp math_utils.o -o program
 
 Different compilers have different flags and module file extensions (.ixx, .cppm, .mpp).
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 - **Modules replace headers** with a binary compilation model—parse once, import many times
 - **Use `export module name;`** to declare a module interface unit
@@ -1876,11 +1875,11 @@ Different compilers have different flags and module file extensions (.ixx, .cppm
 
 ## Designated Initializers
 
-## Overview
+### Overview
 
 Designated initializers are a C++20 feature that allows you to explicitly specify which member variables you're initializing when creating an aggregate type. This makes initialization more readable and less error-prone, especially for structs with many members.
 
-## Basic Syntax
+### Basic Syntax
 
 The syntax uses the member name with a dot prefix inside the initialization braces:
 
@@ -1898,9 +1897,9 @@ Point p1 = {1, 2, 3};  // Must remember order
 Point p2 = {.x = 1, .y = 2, .z = 3};  // Clear and explicit
 ```
 
-## Key Features and Examples
+### Key Features and Examples
 
-### Self-Documenting Code
+#### Self-Documenting Code
 
 Designated initializers make your code more readable by explicitly showing which value corresponds to which member:
 
@@ -1921,7 +1920,7 @@ Config cfg = {
 };
 ```
 
-### Partial Initialization
+#### Partial Initialization
 
 You can initialize only specific members, and the rest will be default-initialized (zero for primitives):
 
@@ -1938,7 +1937,7 @@ Rectangle rect = {.width = 50, .height = 30};
 // x and y are zero-initialized
 ```
 
-### Order Matters
+#### Order Matters
 
 Unlike C99 designated initializers, C++20 requires that you specify members in the same order they're declared in the struct:
 
@@ -1957,7 +1956,7 @@ Data d2 = {.a = 1, .c = 3};  // Also valid (skipping b)
 // Data d3 = {.c = 3, .a = 1, .b = 2};  // Compilation error!
 ```
 
-### Mixing with Positional Initialization
+#### Mixing with Positional Initialization
 
 You cannot mix designated and positional initializers:
 
@@ -1974,7 +1973,7 @@ Point3D p2 = {.x = 1, .y = 2, .z = 3};  // All designated
 // Point3D p3 = {1, .y = 2, .z = 3};  // Compilation error!
 ```
 
-### Nested Structures
+#### Nested Structures
 
 Designated initializers work with nested structures:
 
@@ -2002,7 +2001,7 @@ Person p = {
 };
 ```
 
-### Arrays of Structs
+#### Arrays of Structs
 
 You can use designated initializers when creating arrays of structs:
 
@@ -2021,7 +2020,7 @@ Color palette[] = {
 };
 ```
 
-### Real-World Example: Function Parameters
+#### Real-World Example: Function Parameters
 
 Designated initializers are particularly useful when passing configuration objects to functions:
 
@@ -2050,7 +2049,7 @@ int main() {
 }
 ```
 
-### With Default Member Initializers
+#### With Default Member Initializers
 
 Designated initializers work well with default member initializers:
 
@@ -2066,9 +2065,9 @@ Settings s1 = {.debugMode = true};  // maxUsers=100, scaleFactor=1.0
 Settings s2 = {.maxUsers = 200, .scaleFactor = 1.5};  // debugMode=false
 ```
 
-## Restrictions and Limitations
+### Restrictions and Limitations
 
-### Must Be Aggregate Types
+#### Must Be Aggregate Types
 
 Designated initializers only work with aggregate types. A type is an aggregate if it:
 - Has no user-declared or inherited constructors
@@ -2093,7 +2092,7 @@ struct InvalidStruct {
 // Cannot use designated initializers with InvalidStruct
 ```
 
-### No Array Element Designation
+#### No Array Element Designation
 
 Unlike C, C++20 doesn't support designating array elements:
 
@@ -2107,14 +2106,14 @@ struct Data {
 Data d = {.arr = {1, 0, 3}};
 ```
 
-## Benefits
+### Benefits
 
 1. **Readability**: Code is self-documenting, making it clear which value corresponds to which member
 2. **Maintainability**: Adding new members to the middle of a struct doesn't break existing initialization code that only uses some members
 3. **Safety**: Reduces errors from incorrect ordering of initialization values
 4. **Flexibility**: Allows partial initialization of structures
 
-## Summary: Key Things to Remember
+### Summary: Key Things to Remember
 
 - **Explicit member naming**: Use `.memberName = value` syntax inside braces
 - **Order must match declaration**: Members must be initialized in the order they appear in the struct
@@ -2129,13 +2128,13 @@ Data d = {.arr = {1, 0, 3}};
 
 ---
 
-# Format
+## Format
 
-## Introduction
+### Introduction
 
 `std::format` is a type-safe, extensible text formatting library introduced in C++20 that provides a modern alternative to `printf` and stream-based formatting. It's based on the popular {fmt} library and offers Python-like formatting syntax with compile-time format string checking.
 
-## Basic Syntax
+### Basic Syntax
 
 The basic syntax uses curly braces `{}` as replacement fields:
 
@@ -2158,7 +2157,7 @@ int main() {
 }
 ```
 
-## Positional and Named Arguments
+### Positional and Named Arguments
 
 ```cpp
 #include <format>
@@ -2178,14 +2177,14 @@ int main() {
 }
 ```
 
-## Format Specifications
+### Format Specifications
 
 The general format specification syntax is:
 ```
 {[index]:[fill][align][sign][#][0][width][.precision][type]}
 ```
 
-### Width and Alignment
+#### Width and Alignment
 
 ```cpp
 #include <format>
@@ -2208,7 +2207,7 @@ int main() {
 }
 ```
 
-### Numeric Formatting
+#### Numeric Formatting
 
 ```cpp
 #include <format>
@@ -2239,7 +2238,7 @@ int main() {
 }
 ```
 
-### Floating-Point Formatting
+#### Floating-Point Formatting
 
 ```cpp
 #include <format>
@@ -2270,7 +2269,7 @@ int main() {
 }
 ```
 
-## Dynamic Width and Precision
+### Dynamic Width and Precision
 
 ```cpp
 #include <format>
@@ -2294,7 +2293,7 @@ int main() {
 }
 ```
 
-## Formatting User-Defined Types
+### Formatting User-Defined Types
 
 You can make your custom types formattable by specializing `std::formatter`:
 
@@ -2330,7 +2329,7 @@ int main() {
 }
 ```
 
-### More Advanced Custom Formatter with Format Specs
+#### More Advanced Custom Formatter with Format Specs
 
 ```cpp
 #include <format>
@@ -2372,9 +2371,9 @@ int main() {
 }
 ```
 
-## Practical Applications
+### Practical Applications
 
-### Table Formatting
+#### Table Formatting
 
 ```cpp
 #include <format>
@@ -2412,7 +2411,7 @@ Orange              $     2.49         75
 */
 ```
 
-### Error Messages
+#### Error Messages
 
 ```cpp
 #include <format>
@@ -2436,7 +2435,7 @@ int main() {
 }
 ```
 
-## Performance Considerations
+### Performance Considerations
 
 ```cpp
 #include <format>
@@ -2472,7 +2471,7 @@ int main() {
 }
 ```
 
-## Compile-Time Format String Checking
+### Compile-Time Format String Checking
 
 ```cpp
 #include <format>
@@ -2492,7 +2491,7 @@ int main() {
 }
 ```
 
-## Related Functions
+### Related Functions
 
 ```cpp
 #include <format>
@@ -2518,7 +2517,7 @@ int main() {
 }
 ```
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 1. **Basic syntax**: `std::format("text {} text", arg)` - uses `{}` as placeholders
 2. **Type-safe**: Compile-time checking of format strings and argument types
@@ -2542,13 +2541,13 @@ int main() {
 
 ## Span
 
-## What is std::span?
+### What is std::span?
 
 `std::span` is a lightweight, non-owning view over a contiguous sequence of objects. Introduced in C++20, it provides a safe and efficient way to pass arrays and array-like objects to functions without copying data or losing size information. Think of it as a "reference to an array" that knows its own size.
 
 A span consists of two components: a pointer to the first element and a size (number of elements). It doesn't own the data it points to, so it's cheap to copy and pass around.
 
-## Key Characteristics
+### Key Characteristics
 
 **Non-owning**: std::span doesn't manage the lifetime of the underlying data. The original container must outlive the span.
 
@@ -2558,9 +2557,9 @@ A span consists of two components: a pointer to the first element and a size (nu
 
 **Safe access**: Provides bounds-checked access in debug mode and range-based operations.
 
-## Basic Usage Examples
+### Basic Usage Examples
 
-### Creating spans from different sources
+#### Creating spans from different sources
 
 ```cpp
 #include <span>
@@ -2600,7 +2599,7 @@ int main() {
 }
 ```
 
-### Static vs Dynamic Extent
+#### Static vs Dynamic Extent
 
 ```cpp
 #include <span>
@@ -2622,9 +2621,9 @@ int main() {
 }
 ```
 
-## Common Operations
+### Common Operations
 
-### Accessing Elements
+#### Accessing Elements
 
 ```cpp
 #include <span>
@@ -2650,7 +2649,7 @@ int main() {
 }
 ```
 
-### Creating Subspans
+#### Creating Subspans
 
 ```cpp
 #include <span>
@@ -2683,9 +2682,9 @@ int main() {
 }
 ```
 
-## Practical Use Cases
+### Practical Use Cases
 
-### Replacing Raw Pointers and Size Parameters
+#### Replacing Raw Pointers and Size Parameters
 
 ```cpp
 // Before C++20 - unsafe and verbose
@@ -2715,7 +2714,7 @@ int main() {
 }
 ```
 
-### Working with Bytes
+#### Working with Bytes
 
 ```cpp
 #include <span>
@@ -2749,7 +2748,7 @@ int main() {
 }
 ```
 
-### Matrix Row Views
+#### Matrix Row Views
 
 ```cpp
 #include <span>
@@ -2790,7 +2789,7 @@ int main() {
 }
 ```
 
-## Modifying Through Spans
+### Modifying Through Spans
 
 ```cpp
 #include <span>
@@ -2822,9 +2821,9 @@ int main() {
 }
 ```
 
-## Common Pitfalls
+### Common Pitfalls
 
-### Dangling Spans
+#### Dangling Spans
 
 ```cpp
 #include <span>
@@ -2846,7 +2845,7 @@ int main() {
 }
 ```
 
-### Non-Contiguous Containers
+#### Non-Contiguous Containers
 
 ```cpp
 #include <span>
@@ -2864,7 +2863,7 @@ int main() {
 }
 ```
 
-## Performance Benefits
+### Performance Benefits
 
 std::span has zero overhead compared to passing raw pointers and sizes separately. The compiler can optimize it just as well as manual pointer arithmetic, but with added safety.
 
@@ -2894,7 +2893,7 @@ void process_v3(std::span<const int> data) {
 // All three compile to essentially identical machine code
 ```
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 **What it is**: Non-owning, lightweight view over contiguous sequences with automatic size tracking
 
@@ -2918,11 +2917,11 @@ void process_v3(std::span<const int> data) {
 
 ---
 
-## Constexpr Enhancements
+### Constexpr Enhancements
 
 C++20 significantly expanded the capabilities of `constexpr`, allowing more code to be evaluated at compile-time. This enhancement makes the language more powerful and can lead to better performance by moving computations from runtime to compile-time.
 
-## What Changed in C++20
+### What Changed in C++20
 
 Prior to C++20, `constexpr` functions had many restrictions. C++20 relaxed these limitations, allowing:
 
@@ -2933,7 +2932,7 @@ Prior to C++20, `constexpr` functions had many restrictions. C++20 relaxed these
 - **Changing the active member of a union**
 - **`std::vector`, `std::string`** and other dynamic containers
 
-## Dynamic Memory Allocation
+### Dynamic Memory Allocation
 
 One of the most significant changes is the ability to use dynamic memory allocation in `constexpr` contexts.
 
@@ -2959,7 +2958,7 @@ int main() {
 
 The key requirement is that any memory allocated during compile-time evaluation must be deallocated before the evaluation completes.
 
-## Constexpr Virtual Functions
+### Constexpr Virtual Functions
 
 C++20 allows virtual functions to be `constexpr`, enabling polymorphism at compile-time.
 
@@ -2992,7 +2991,7 @@ int main() {
 }
 ```
 
-## Try-Catch Blocks
+### Try-Catch Blocks
 
 You can now use `try-catch` in `constexpr` functions, though you still cannot throw exceptions during constant evaluation.
 
@@ -3017,7 +3016,7 @@ int main() {
 }
 ```
 
-## Constexpr Destructors
+### Constexpr Destructors
 
 Destructors can now be `constexpr`, which is essential for RAII patterns in compile-time code.
 
@@ -3043,7 +3042,7 @@ int main() {
 }
 ```
 
-## Constexpr std::vector and std::string
+### Constexpr std::vector and std::string
 
 Standard library containers like `std::vector` and `std::string` now have `constexpr` support.
 
@@ -3082,7 +3081,7 @@ int main() {
 }
 ```
 
-## Practical Example: Compile-Time Parser
+### Practical Example: Compile-Time Parser
 
 Here's a more complex example showing a compile-time string parser:
 
@@ -3121,7 +3120,7 @@ int main() {
 }
 ```
 
-## Limitations and Considerations
+### Limitations and Considerations
 
 While C++20 greatly expanded `constexpr`, some limitations remain:
 
@@ -3150,7 +3149,7 @@ constexpr int throwExample(bool condition) {
 }
 ```
 
-## Consteval: Immediate Functions
+### Consteval: Immediate Functions
 
 C++20 also introduced `consteval`, which guarantees compile-time evaluation:
 
@@ -3169,7 +3168,7 @@ int main() {
 }
 ```
 
-## Things to Remember
+### Things to Remember
 
 - **Dynamic allocation allowed**: `new`, `delete`, `std::vector`, `std::string` work in `constexpr` functions
 - **Virtual functions supported**: Compile-time polymorphism is now possible
@@ -3188,7 +3187,7 @@ int main() {
 
 C++20 introduced several significant enhancements to lambda expressions, making them more powerful, flexible, and easier to use. Let me walk you through the key improvements with detailed examples.
 
-## 1. Template Lambdas
+### 1. Template Lambdas
 
 C++20 allows lambdas to have explicit template parameters, giving you fine-grained control over generic lambdas.
 
@@ -3220,7 +3219,7 @@ auto constrained = []<std::integral T>(T value) {
 
 This is particularly useful when you need to use the type in the lambda body, such as with `std::vector<T>` or `sizeof(T)`.
 
-## 2. Lambdas in Unevaluated Contexts
+### 2. Lambdas in Unevaluated Contexts
 
 C++20 allows lambdas to appear in unevaluated contexts like `decltype`, `sizeof`, and `noexcept`.
 
@@ -3243,7 +3242,7 @@ size_ordered_map["hi"] = 2;
 size_ordered_map["goodbye"] = 3;
 ```
 
-## 3. Lambdas with Capture of Parameter Packs
+### 3. Lambdas with Capture of Parameter Packs
 
 You can now capture parameter packs by value or reference directly.
 
@@ -3269,7 +3268,7 @@ auto capture_as_tuple(Args... args) {
 }
 ```
 
-## 4. `[=, this]` Deprecation Warning Fix
+### 4. `[=, this]` Deprecation Warning Fix
 
 C++20 clarifies the capture of `this` in lambdas. Previously, `[=]` would implicitly capture `this` by reference, which was confusing.
 
@@ -3295,7 +3294,7 @@ public:
 };
 ```
 
-## 5. Default Constructible and Assignable Stateless Lambdas
+### 5. Default Constructible and Assignable Stateless Lambdas
 
 Stateless lambdas (those without captures) are now default constructible and assignable.
 
@@ -3315,7 +3314,7 @@ std::sort(vec.begin(), vec.end(), compare);
 std::sort(vec.begin(), vec.end(), decltype(compare){});  // Default construct
 ```
 
-## 6. `consteval` and `constexpr` Lambdas
+### 6. `consteval` and `constexpr` Lambdas
 
 Lambdas can now be explicitly marked as `consteval` (must be compile-time) or implicitly `constexpr` when possible.
 
@@ -3340,7 +3339,7 @@ auto factorial = []<int N>() consteval -> int {
 constexpr int fact5 = factorial.template operator()<5>();  // 120
 ```
 
-## 7. Pack Expansion in Lambda Init-Capture
+### 7. Pack Expansion in Lambda Init-Capture
 
 You can now initialize captures with pack expansions.
 
@@ -3364,7 +3363,7 @@ auto make_tuple_lambda(Args&&... args) {
 }
 ```
 
-## Practical Combined Example
+### Practical Combined Example
 
 Here's a real-world example combining several C++20 lambda features:
 
@@ -3411,7 +3410,7 @@ int main() {
 }
 ```
 
-## Things to Remember
+### Things to Remember
 
 **Template Lambdas**: Use `[]<typename T>()` for explicit template parameters when you need the type name in the lambda body.
 
@@ -3433,11 +3432,11 @@ int main() {
 
 `std::source_location` is a C++20 feature that provides a way to obtain information about the source code location where it's invoked. It captures details like file name, line number, column number, and function name at compile time, making it incredibly useful for logging, debugging, and error reporting.
 
-## Why It Exists
+### Why It Exists
 
 Before C++20, developers relied on preprocessor macros like `__FILE__`, `__LINE__`, and `__func__` to get source location information. While functional, these macros had limitations—they couldn't be easily passed as default arguments to functions and didn't work well with templates. `std::source_location` solves these problems with a type-safe, modern C++ approach.
 
-## Basic Usage
+### Basic Usage
 
 Here's a simple example showing how to capture and display source location information:
 
@@ -3471,7 +3470,7 @@ Message: Something happened!
 
 The key insight here is that `std::source_location::current()` is used as a **default argument**. This means it captures the location of the caller, not the location inside the function itself.
 
-## Member Functions
+### Member Functions
 
 `std::source_location` provides four main member functions:
 
@@ -3495,7 +3494,7 @@ void demonstrate_members() {
 }
 ```
 
-## Practical Example: Custom Assert
+### Practical Example: Custom Assert
 
 One powerful use case is creating a custom assertion macro replacement:
 
@@ -3526,7 +3525,7 @@ int main() {
 }
 ```
 
-## Logger Class Example
+### Logger Class Example
 
 Here's a more complete example showing a simple logger class:
 
@@ -3590,7 +3589,7 @@ int main() {
 }
 ```
 
-## Template Function Example
+### Template Function Example
 
 `std::source_location` works seamlessly with templates:
 
@@ -3616,7 +3615,7 @@ int main() {
 }
 ```
 
-## Important Considerations
+### Important Considerations
 
 **Default Argument Position**: `std::source_location::current()` should always be the **last** default argument in a function. This ensures it captures the caller's location correctly.
 
@@ -3632,7 +3631,7 @@ void func(const std::source_location& loc = std::source_location::current(), int
 
 **Compile-Time Evaluation**: The location information is captured at compile time, not runtime, so there's minimal performance overhead.
 
-## Comparison with Preprocessor Macros
+### Comparison with Preprocessor Macros
 
 ```cpp
 // Old way with macros
@@ -3649,7 +3648,7 @@ void log(const std::string& msg,
 // works with templates, and can be passed through multiple functions
 ```
 
-## Things to Remember
+### Things to Remember
 
 - `std::source_location::current()` captures file name, line number, column number, and function name at compile time
 - Use it as a **default argument** (and make it the last one) to capture the caller's location, not the current function's location
@@ -3666,9 +3665,9 @@ void log(const std::string& msg,
 
 C++20 introduced a comprehensive calendar and time zone library as an extension to the `<chrono>` library, bringing date handling and time zone support to the standard library for the first time. This functionality is primarily based on Howard Hinnant's `date` library.
 
-## Core Components
+### Core Components
 
-### 1. Calendar Types
+#### 1. Calendar Types
 
 C++20 provides several calendar-specific types in the `std::chrono` namespace:
 
@@ -3696,7 +3695,7 @@ int main() {
 }
 ```
 
-### 2. Date Literals and Operators
+#### 2. Date Literals and Operators
 
 C++20 introduces user-defined literals for calendar types:
 
@@ -3719,7 +3718,7 @@ auto birthday = March/15d;
 auto month_ref = 2024y/March;
 ```
 
-### 3. Weekday Operations
+#### 3. Weekday Operations
 
 ```cpp
 #include <chrono>
@@ -3747,7 +3746,7 @@ int main() {
 }
 ```
 
-### 4. System Clock and Days
+#### 4. System Clock and Days
 
 The `sys_days` type represents a count of days since the epoch:
 
@@ -3773,7 +3772,7 @@ int main() {
 }
 ```
 
-### 5. Date Validation
+#### 5. Date Validation
 
 ```cpp
 #include <chrono>
@@ -3795,9 +3794,9 @@ int main() {
 }
 ```
 
-## Time Zones
+### Time Zones
 
-### 1. Time Zone Database
+#### 1. Time Zone Database
 
 C++20 provides access to the IANA time zone database:
 
@@ -3821,7 +3820,7 @@ int main() {
 }
 ```
 
-### 2. Zoned Time
+#### 2. Zoned Time
 
 The `zoned_time` class represents a time point in a specific time zone:
 
@@ -3852,7 +3851,7 @@ int main() {
 }
 ```
 
-### 3. Local Time
+#### 3. Local Time
 
 Working with local time (time without time zone information):
 
@@ -3878,7 +3877,7 @@ int main() {
 }
 ```
 
-### 4. Time Zone Information
+#### 4. Time Zone Information
 
 ```cpp
 #include <chrono>
@@ -3899,9 +3898,9 @@ int main() {
 }
 ```
 
-## Practical Examples
+### Practical Examples
 
-### Example 1: Date Arithmetic
+#### Example 1: Date Arithmetic
 
 ```cpp
 #include <chrono>
@@ -3932,7 +3931,7 @@ int main() {
 }
 ```
 
-### Example 2: Meeting Scheduler Across Time Zones
+#### Example 2: Meeting Scheduler Across Time Zones
 
 ```cpp
 #include <chrono>
@@ -3961,7 +3960,7 @@ int main() {
 }
 ```
 
-### Example 3: Birthday Calculator
+#### Example 3: Birthday Calculator
 
 ```cpp
 #include <chrono>
@@ -3991,7 +3990,7 @@ int main() {
 }
 ```
 
-### Example 4: Handling Daylight Saving Time
+#### Example 4: Handling Daylight Saving Time
 
 ```cpp
 #include <chrono>
@@ -4026,7 +4025,7 @@ int main() {
 }
 ```
 
-## Key Features and Benefits
+### Key Features and Benefits
 
 1. **Type Safety**: Calendar types prevent invalid operations at compile time
 2. **Expressive Syntax**: Natural date construction with literals and operators
@@ -4035,14 +4034,14 @@ int main() {
 5. **Leap Year Handling**: Automatic validation of dates including leap years
 6. **Interoperability**: Seamless conversion between different time representations
 
-## Common Pitfalls
+### Common Pitfalls
 
 1. **Ambiguous Local Times**: During DST transitions, some local times don't exist or occur twice
 2. **Time Zone Names**: Use IANA names (e.g., "America/New_York") not abbreviations (e.g., "EST")
 3. **Invalid Dates**: Always check `.ok()` when constructing dates programmatically
 4. **Month Indexing**: Months use constants (January, February) or 1-based indexing, not 0-based
 
-## Summary: Things to Remember
+### Summary: Things to Remember
 
 1. **Calendar Types**: Use `year`, `month`, `day`, and `year_month_day` for date representation
 2. **Literals**: `2024y`, `15d` for concise date construction; `/` operator combines components
@@ -4061,16 +4060,16 @@ int main() {
 
 ## Additional Features
 
-## 1. `[[likely]]` and `[[unlikely]]` Attributes
+### 1. `[[likely]]` and `[[unlikely]]` Attributes
 
 These attributes provide optimization hints to the compiler about which branch of a conditional statement is more probable to execute.
 
-### Purpose
+#### Purpose
 - Help the compiler optimize branch prediction
 - Improve CPU cache utilization
 - Reduce branch misprediction penalties
 
-### Syntax and Examples
+#### Syntax and Examples
 
 ```cpp
 #include <iostream>
@@ -4121,16 +4120,16 @@ void processData(const std::vector<int>& data) {
 - Use profiling data to guide placement
 - Don't overuse—reserve for hot paths
 
-## 2. `constinit` Keyword
+### 2. `constinit` Keyword
 
 Ensures that a variable is initialized at compile-time, preventing the "static initialization order fiasco."
 
-### Purpose
+#### Purpose
 - Guarantee compile-time initialization
 - Avoid runtime initialization overhead
 - Prevent initialization order bugs in static variables
 
-### Syntax and Examples
+#### Syntax and Examples
 
 ```cpp
 #include <iostream>
@@ -4179,16 +4178,16 @@ int main() {
 - `constinit`: Compile-time initialized, but mutable
 - `const`: May initialize at runtime, immutable
 
-## 3. `std::bit_cast` for Safe Type Punning
+### 3. `std::bit_cast` for Safe Type Punning
 
 Provides a safe way to reinterpret the bit pattern of one type as another without undefined behavior.
 
-### Purpose
+#### Purpose
 - Safe alternative to `reinterpret_cast` and `union` type punning
 - Preserve exact bit representation
 - Enable low-level optimizations without UB
 
-### Syntax and Examples
+#### Syntax and Examples
 
 ```cpp
 #include <bit>
@@ -4259,16 +4258,16 @@ int main() {
 - Both types must be trivially copyable
 - Returns by value (not a reference)
 
-## 4. Mathematical Constants in `std::numbers`
+### 4. Mathematical Constants in `std::numbers`
 
 Provides precise mathematical constants at compile-time.
 
-### Purpose
+#### Purpose
 - Avoid magic numbers
 - Maximize precision for fundamental constants
 - Type-safe constants (float, double, long double)
 
-### Available Constants and Examples
+#### Available Constants and Examples
 
 ```cpp
 #include <numbers>
@@ -4346,16 +4345,16 @@ int main() {
 - `egamma` (Euler-Mascheroni constant)
 - `phi` (golden ratio)
 
-## 5. Init-Statements in Range-Based For Loops
+### 5. Init-Statements in Range-Based For Loops
 
 Allows you to declare initialization statements before the range-based for loop.
 
-### Purpose
+#### Purpose
 - Limit variable scope
 - Initialize containers or iterators inline
 - Cleaner, more expressive code
 
-### Syntax and Examples
+#### Syntax and Examples
 
 ```cpp
 #include <iostream>
@@ -4445,16 +4444,16 @@ int main() {
 - More compact code
 - Better resource management (RAII)
 
-## 6. Abbreviated Function Templates with `auto` Parameters
+### 6. Abbreviated Function Templates with `auto` Parameters
 
 Simplifies generic function syntax by using `auto` parameters, creating implicit templates.
 
-### Purpose
+#### Purpose
 - Shorter syntax for simple generic functions
 - Easier to read and write
 - Each `auto` parameter creates a separate template parameter
 
-### Syntax and Examples
+#### Syntax and Examples
 
 ```cpp
 #include <iostream>
@@ -4581,7 +4580,7 @@ auto add(T a, U b) { return a + b; }
 
 ---
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 **`[[likely]]` / `[[unlikely]]`:**
 - Optimization hints for branch prediction
