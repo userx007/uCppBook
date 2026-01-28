@@ -800,18 +800,18 @@ void demo_elifdef() {
 ## Core Language Features
 [Back to top](#major-features)
 
-## 1. `std::print` and `std::println` - Modern Formatted Output
+### 1. `std::print` and `std::println` - Modern Formatted Output
 
 C++23 introduces `std::print` and `std::println` in `<print>` as modern alternatives to iostream, offering Python-like formatting with better performance and type safety.
 
-### Key Features
+#### Key Features
 - Format string syntax based on `std::format` (similar to Python's f-strings)
 - Direct output without stream manipulators
 - Compile-time format string checking
 - Better performance than iostream
 - Automatic newline handling with `println`
 
-### Examples
+#### Examples
 
 ```cpp
 #include <print>
@@ -867,17 +867,17 @@ std::cout << "Name: " << name << ", Age: " << age << std::endl;
 std::println("Name: {}, Age: {}", name, age);
 ```
 
-## 2. `std::expected<T, E>` - Railway-Oriented Error Handling
+### 2. `std::expected<T, E>` - Railway-Oriented Error Handling
 
 `std::expected<T, E>` from `<expected>` represents a value that can either contain a successful result (`T`) or an error (`E`), enabling functional error handling without exceptions.
 
-### Key Concepts
+#### Key Concepts
 - Returns either a value or an error (like Rust's `Result<T, E>`)
 - Explicit error handling in return types
 - No performance overhead of exceptions
 - Composable error handling (railway-oriented programming)
 
-### Examples
+#### Examples
 
 ```cpp
 #include <expected>
@@ -983,11 +983,11 @@ if (config) {
 }
 ```
 
-## 3. Multidimensional `operator[]` - Natural Matrix Syntax
+### 3. Multidimensional `operator[]` - Natural Matrix Syntax
 
 C++23 allows `operator[]` to accept multiple arguments, enabling natural multidimensional indexing syntax.
 
-### Before vs After
+#### Before vs After
 
 ```cpp
 // C++20 and earlier - awkward
@@ -998,7 +998,7 @@ matrix[i][j]        // Chained single indices (error-prone)
 matrix[i, j]        // Direct multidimensional indexing
 ```
 
-### Examples
+#### Examples
 
 ```cpp
 #include <vector>
@@ -1073,17 +1073,17 @@ m(i, j) = value;
 m[i, j] = value;
 ```
 
-## 4. `if consteval` - Compile-Time Context Detection
+### 4. `if consteval` - Compile-Time Context Detection
 
 `if consteval` allows you to write different code paths for compile-time evaluation versus runtime execution, without using `std::is_constant_evaluated()`.
 
-### Key Features
+#### Key Features
 - Cleaner syntax than `std::is_constant_evaluated()`
 - Distinguishes between constant evaluation and runtime
 - Useful for optimization and debugging
 - No need for functions, works inline
 
-### Examples
+#### Examples
 
 ```cpp
 #include <print>
@@ -1207,17 +1207,17 @@ constexpr int check_runtime(int x) {
 
 
 
-## 5. Deducing `this` - Explicit Object Parameters
+### 5. Deducing `this` - Explicit Object Parameters
 
 Deducing `this` allows member functions to have an explicit object parameter, simplifying CRTP, forwarding, and code deduplication between const/non-const overloads.
 
-### Key Benefits
+#### Key Benefits
 - Eliminates CRTP boilerplate
 - Perfect forwarding in member functions
 - Single implementation for const/non-const/rvalue overloads
 - More efficient recursive lambdas
 
-### Examples
+#### Examples
 
 **Example 1: Deduplicating const/non-const overloads**
 ```cpp
@@ -1382,33 +1382,33 @@ public:
 };
 ```
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
-### `std::print` / `std::println`
+#### `std::print` / `std::println`
 - Modern formatted output with Python-like syntax
 - Better performance than iostream
 - Use `std::println("x={}, y={}", x, y)` instead of `std::cout << "x=" << x ...`
 - Compile-time format string checking
 
-### `std::expected<T, E>`
+#### `std::expected<T, E>`
 - Represents either a value (T) or error (E)
 - Explicit error handling without exceptions
 - Check with `if (result)` or `if (!result)`
 - Access value with `.value()` or `*result`, error with `.error()`
 - Composable with `.and_then()`, `.transform()`, `.or_else()`
 
-### Multidimensional `operator[]`
+#### Multidimensional `operator[]`
 - Natural syntax: `matrix[i, j]` instead of `matrix(i, j)` or `matrix[i][j]`
 - Works with any number of dimensions: `tensor[x, y, z]`
 - Simpler implementation than proxy-based approaches
 
-### `if consteval`
+#### `if consteval`
 - Cleaner than `std::is_constant_evaluated()`
 - Different code paths for compile-time vs runtime
 - Syntax: `if consteval { ... } else { ... }`
 - Use for optimization, debugging, or different strategies
 
-### Deducing `this`
+#### Deducing `this`
 - Explicit object parameter: `void func(this Self&& self)`
 - Eliminates const/non-const overload duplication
 - Simplifies CRTP patterns
@@ -1420,17 +1420,17 @@ public:
 ## Library Enhancements
 [Back to top](#major-features)
 
-## 1. `std::mdspan` - Multidimensional Array Views
+### 1. `std::mdspan` - Multidimensional Array Views
 
 `std::mdspan` provides a non-owning view over contiguous or strided multidimensional data, similar to how `std::span` works for one-dimensional arrays.
 
-### Key Features:
+#### Key Features:
 - Zero-overhead abstraction for multidimensional data
 - Works with existing memory (doesn't allocate)
 - Supports custom layouts (row-major, column-major, strided)
 - Type-safe indexing
 
-### Examples:
+#### Examples:
 
 ```cpp
 #include <mdspan>
@@ -1479,11 +1479,11 @@ void process_3d_tensor(std::mdspan<float, std::dextents<size_t, 3>> tensor) {
 }
 ```
 
-## 2. `std::stacktrace` - Built-in Stack Trace Capture
+### 2. `std::stacktrace` - Built-in Stack Trace Capture
 
 Previously, capturing stack traces required platform-specific code or third-party libraries. C++23 standardizes this functionality.
 
-### Examples:
+#### Examples:
 
 ```cpp
 #include <stacktrace>
@@ -1545,11 +1545,11 @@ void analyze_caller() {
 }
 ```
 
-## 3. String Improvements - `contains()` Method
+### 3. String Improvements - `contains()` Method
 
 A simple but highly requested feature: checking if a string contains a substring without using `find()`.
 
-### Examples:
+#### Examples:
 
 ```cpp
 #include <string>
@@ -1607,11 +1607,11 @@ void validation_example() {
 }
 ```
 
-## 4. `std::to_underlying` - Clean Enum to Integer Conversion
+### 4. `std::to_underlying` - Clean Enum to Integer Conversion
 
 Converts an enum value to its underlying integral type in a type-safe, readable way.
 
-### Examples:
+#### Examples:
 
 ```cpp
 #include <utility>
@@ -1690,11 +1690,11 @@ void set_task_priority(int priority_value) {
 }
 ```
 
-## 5. `std::unreachable()` - Optimization Hint
+### 5. `std::unreachable()` - Optimization Hint
 
 Indicates that a code path should never be executed, allowing the compiler to optimize accordingly. If reached in practice, the behavior is undefined.
 
-### Examples:
+#### Examples:
 
 ```cpp
 #include <utility>
@@ -1782,33 +1782,33 @@ public:
 };
 ```
 
-## Summary: Quick Reference
+### Summary: Quick Reference
 
-### `std::mdspan`
+#### `std::mdspan`
 - Non-owning view over multidimensional data
 - Zero-overhead abstraction, no allocations
 - Use `std::extents` for compile-time dimensions, `std::dextents` for runtime
 - Access with `mdspan[i, j, k]` syntax
 
-### `std::stacktrace`
+#### `std::stacktrace`
 - Capture call stacks: `std::stacktrace::current()`
 - Great for debugging and exception context
 - Can skip/limit frames: `current(skip, max_depth)`
 - Print directly or store in exceptions
 
-### String `contains()`
+#### String `contains()`
 - Replaces `str.find(x) != npos` pattern
 - Overloads: substring, character, string_view, C-string
 - More readable: `if (text.contains("pattern"))`
 - Works with `std::string` and `std::string_view`
 
-### `std::to_underlying`
+#### `std::to_underlying`
 - Converts enum to underlying integral type
 - Replaces `static_cast<underlying_type_t<E>>(value)`
 - Useful for: array indexing, bitwise ops, API integration
 - Type-safe and concise
 
-### `std::unreachable()`
+#### `std::unreachable()`
 - Marks impossible code paths
 - Enables compiler optimizations
 - **UB if actually reached** - use carefully
@@ -1820,15 +1820,15 @@ public:
 ## Ranges And Views
 [Back to top](#major-features)
 
-## Overview
+### Overview
 
 C++23 significantly enhances the ranges library introduced in C++20, making range-based programming more practical and ergonomic. The two major additions are `std::ranges::to<>` for materializing ranges into containers, and several powerful new view types that enable sophisticated data transformations.
 
-## `std::ranges::to<>`: Materializing Ranges
+### `std::ranges::to<>`: Materializing Ranges
 
 Before C++23, converting a range back into a container required verbose code. The `std::ranges::to<>` function template solves this elegantly.
 
-### Basic Usage
+#### Basic Usage
 
 ```cpp
 #include <ranges>
@@ -1853,7 +1853,7 @@ auto result_set = std::ranges::to<std::set>(vec);
 // result_set is std::set<int>{1, 2, 3, 4, 5}
 ```
 
-### Nested Conversions
+#### Nested Conversions
 
 `std::ranges::to<>` excels at handling nested ranges:
 
@@ -1873,7 +1873,7 @@ auto nested = words
 // Result: {"heo", "word", "cpp23"}
 ```
 
-### Deducing Container Type
+#### Deducing Container Type
 
 You can also let the compiler deduce the container type:
 
@@ -1884,9 +1884,9 @@ auto result = vec | std::views::transform([](int n) { return n * 2; })
 // Deduces std::vector<int>
 ```
 
-## New View Types
+### New View Types
 
-### `std::views::zip`
+#### `std::views::zip`
 
 Combines multiple ranges element-wise into tuples. This is useful for iterating over parallel sequences.
 
@@ -1917,7 +1917,7 @@ auto result = std::views::zip(ids, names)
 
 The zip operation stops at the shortest range's length.
 
-### `std::views::slide`
+#### `std::views::slide`
 
 Creates a sliding window of fixed size over a range. Each element is a view of N consecutive elements.
 
@@ -1952,7 +1952,7 @@ auto moving_avg = data
 // moving_avg: {2.0, 3.0, 4.0}
 ```
 
-### `std::views::chunk`
+#### `std::views::chunk`
 
 Divides a range into non-overlapping chunks of a specified size. The last chunk may be smaller.
 
@@ -1987,7 +1987,7 @@ auto batch_sums = numbers
     | std::ranges::to<std::vector>();
 ```
 
-### `std::views::enumerate`
+#### `std::views::enumerate`
 
 Pairs each element with its index, similar to Python's `enumerate()`.
 
@@ -2018,7 +2018,7 @@ auto indices = items
 // indices: {1}
 ```
 
-### `std::views::cartesian_product`
+#### `std::views::cartesian_product`
 
 Generates the cartesian product of multiple ranges, producing tuples of all possible combinations.
 
@@ -2046,7 +2046,7 @@ auto test_cases = std::views::cartesian_product(flags, values, values)
     | std::ranges::to<std::vector>();
 ```
 
-## Combining Multiple Views
+### Combining Multiple Views
 
 The power of these views comes from composing them:
 
@@ -2088,7 +2088,7 @@ auto dot_products = std::views::zip(row1, row2)
     | std::ranges::to<std::vector>();
 ```
 
-## Performance Considerations
+### Performance Considerations
 
 All these views are lazy and don't materialize data until needed. They compose efficiently without creating intermediate containers:
 
@@ -2101,7 +2101,7 @@ auto result = data
     | std::ranges::to<std::vector>();  // Only here is memory allocated
 ```
 
-## Key Points to Remember
+### Key Points to Remember
 
 - **`std::ranges::to<>`** materializes ranges into concrete containers, ending the pipeline and allocating memory
 - **`zip`** combines multiple ranges element-wise; stops at the shortest range length
@@ -2116,19 +2116,19 @@ auto result = data
 
 ---
 
-# Other Improvements
+## Other Improvements
 [Back to top](#major-features)
 
 
-## 1. `constexpr` for `<cmath>` Functions
+### 1. `constexpr` for `<cmath>` Functions
 
 C++23 makes many mathematical functions from `<cmath>` usable in `constexpr` contexts, enabling compile-time mathematical computations.
 
-### What's New
+#### What's New
 
 Previously, math functions like `std::abs`, `std::sqrt`, `std::sin`, etc., could only be evaluated at runtime. Now they can be used in constant expressions.
 
-### Examples
+#### Examples
 
 ```cpp
 #include <cmath>
@@ -2163,26 +2163,26 @@ constexpr double physics_calc() {
 constexpr double result = physics_calc();  // Computed at compile time
 ```
 
-### Benefits
+#### Benefits
 
 - **Performance**: Complex calculations done during compilation, not at runtime
 - **Optimization**: Enables better compiler optimizations
 - **Type safety**: Compile-time validation of mathematical operations
 
 
-## 2. Monadic Operations for `std::optional`
+### 2. Monadic Operations for `std::optional`
 
 C++23 adds functional programming-style operations to `std::optional`, making it easier to chain operations without explicit checks.
 
-### The Three Operations
+#### The Three Operations
 
 - **`and_then`**: Chains operations that return `optional`
 - **`transform`**: Applies a function and wraps result in `optional`
 - **`or_else`**: Provides alternative when `optional` is empty
 
-### Examples
+#### Examples
 
-#### Without Monadic Operations (C++17/20)
+##### Without Monadic Operations (C++17/20)
 
 ```cpp
 std::optional<std::string> get_user_name(int id);
@@ -2200,7 +2200,7 @@ if (name) {
 }
 ```
 
-#### With Monadic Operations (C++23)
+##### With Monadic Operations (C++23)
 
 ```cpp
 // Clean, functional-style chaining
@@ -2209,7 +2209,7 @@ auto result = get_user_name(42)
     .and_then(format_age);
 ```
 
-### Detailed Examples
+#### Detailed Examples
 
 ```cpp
 #include <optional>
@@ -2270,23 +2270,23 @@ auto user = get_config("user_settings")
     .transform([](const User& u) { return u.name; });
 ```
 
-### Benefits
+#### Benefits
 
 - **Readability**: Linear flow instead of nested `if` statements
 - **Composability**: Easy to build complex pipelines
 - **Safety**: Automatic null handling throughout the chain
 
 
-## 3. Size Literal Suffix `uz` and `z`
+### 3. Size Literal Suffix `uz` and `z`
 
 C++23 introduces literal suffixes for `size_t` and signed size types to avoid type conversion issues.
 
-### The Suffixes
+#### The Suffixes
 
 - **`uz`** or **`zu`**: Creates `size_t` literals
 - **`z`**: Creates `std::ptrdiff_t` or signed size literals
 
-### Examples
+#### Examples
 
 ```cpp
 #include <vector>
@@ -2332,7 +2332,7 @@ process(42uz);  // Clear and correct
 process(42);    // Might warn about implicit conversion
 ```
 
-### Why It Matters
+#### Why It Matters
 
 ```cpp
 // Common pitfall avoided by uz
@@ -2351,15 +2351,15 @@ for (size_t i = v.size(); i > 0uz; ) {
 }
 ```
 
-## 4. `#warning` Directive
+### 4. `#warning` Directive
 
 C++23 standardizes the `#warning` preprocessor directive, which many compilers already supported as an extension.
 
-### What It Does
+#### What It Does
 
 Emits a compiler warning with a custom message during compilation.
 
-### Examples
+#### Examples
 
 ```cpp
 // Basic usage
@@ -2401,7 +2401,7 @@ Emits a compiler warning with a custom message during compilation.
 #endif
 ```
 
-### Practical Use Cases
+#### Practical Use Cases
 
 ```cpp
 // Work-in-progress notification
@@ -2423,7 +2423,7 @@ Emits a compiler warning with a custom message during compilation.
 #endif
 ```
 
-### Difference from `#error`
+#### Difference from `#error`
 
 ```cpp
 // #error stops compilation
@@ -2437,9 +2437,9 @@ Emits a compiler warning with a custom message during compilation.
 #endif
 ```
 
-## Summary: Quick Reference
+### Summary: Quick Reference
 
-### Things to Remember
+#### Things to Remember
 
 1. **`constexpr <cmath>`**
    - Math functions now work at compile-time
@@ -2473,15 +2473,15 @@ Emits a compiler warning with a custom message during compilation.
 ## Containers and Data Structures
 [Back to top](#major-features)
 
-## Overview
+### Overview
 
 C++23 introduces `std::flat_map` and `std::flat_set` as new container adaptors that provide associative container interfaces backed by contiguous memory storage. These containers store their elements in sorted vectors rather than tree nodes, offering superior cache locality and memory efficiency compared to traditional tree-based containers like `std::map` and `std::set`.
 
 These containers are defined in the `<flat_map>` and `<flat_set>` headers respectively.
 
-## Key Characteristics
+### Key Characteristics
 
-### Memory Layout
+#### Memory Layout
 
 Unlike `std::map` and `std::set` which use red-black trees with scattered node allocations, flat containers store elements in contiguous memory (typically using `std::vector` internally). For `std::flat_map`, keys and values are stored in separate contiguous sequences.
 
@@ -2495,9 +2495,9 @@ Unlike `std::map` and `std::set` which use red-black trees with scattered node a
 - Slower insertions and deletions (O(n) vs O(log n) for trees)
 - Best suited for scenarios with infrequent modifications and frequent lookups
 
-## `std::flat_set`
+### `std::flat_set`
 
-### Basic Usage
+#### Basic Usage
 
 ```cpp
 #include <flat_set>
@@ -2531,7 +2531,7 @@ int main() {
 }
 ```
 
-### Advanced Example: Custom Comparator
+#### Advanced Example: Custom Comparator
 
 ```cpp
 #include <flat_set>
@@ -2564,9 +2564,9 @@ int main() {
 }
 ```
 
-## `std::flat_map`
+### `std::flat_map`
 
-### Basic Usage
+#### Basic Usage
 
 ```cpp
 #include <flat_map>
@@ -2605,7 +2605,7 @@ int main() {
 }
 ```
 
-### Performance Comparison Example
+#### Performance Comparison Example
 
 ```cpp
 #include <flat_map>
@@ -2663,7 +2663,7 @@ int main() {
 }
 ```
 
-## Construction from Sorted Ranges
+### Construction from Sorted Ranges
 
 A key optimization is constructing flat containers from already-sorted data using `std::sorted_unique`:
 
@@ -2692,7 +2692,7 @@ int main() {
 }
 ```
 
-## Working with Underlying Containers
+### Working with Underlying Containers
 
 You can extract or replace the underlying containers:
 
@@ -2723,9 +2723,9 @@ int main() {
 }
 ```
 
-## Use Case Examples
+### Use Case Examples
 
-### Configuration Cache
+#### Configuration Cache
 
 ```cpp
 #include <flat_map>
@@ -2752,7 +2752,7 @@ public:
 };
 ```
 
-### Enum to String Mapping
+#### Enum to String Mapping
 
 ```cpp
 #include <flat_map>
@@ -2781,7 +2781,7 @@ public:
 };
 ```
 
-## When to Use Flat Containers
+### When to Use Flat Containers
 
 **Prefer `std::flat_map`/`std::flat_set` when:**
 - Lookups are much more frequent than insertions/deletions
@@ -2795,7 +2795,7 @@ public:
 - Iterator stability is required (flat containers invalidate iterators on insertion/deletion)
 - The dataset is very large and tree traversal patterns are beneficial
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 - **Contiguous storage**: Flat containers use vectors internally, providing better cache locality than tree-based containers
 - **Performance trade-off**: Faster lookups (especially sequential access) but slower insertions/deletions (O(n) vs O(log n))
@@ -2812,13 +2812,13 @@ public:
 ## Coroutines
 [Back to top](#major-features)
 
-## Overview
+### Overview
 
 `std::generator` is a standard library addition in C++23 that provides a simple, type-safe way to create lazy sequences using coroutines. It represents a coroutine that produces a sequence of values on-demand, yielding control back to the caller between each value generation.
 
-## Core Concepts
+### Core Concepts
 
-### What is `std::generator`?
+#### What is `std::generator`?
 
 `std::generator<T>` is a range that generates values lazily using the `co_yield` keyword. Unlike regular functions that compute all values upfront, generators compute values only when requested, making them memory-efficient for large or infinite sequences.
 
@@ -2828,7 +2828,7 @@ public:
 - **Single-pass input range**: Can be iterated once
 - **No `co_await` or `co_return` with values**: Only `co_yield` and empty `co_return`
 
-## Basic Syntax
+### Basic Syntax
 
 ```cpp
 #include <generator>
@@ -2846,9 +2846,9 @@ int main() {
 }
 ```
 
-## Practical Examples
+### Practical Examples
 
-### Example 1: Fibonacci Sequence
+#### Example 1: Fibonacci Sequence
 
 The classic use case - generating Fibonacci numbers on demand:
 
@@ -2877,7 +2877,7 @@ int main() {
 }
 ```
 
-### Example 2: Infinite Stream with Filter
+#### Example 2: Infinite Stream with Filter
 
 Generating prime numbers lazily:
 
@@ -2916,7 +2916,7 @@ int main() {
 }
 ```
 
-### Example 3: Range Generation
+#### Example 3: Range Generation
 
 Creating custom ranges with parameters:
 
@@ -2938,7 +2938,7 @@ int main() {
 }
 ```
 
-### Example 4: Tree Traversal
+#### Example 4: Tree Traversal
 
 Lazy traversal of data structures:
 
@@ -2993,7 +2993,7 @@ int main() {
 }
 ```
 
-### Example 5: Parsing and Token Generation
+#### Example 5: Parsing and Token Generation
 
 Lazy tokenization of input:
 
@@ -3032,7 +3032,7 @@ int main() {
 }
 ```
 
-### Example 6: Combining Generators
+#### Example 6: Combining Generators
 
 Chaining multiple generators:
 
@@ -3072,7 +3072,7 @@ int main() {
 }
 ```
 
-## Memory Efficiency
+### Memory Efficiency
 
 Generators shine when dealing with large datasets:
 
@@ -3102,9 +3102,9 @@ int main() {
 }
 ```
 
-## Important Considerations
+### Important Considerations
 
-### Lifetime Management
+#### Lifetime Management
 
 ```cpp
 std::generator<int> dangerous_example() {
@@ -3121,7 +3121,7 @@ std::generator<const int&> reference_generator() {
 }
 ```
 
-### Single-Pass Limitation
+#### Single-Pass Limitation
 
 ```cpp
 auto gen = fibonacci();
@@ -3135,7 +3135,7 @@ for (auto fib : gen) {
 // for (auto fib : gen) { } // Won't produce values
 ```
 
-### Exception Handling
+#### Exception Handling
 
 ```cpp
 std::generator<int> may_throw() {
@@ -3155,7 +3155,7 @@ int main() {
 }
 ```
 
-## Summary: Key Points to Remember
+### Summary: Key Points to Remember
 
 **Core Concepts:**
 - `std::generator<T>` creates lazy sequences that compute values on-demand
@@ -3190,15 +3190,15 @@ int main() {
 ## Formatting
 [Back to top](#major-features)
 
-## Overview
+### Overview
 
 C++23 significantly enhances the `std::format` library (introduced in C++20) by adding three major features that make formatting more powerful and convenient: direct range formatting, nested container support, and escaped string formatting. These improvements reduce boilerplate code and provide safer, more intuitive ways to format complex data structures.
 
-## 1. Direct Range Formatting
+### 1. Direct Range Formatting
 
 Prior to C++23, formatting ranges required custom formatters or manual iteration. C++23 adds built-in support for formatting ranges directly.
 
-### Basic Range Formatting
+#### Basic Range Formatting
 
 ```cpp
 #include <format>
@@ -3225,7 +3225,7 @@ int main() {
 }
 ```
 
-### Custom Range Formatting
+#### Custom Range Formatting
 
 You can customize how ranges are displayed using format specifiers:
 
@@ -3252,7 +3252,7 @@ int main() {
 }
 ```
 
-### Range of Tuples/Pairs
+#### Range of Tuples/Pairs
 
 ```cpp
 #include <format>
@@ -3277,11 +3277,11 @@ int main() {
 }
 ```
 
-## 2. Nested Container Support
+### 2. Nested Container Support
 
 C++23 allows formatting of nested containers (containers of containers) without custom formatters.
 
-### Basic Nested Containers
+#### Basic Nested Containers
 
 ```cpp
 #include <format>
@@ -3311,7 +3311,7 @@ int main() {
 }
 ```
 
-### Deeply Nested Structures
+#### Deeply Nested Structures
 
 ```cpp
 #include <format>
@@ -3340,7 +3340,7 @@ int main() {
 }
 ```
 
-### Formatting Nested Containers with Precision
+#### Formatting Nested Containers with Precision
 
 ```cpp
 #include <format>
@@ -3364,11 +3364,11 @@ int main() {
 }
 ```
 
-## 3. Escaped String Formatting
+### 3. Escaped String Formatting
 
 C++23 introduces the `?` format specifier for escaped string output, which is crucial for debugging and displaying strings with special characters safely.
 
-### Basic Escaped Formatting
+#### Basic Escaped Formatting
 
 ```cpp
 #include <format>
@@ -3390,7 +3390,7 @@ int main() {
 }
 ```
 
-### Handling Special Characters
+#### Handling Special Characters
 
 ```cpp
 #include <format>
@@ -3415,7 +3415,7 @@ int main() {
 }
 ```
 
-### Escaped Formatting for Ranges
+#### Escaped Formatting for Ranges
 
 ```cpp
 #include <format>
@@ -3443,7 +3443,7 @@ int main() {
 }
 ```
 
-### Combining Escaped with Other Specifiers
+#### Combining Escaped with Other Specifiers
 
 ```cpp
 #include <format>
@@ -3463,7 +3463,7 @@ int main() {
 }
 ```
 
-## Practical Combined Example
+### Practical Combined Example
 
 Here's a real-world example combining all three features:
 
@@ -3516,7 +3516,7 @@ int main() {
 }
 ```
 
-## Performance Considerations
+### Performance Considerations
 
 ```cpp
 #include <format>
@@ -3541,7 +3541,7 @@ int main() {
 }
 ```
 
-## Summary: Key Things to Remember
+### Summary: Key Things to Remember
 
 - **Direct Range Formatting**: All standard containers (vector, list, array, map, etc.) can be formatted directly without custom code
 - **Default Output**: Ranges format as `[elem1, elem2, elem3]` with automatic quoting for strings
@@ -3561,9 +3561,9 @@ int main() {
 
 C++23 significantly expands the ranges library introduced in C++20, adding powerful new view adaptors that make working with sequences more expressive and efficient. Let's explore each of these new views in detail.
 
-## 1. `std::views::zip` and `std::views::zip_transform`
+### 1. `std::views::zip` and `std::views::zip_transform`
 
-### `std::views::zip`
+#### `std::views::zip`
 
 Combines multiple ranges element-wise into tuples, similar to Python's `zip()`. The resulting range has a length equal to the shortest input range.
 
@@ -3595,7 +3595,7 @@ int main() {
 }
 ```
 
-### `std::views::zip_transform`
+#### `std::views::zip_transform`
 
 Applies a function to corresponding elements from multiple ranges, combining `zip` with `transform`.
 
@@ -3628,9 +3628,9 @@ int main() {
 }
 ```
 
-## 2. `std::views::slide` and `std::views::adjacent`
+### 2. `std::views::slide` and `std::views::adjacent`
 
-### `std::views::slide`
+#### `std::views::slide`
 
 Creates overlapping sliding windows of a specified size over a range.
 
@@ -3671,7 +3671,7 @@ int main() {
 }
 ```
 
-### `std::views::adjacent`
+#### `std::views::adjacent`
 
 A specialized version of `slide` for accessing N adjacent elements as tuples. Available as `adjacent<N>`, with convenience aliases like `adjacent<2>` (pairwise).
 
@@ -3722,9 +3722,9 @@ bool is_increasing = std::ranges::all_of(
 );
 ```
 
-## 3. `std::views::chunk` and `std::views::chunk_by`
+### 3. `std::views::chunk` and `std::views::chunk_by`
 
-### `std::views::chunk`
+#### `std::views::chunk`
 
 Splits a range into fixed-size chunks (non-overlapping).
 
@@ -3771,7 +3771,7 @@ int main() {
 }
 ```
 
-### `std::views::chunk_by`
+#### `std::views::chunk_by`
 
 Groups consecutive elements where a binary predicate returns true. Unlike `chunk`, the size is dynamic based on the predicate.
 
@@ -3825,7 +3825,7 @@ int main() {
 }
 ```
 
-## 4. `std::views::enumerate`
+### 4. `std::views::enumerate`
 
 Provides Python-style enumeration: pairs each element with its index (starting at 0).
 
@@ -3877,7 +3877,7 @@ int main() {
 }
 ```
 
-## 5. `std::views::cartesian_product`
+### 5. `std::views::cartesian_product`
 
 Generates the Cartesian product of multiple ranges—all possible combinations of elements from each range.
 
@@ -3937,7 +3937,7 @@ int main() {
 }
 ```
 
-## Practical Combined Examples
+### Practical Combined Examples
 
 These views become even more powerful when combined:
 
@@ -3992,7 +3992,7 @@ int main() {
 }
 ```
 
-## Performance Considerations
+### Performance Considerations
 
 All these views are **lazy** and **non-owning**:
 - Elements are computed on-demand during iteration
@@ -4010,9 +4010,9 @@ auto result = data
 // Nothing computed until you iterate over 'result'
 ```
 
-## Quick Reference Summary
+### Quick Reference Summary
 
-### Key Things to Remember:
+#### Key Things to Remember:
 
 1. **`zip` / `zip_transform`**: Combine N ranges element-wise; length = shortest range; use `zip_transform` for applying functions
 
@@ -4036,18 +4036,17 @@ auto result = data
 
 ---
 
-
 ## Language Features
 [Back to top](#major-features)
 
-## 1. Relaxed `constexpr` - Compile-Time Containers
+### 1. Relaxed `constexpr` - Compile-Time Containers
 
 C++23 significantly expands `constexpr` capabilities by allowing **non-transient allocations** at compile-time, enabling `std::vector` and `std::string` to be used in `constexpr` contexts.
 
-### Key Concept
+#### Key Concept
 Previously, all memory allocated during constant evaluation had to be deallocated before the evaluation completed. C++23 relaxes this, allowing containers to exist at compile-time as long as they're properly cleaned up.
 
-### Example: Compile-Time String Processing
+#### Example: Compile-Time String Processing
 
 ```cpp
 #include <string>
@@ -4080,7 +4079,7 @@ constexpr auto even_numbers = get_evens({1, 2, 3, 4, 5, 6, 7, 8});
 // even_numbers = {2, 4, 6, 8} computed at compile-time
 ```
 
-### Example: Compile-Time Configuration Parser
+#### Example: Compile-Time Configuration Parser
 
 ```cpp
 constexpr auto parse_config() {
@@ -4103,20 +4102,20 @@ constexpr bool validate_config() {
 static_assert(validate_config(), "Invalid configuration");
 ```
 
-### Benefits
+#### Benefits
 - **Zero runtime overhead** for complex initialization
 - **Compile-time validation** of data structures
 - **Template metaprogramming** becomes more readable
 
 
-## 2. `static operator()` and `operator[]` - Zero-Size Function Objects
+### 2. `static operator()` and `operator[]` - Zero-Size Function Objects
 
 C++23 allows marking `operator()` and `operator[]` as `static`, eliminating the need for an implicit `this` pointer and enabling **zero-size optimizations**.
 
-### Key Concept
+#### Key Concept
 Stateless function objects (lambdas with no captures) can now be truly zero-size by making their call operator `static`.
 
-### Example: Zero-Size Comparators
+#### Example: Zero-Size Comparators
 
 ```cpp
 #include <algorithm>
@@ -4151,7 +4150,7 @@ void example() {
 }
 ```
 
-### Example: Static Index Operator
+#### Example: Static Index Operator
 
 ```cpp
 template<typename T>
@@ -4169,7 +4168,7 @@ auto value = StaticLookup<int>{}[2]; // Returns 30
 // Equivalent to: StaticLookup<int>::data[2]
 ```
 
-### Example: Algorithm Optimizations
+#### Example: Algorithm Optimizations
 
 ```cpp
 #include <ranges>
@@ -4186,20 +4185,20 @@ void process(std::vector<int>& data) {
 }
 ```
 
-### Benefits
+#### Benefits
 - **Better optimization** potential for algorithms
 - **Clearer intent** - explicitly stateless
 - **Improved lambda semantics** for pure functions
 
 
-## 3. `auto(x)` and `auto{x}` - Explicit Decay-Copy
+### 3. `auto(x)` and `auto{x}` - Explicit Decay-Copy
 
 These new constructs provide **explicit decay-copy** semantics, converting references to values and stripping cv-qualifiers.
 
-### Key Concept
+#### Key Concept
 `auto(x)` creates a prvalue by performing decay-copy, useful in templates and perfect forwarding scenarios where you need to force a copy.
 
-### Example: Perfect Forwarding Edge Cases
+#### Example: Perfect Forwarding Edge Cases
 
 ```cpp
 #include <utility>
@@ -4225,7 +4224,7 @@ void example() {
 }
 ```
 
-### Example: Stripping References and Qualifiers
+#### Example: Stripping References and Qualifiers
 
 ```cpp
 void demonstrate_decay() {
@@ -4246,7 +4245,7 @@ void demonstrate_decay() {
 }
 ```
 
-### Example: Generic Lambda Return
+#### Example: Generic Lambda Return
 
 ```cpp
 #include <string>
@@ -4263,7 +4262,7 @@ auto process_strings(const std::vector<std::string>& vec) {
 }
 ```
 
-### Example: SFINAE and Concept Compatibility
+#### Example: SFINAE and Concept Compatibility
 
 ```cpp
 template<typename T>
@@ -4277,20 +4276,20 @@ void safe_copy(const T& source, T& dest) {
 }
 ```
 
-### Benefits
+#### Benefits
 - **Explicit control** over copy semantics
 - **Safer forwarding** in async contexts
 - **Clearer intent** in generic code
 
 
-## 4. `#elifdef` / `#elifndef` - Cleaner Preprocessor Conditionals
+### 4. `#elifdef` / `#elifndef` - Cleaner Preprocessor Conditionals
 
 C++23 adds `#elifdef` and `#elifndef` as shorthand for common preprocessor patterns, improving readability.
 
-### Key Concept
+#### Key Concept
 Replace verbose `#elif defined(...)` / `#elif !defined(...)` patterns with cleaner equivalents.
 
-### Example: Traditional vs C++23
+#### Example: Traditional vs C++23
 
 ```cpp
 // Traditional approach - verbose
@@ -4322,7 +4321,7 @@ Replace verbose `#elif defined(...)` / `#elif !defined(...)` patterns with clean
 #endif
 ```
 
-### Example: Feature Detection
+#### Example: Feature Detection
 
 ```cpp
 // Checking for various feature support
@@ -4344,7 +4343,7 @@ const char* get_accelerator() {
 }
 ```
 
-### Example: Debug Level Configuration
+#### Example: Debug Level Configuration
 
 ```cpp
 #ifdef DEBUG_LEVEL_VERBOSE
@@ -4358,7 +4357,7 @@ const char* get_accelerator() {
 #endif
 ```
 
-### Example: `#elifndef` Usage
+#### Example: `#elifndef` Usage
 
 ```cpp
 // Fallback definitions
@@ -4371,29 +4370,29 @@ const char* get_accelerator() {
 #endif
 ```
 
-### Benefits
+#### Benefits
 - **Improved readability** - less visual noise
 - **Consistency** with `#ifdef`/`#ifndef` patterns
 - **Reduced errors** - simpler syntax means fewer typos
 
-## Summary: Key Takeaways
+### Summary: Key Takeaways
 
-### ✓ Relaxed `constexpr`
+#### ✓ Relaxed `constexpr`
 - `std::vector` and `std::string` work at compile-time
 - Enables complex compile-time computations
 - Zero runtime cost for initialization
 
-### ✓ `static operator()` / `operator[]`
+#### ✓ `static operator()` / `operator[]`
 - Marks function objects as truly stateless
 - Better optimization opportunities
 - Clearer semantic intent
 
-### ✓ `auto(x)` / `auto{x}`
+#### ✓ `auto(x)` / `auto{x}`
 - Explicit decay-copy for references and values
 - Critical for safe perfect forwarding
 - Strips cv-qualifiers and converts to prvalue
 
-### ✓ `#elifdef` / `#elifndef`
+#### ✓ `#elifdef` / `#elifndef`
 - Shorthand for `#elif defined(...)` patterns
 - Cleaner preprocessor conditionals
 - Reduces verbosity in platform/feature detection
