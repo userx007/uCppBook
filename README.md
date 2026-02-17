@@ -274,9 +274,10 @@
 
 ---
 
-# Hints and Tricks
+# Rust Hints and Tricks
 
-[301. **Hints and tricks**](docs/Rust/301_Hints_to_remember.md)<br>
+[301. **Rust hints and tricks**](docs/Rust/301_Hints_to_remember.md)<br>
 
+# C++ Hints and Tricks
 
-
+[401. **C++ hints and tricks**](docs/Topics/401_Hints_to_remember)<br>
