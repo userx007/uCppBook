@@ -281,3 +281,10 @@
 # C++ Hints and Tricks
 
 [401. **C++ hints and tricks**](docs/Topics/401_Hints_to_remember)<br>
+
+---
+
+# Summary
+
+[1001. **Threads**](docs/Summary/1001_Threads.md)<br>
+[1002. **Mutexes**](docs/Summary/1002_Mutexes.md)<br>

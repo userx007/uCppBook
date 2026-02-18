@@ -68,4 +68,115 @@ void sync_print(Args&&... args) {
 // Usage
 sync_print("Producer ", id, " pushed:  ", value);
 ```
+---
 
+# Condition variable
+
+```cpp
+if (!cv_full.wait_for(lock, timeout, [this]() { return !is_full(); })) {
+    return false;
+}
+```
+
+
+## `wait_for` — The Three Arguments
+
+```cpp
+cv_full.wait_for(lock, timeout, predicate)
+//               ───   ───────  ─────────
+//                1       2         3
+```
+
+**1. `lock`** — the `unique_lock` currently held by this thread. `wait_for` will **atomically release it** while sleeping, so other threads (consumers) can acquire the mutex and make progress. When woken, it reacquires the lock before returning.
+
+**2. `timeout`** — maximum time to wait. If nobody signals within this duration, the thread wakes up on its own.
+
+**3. `[this]() { return !is_full(); }`** — the predicate (more below).
+
+---
+
+## The Predicate — Why It Exists
+
+```cpp
+[this]() { return !is_full(); }
+//^^^
+// captures `this` so the lambda can call is_full()
+// which accesses  count and capacity — member variables
+```
+
+Without a predicate, `wait_for` would wake on **any** signal — including spurious wakeups (the OS can wake a thread for no reason at all). The predicate guards against that:
+
+```
+Thread wakes up
+      ↓
+Is predicate true?  (!is_full())
+      ↓                   ↓
+     YES                  NO
+      ↓                   ↓
+   proceed            go back to sleep   ← spurious wakeup avoided
+```
+
+`wait_for` re-checks the predicate **every time** the thread wakes, whether from a real signal or a spurious one.
+
+---
+
+## What `wait_for` Actually Returns
+
+```cpp
+// Internally, wait_for with a predicate behaves like:
+//
+//   while (!predicate()) {
+//       if (timed_out) return false;   // timeout expired, predicate still false
+//       sleep_and_wait_for_signal();
+//   }
+//   return true;   // predicate became true in time
+```
+
+So:
+
+```
+returns true  → predicate became true before timeout → space is available → safe to write
+returns false → timeout expired, still full           → give up, tell caller
+```
+
+---
+
+## The `!` Inversion and `return false`
+
+```cpp
+if (!cv_full.wait_for(...)) {   // if wait_for returned FALSE (timed out)
+    return false;               // propagate failure to caller — push() failed
+}
+```
+
+The `!` flips the logic: **if** `wait_for` returns `false` (timed out, still full), **then** we return `false` from `push()`. If it returns `true` (space is available), execution falls through and the write proceeds.
+
+---
+
+## Full Picture — Timeline
+
+```
+PRODUCER calls push(), buffer is FULL
+         │
+         ▼
+  lock acquired
+         │
+         ▼
+  cv_full.wait_for()
+  ┌──────────────────────────────────────────────────────┐
+  │  atomically releases lock                            │
+  │  thread sleeps ──────────────────────────────────┐   │
+  │                                                  │   │
+  │  CONSUMER calls pop()                            │   │
+  │    acquires lock (now available)                 │   │
+  │    removes item, count--                         │   │
+  │    calls cv_full.notify_one() ───────────────────┘   │
+  │                                                      │
+  │  producer wakes up                                   │
+  │  reacquires lock                                     │
+  │  checks predicate: !is_full() → true                 │
+  └──────────────────────────────────────────────────────┘
+         │
+         ▼
+  write proceeds safely
+```
