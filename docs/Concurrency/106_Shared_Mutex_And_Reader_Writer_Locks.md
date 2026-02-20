@@ -568,28 +568,55 @@ Both shared and exclusive locks support non-blocking variants:
 #include <iostream>
 
 class Resource {
-    mutable std::shared_mutex mutex_;
+    mutable std::shared_mutex mutex_;   // mutable: allows locking in const methods without
+                                        // breaking const correctness (locking is an
+                                        // implementation detail, not a logical state change)
     std::string data_;
 
 public:
     bool try_read(std::string& out) const {
-        if (mutex_.try_lock_shared()) {
+        if (mutex_.try_lock_shared()) {     // non-blocking attempt to acquire shared lock
+                                            // returns false immediately if a writer holds the lock
+                                            // multiple readers can hold shared lock simultaneously
             std::shared_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
-            out = data_;
-            return true;
+                                            // adopt_lock: mutex already locked above, don't lock again
+                                            // RAII: lock destructor will release the shared lock
+                                            //       automatically when scope exits
+            out = data_;                    // safe to read: shared lock allows concurrent readers
+            return true;                    // caller knows read succeeded
         }
-        return false;
+        return false;                       // lock was busy (writer active), caller decides what to do
     }
 
     bool try_write(const std::string& value) {
-        if (mutex_.try_lock()) {
+        if (mutex_.try_lock()) {            // non-blocking attempt to acquire exclusive lock
+                                            // returns false immediately if any reader or writer holds the lock
+                                            // only one writer can hold exclusive lock at a time
             std::unique_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
-            data_ = value;
-            return true;
+                                            // adopt_lock: mutex already locked above, don't lock again
+                                            // RAII: lock destructor will release the exclusive lock
+                                            //       automatically when scope exits
+            data_ = value;                  // safe to write: exclusive lock, no other readers or writers
+            return true;                    // caller knows write succeeded
         }
-        return false;
+        return false;                       // lock was busy (readers or writer active), caller decides what to do
     }
 };
+
+int main() {
+    Resource res;
+    std::string out;
+
+    if (!res.try_write("hello")) {          // attempt write, don't block if busy
+        std::cout << "Write failed, resource busy\n";
+    }
+
+    if (!res.try_read(out)) {              // attempt read, don't block if busy
+        std::cout << "Read failed, resource busy\n";
+    } else {
+        std::cout << "Read: " << out << '\n';
+    }
+}
 ```
 
 ## Timed Locks

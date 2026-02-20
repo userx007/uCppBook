@@ -8,7 +8,7 @@
 [**Using wait_for with Timeout**](#using-wait_for-with-timeout)<br>
 [**Multiple Threads Waiting - Barrier Pattern**](#multiple-threads-waiting---barrier-pattern)<br>
 [**Spurious Wakeups and Predicates**](#spurious-wakeups-and-predicates)<br>
-[**Solution - Predicate-Based Waiting**](#solution---predicate-based-waiting)<br>
+[**Solution - Predicate-Based Waiting**](#solution-predicate-based-waiting)<br>
 
 [****](#)<br>
 [****](#)<br>
@@ -315,7 +315,7 @@ A spurious wakeup occurs when a thread waiting on a condition variable wakes up 
 - **Hardware considerations**: On multiprocessor systems, certain optimizations can trigger spurious wakeups
 
 
-***Solution - Predicate-Based Waiting***
+***Solution Predicate-Based Waiting***
 
 ```cpp
 #include <iostream>
