@@ -412,7 +412,23 @@ int main() {
 
 ## Summary
 
-Understanding thread basics and lifecycle management in C++ is essential for concurrent programming. The key concepts include: `std::thread` objects represent independent execution paths that can be created with various callable types including functions, lambdas, functors, and member functions. Every thread must be either joined (blocking until completion) or detached (running independently) before destruction, otherwise the program terminates. Joinability can be checked with the `joinable()` method, and threads become non-joinable after being joined, detached, or moved from. Proper lifecycle management requires careful attention to resource ownership, especially with detached threads that can create dangling references if not handled correctly. Threads support move semantics but not copy semantics, enabling ownership transfer. RAII wrappers like ThreadGuard ensure threads are properly joined even in the presence of exceptions, and `std::thread::hardware_concurrency()` provides insight into available parallelism. Following best practices such as always joining or detaching threads, avoiding dangling references with detached threads, using RAII for automatic cleanup, passing data by value to detached threads, and checking joinability before operations will help you write robust, thread-safe applications.
+- Understanding thread basics and lifecycle management in C++ is essential for concurrent programming. 
+- The key concepts include: `std::thread` objects represent independent execution paths that can be created with various callable types including: 
+    - functions, 
+    - lambdas, 
+    - functors, 
+    - member functions. 
+- Every thread must be either joined (blocking until completion) or detached (running independently) before destruction, otherwise the program terminates. 
+- Joinability can be checked with the `joinable()` method, and threads become non-joinable after being joined, detached, or moved from. 
+- Proper lifecycle management requires careful attention to resource ownership, especially with detached threads that can create dangling references if not handled correctly. 
+- Threads support move semantics but not copy semantics, enabling ownership transfer. 
+- RAII wrappers like ThreadGuard ensure threads are properly joined even in the presence of exceptions, and `std::thread::hardware_concurrency()` provides insight into available parallelism. 
+- Following best practices such as below helps to write robust, thread-safe applications: 
+    - always joining or detaching threads, 
+    - avoiding dangling references with detached threads, 
+    - using RAII for automatic cleanup, 
+    - passing data by value to detached threads, 
+    - checking joinability before operations 
 
 ---
 
@@ -574,4 +590,9 @@ This pattern works whether `t` is default constructed, has been moved from, or r
 
 ## Summary
 
-Default constructed threads are essentially "empty" thread objects that serve as placeholders. They're useful for delayed initialization, conditional creation, and managing thread lifetimes in more complex scenarios. While they can't be joined or detached directly, they provide flexibility in thread management and are safe to use in containers and as class members.
+- Default constructed threads are essentially "empty" thread objects that serve as placeholders. 
+- They're useful for: 
+    - delayed initialization, 
+    - conditional creation, 
+    - managing thread lifetimes in more complex scenarios. 
+While they can't be joined or detached directly, they provide flexibility in thread management and are safe to use in containers and as class members.
