@@ -224,6 +224,7 @@
 [154. **C++ Async Components Flow Descriptions**](docs/Concurrency/154_Async_Components_Diagrams.md)<br>
 [155. **C++ Runtime Components Detailed Flow Descriptions**](docs/Concurrency/155_Runtime_Components_Flow.md)<br>
 [156. **C++ Runtime Lifecycle And Memory Detailed Flow Descriptions**](docs/Concurrency/156_Runtime_Lifecycle_And_Memory.md)<br>
+[157. **std::jthread — C++20's smarter thread**](docs/Concurrency/157_jthread.md)<br>
 
 ---
 
