@@ -1,4 +1,4 @@
-I'll provide you with a comprehensive overview of `std::string` and `std::string_view`, two fundamental types for working with strings in modern C++.I've created a comprehensive guide with working code examples. Here's a summary of the key differences and concepts:
+# `std::string` vs. `std::string_view`
 
 ## **Core Differences**
 

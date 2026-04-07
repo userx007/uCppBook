@@ -215,18 +215,20 @@
 [151. **Second Tier Most Used Features and Methods**](docs/Concurrency/151_Second_Tier_Most_Used_Features_and_Methods.md)<br>
 [152. **Third Tier Most Used Features and Methods**](docs/Concurrency/152_Third_Tier_Most_Used_Features_and_Methods.md)<br>
 
-## Miscelaneous
-
-[153. **std::mutex: lock() vs try_lock()**](docs/Concurrency/153_std_mutex_lock_vs_try_lock.md)<br>
-
 ## Async Diagrams and Descriptions
 
 [154. **C++ Async Components Flow Descriptions**](docs/Concurrency/154_Async_Components_Diagrams.md)<br>
 [155. **C++ Runtime Components Detailed Flow Descriptions**](docs/Concurrency/155_Runtime_Components_Flow.md)<br>
 [156. **C++ Runtime Lifecycle And Memory Detailed Flow Descriptions**](docs/Concurrency/156_Runtime_Lifecycle_And_Memory.md)<br>
-[157. **std::jthread — C++20's smarter thread**](docs/Concurrency/157_jthread.md)<br>
+
+## Miscelaneous
+
+[170. **std::mutex: lock() vs try_lock()**](docs/Concurrency/170_std_mutex_lock_vs_try_lock.md)<br>
+[171. **std::jthread — C++20's smarter thread**](docs/Concurrency/171_jthread.md)<br>
+[172. **std::unique_lock**](docs/Concurrency/172_unique_lock.md)<br>
 
 ---
+
 
 # C++ vs. Rust
 
