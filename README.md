@@ -226,6 +226,7 @@
 [170. **std::mutex: lock() vs try_lock()**](docs/Concurrency/170_std_mutex_lock_vs_try_lock.md)<br>
 [171. **std::jthread — C++20's smarter thread**](docs/Concurrency/171_jthread.md)<br>
 [172. **std::unique_lock**](docs/Concurrency/172_unique_lock.md)<br>
+[173. **std::shared_lock**](docs/Concurrency/173_shared_lock.md)<br>
 
 ---
 
