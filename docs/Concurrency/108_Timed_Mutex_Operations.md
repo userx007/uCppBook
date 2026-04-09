@@ -189,25 +189,56 @@ Similar to `std::recursive_mutex`, there's also `std::recursive_timed_mutex` for
 #include <thread>
 #include <chrono>
 
+// std::recursive_timed_mutex extends std::recursive_mutex with timed lock acquisition.
+// "Recursive" means the *same* thread can lock it multiple times without deadlocking —
+// each successful lock increments an internal ownership counter that must be matched
+// by an equal number of unlock() calls before the mutex is truly released.
+// "Timed" means lock attempts can specify a timeout, avoiding indefinite blocking.
 std::recursive_timed_mutex rtmutex;
 
+// Simulates a recursive algorithm that requires holding the mutex at every call frame.
+// Each level re-locks the mutex (allowed because it's recursive), performs some work,
+// and unlocks once before returning — unwinding the ownership count back to zero.
+//
+// @param depth  Current recursion depth; counts down to 0 to terminate recursion.
 void recursive_function(int depth) {
-    using namespace std::chrono_literals;
-    
+    using namespace std::chrono_literals; // Enables the '100ms' duration literal below.
+
+    // try_lock_for() attempts to acquire the mutex, blocking for *at most* 100ms.
+    // For a recursive_timed_mutex, if this thread already owns the lock, the call
+    // succeeds immediately (no waiting) and increments the ownership count.
+    // Returns true on success, false if the timeout expires without acquiring the lock.
     if (rtmutex.try_lock_for(100ms)) {
+
+        // At this point the mutex is owned by this thread.
+        // The ownership count is now equal to (initial_depth - depth + 1),
+        // since every frame on the call stack holds one lock.
         std::cout << "Locked at depth " << depth << "\n";
-        
+
         if (depth > 0) {
+            // Recurse while still holding the lock. A plain std::mutex would
+            // deadlock here because the same thread cannot re-acquire it.
+            // recursive_timed_mutex allows this safely.
             recursive_function(depth - 1);
         }
-        
+
+        // Release this frame's lock. For recursive ownership the mutex is only
+        // made available to other threads once the count drops back to zero
+        // (i.e., after the outermost frame calls unlock()).
         rtmutex.unlock();
+
     } else {
+        // try_lock_for() timed out — another thread holds the mutex and did not
+        // release it within the 100ms window. Graceful fallback instead of blocking.
         std::cout << "Timeout at depth " << depth << "\n";
     }
 }
 
 int main() {
+    // Kick off recursion from depth 3.
+    // Lock acquisition sequence:  depth 3 → 2 → 1 → 0  (count climbs to 4)
+    // Unlock sequence (LIFO):     depth 0 → 1 → 2 → 3  (count falls back to 0)
+    // Because this is single-threaded, every try_lock_for() succeeds instantly.
     recursive_function(3);
     return 0;
 }
@@ -237,7 +268,7 @@ public:
                 
                 // Simulate potential exception
                 if (counter == 5) {
-                    mutex.unlock();
+                    // remains unlocked on this branch due to exception
                     throw std::runtime_error("Counter reached critical value");
                 }
                 
@@ -274,6 +305,86 @@ int main() {
         }
     }
     
+    std::cout << "Final counter value: " << counter.get_value() << "\n";
+    return 0;
+}
+```
+
+A better alternative for this would be:
+
+```cpp
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <chrono>
+#include <stdexcept>
+
+class SafeCounter {
+private:
+    // std::timed_mutex (non-recursive) supports try_lock_for() / try_lock_until(),
+    // making it suitable for operations that must not block indefinitely.
+    std::timed_mutex mutex;
+    int counter = 0;
+
+public:
+    // Attempts to increment the counter, waiting at most 'timeout' for the lock.
+    // Returns true on success, false if the lock could not be acquired in time.
+    // Throws std::runtime_error if the counter hits the critical value (5).
+    bool increment_with_timeout(std::chrono::milliseconds timeout) {
+
+        // std::unique_lock with std::defer_lock constructs the guard without
+        // locking immediately, letting us use try_lock_for() ourselves.
+        std::unique_lock<std::timed_mutex> lock(mutex, std::defer_lock);
+
+        if (!lock.try_lock_for(timeout)) {
+            return false; // Timed out — mutex held by another thread too long.
+        }
+
+        // --- Lock is held from here. unique_lock releases it automatically
+        //     when 'lock' goes out of scope, whether by normal return OR exception.
+        counter++;
+
+        // Simulate a critical-value condition.
+        // Throwing here causes 'lock' to destruct → mutex released exactly once.
+        if (counter == 5) {
+            throw std::runtime_error("Counter reached critical value");
+        }
+
+        return true; // 'lock' destructs here on the happy path → clean release.
+    }
+
+    // Read the counter safely. lock_guard is sufficient: no timeout needed,
+    // and we never re-lock recursively, so timed/recursive variants are overkill.
+    int get_value() {
+        std::lock_guard<std::timed_mutex> lock(mutex);
+        return counter;
+    }
+};
+
+int main() {
+    using namespace std::chrono_literals;
+    SafeCounter counter;
+
+    // Expected output across 10 iterations (single-threaded, so no real contention):
+    //   i = 0..3 → "Incremented successfully"   (counter 1→4)
+    //   i = 4    → exception at counter == 5    (counter stays at 5)
+    //   i = 5..9 → "Incremented successfully"   (counter 6→10)
+    // Final value: 10
+    for (int i = 0; i < 10; ++i) {
+        try {
+            if (counter.increment_with_timeout(100ms)) {
+                std::cout << "Incremented successfully\n";
+            } else {
+                // Would fire if a second thread were holding the mutex for >100ms.
+                std::cout << "Timeout occurred\n";
+            }
+        } catch (const std::runtime_error& e) {
+            // Counter was already incremented to 5 before the throw,
+            // so execution continues and subsequent iterations keep incrementing.
+            std::cout << "Exception: " << e.what() << "\n";
+        }
+    }
+
     std::cout << "Final counter value: " << counter.get_value() << "\n";
     return 0;
 }
