@@ -185,42 +185,56 @@ int main() {
 #include <iostream>
 #include <vector>
 
+// Simple spinlock implementation using an atomic flag
 class Spinlock {
 private:
+    // Atomic flag indicating lock state:
+    // false = unlocked, true = locked
     std::atomic<bool> flag{false};
 
 public:
     void lock() {
-        // Try to acquire lock with exchange
+        // Try to acquire the lock by setting flag to true.
+        // exchange() returns the previous value:
+        // - If it was false → we acquired the lock
+        // - If it was true → someone else holds the lock
         while (flag.exchange(true, std::memory_order_acquire)) {
-            // Spin with relaxed loads to reduce cache traffic
+            
+            // If lock is already held, spin here (busy-wait)
+            // using relaxed loads to reduce cache coherence traffic
             while (flag.load(std::memory_order_relaxed)) {
+                // Yield CPU to avoid wasting full time slices
                 std::this_thread::yield();
             }
         }
-        // Lock acquired with acquire semantics
+        // When we exit the loop, we hold the lock.
+        // memory_order_acquire ensures subsequent reads/writes
+        // are not reordered before the lock acquisition.
     }
 
     void unlock() {
-        // Release lock with release semantics
+        // Release the lock by setting flag to false.
+        // memory_order_release ensures all prior writes
+        // are visible to other threads acquiring the lock.
         flag.store(false, std::memory_order_release);
     }
 };
 
+// Thread-safe counter protected by Spinlock
 class Counter {
 private:
-    int count = 0;
-    Spinlock lock;
+    int count = 0;   // Shared resource
+    Spinlock lock;   // Synchronization primitive
 
 public:
     void increment() {
-        lock.lock();
-        ++count;  // Protected by acquire-release
-        lock.unlock();
+        lock.lock();     // Enter critical section
+        ++count;         // Safely modify shared data
+        lock.unlock();   // Exit critical section
     }
 
     int get() {
-        lock.lock();
+        lock.lock();     // Ensure consistent read
         int result = count;
         lock.unlock();
         return result;
@@ -231,24 +245,29 @@ int main() {
     Counter counter;
     std::vector<std::thread> threads;
     
+    // Create 10 threads
     for (int i = 0; i < 10; ++i) {
         threads.emplace_back([&counter]() {
+            // Each thread increments the counter 1000 times
             for (int j = 0; j < 1000; ++j) {
                 counter.increment();
             }
         });
     }
     
+    // Wait for all threads to finish
     for (auto& t : threads) {
         t.join();
     }
     
+    // Output final result
     std::cout << "Final count: " << counter.get() << std::endl;
     std::cout << "Expected: 10000" << std::endl;
     
     return 0;
 }
 ```
+
 
 ## Code Example 4: Read-Modify-Write with Acq_Rel
 
@@ -257,41 +276,61 @@ int main() {
 #include <thread>
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <chrono>
 
 class SharedResource {
 private:
+    // Fixed-size shared buffer written by multiple threads
     int data[100];
+
+    // Atomic counter tracking number of writes performed
     std::atomic<int> write_count{0};
 
 public:
     SharedResource() {
+        // Initialize buffer to a known state
         for (int i = 0; i < 100; ++i) {
             data[i] = 0;
         }
     }
 
-    // Writer: modify data and update counter
+    // Writer: safely writes into next available slot
     void write(int thread_id) {
-        // Get current position with acq_rel
+        // Atomically reserve a unique position in the array.
+        // fetch_add ensures each thread gets a distinct index.
+        //
+        // memory_order_acq_rel:
+        // - acquire: prevents later reads/writes from moving before this op
+        // - release: ensures prior writes become visible before update
         int pos = write_count.fetch_add(1, std::memory_order_acq_rel);
-        
+
+        // Prevent buffer overflow if more than 100 writes occur
         if (pos < 100) {
+            // Write thread ID into assigned slot
+            // Note: data[] is not atomic, but each index is uniquely assigned
+            // so there is no concurrent write to the same location
             data[pos] = thread_id;
-            std::cout << "Thread " << thread_id 
+
+            std::cout << "Thread " << thread_id
                       << " wrote at position " << pos << std::endl;
         }
     }
 
-    // Reader: safely read final count
+    // Reader: displays a consistent snapshot of the buffer
     void display() {
-        // Acquire: synchronize with all previous acq_rel operations
+        // Acquire ensures we see all writes that happened-before
+        // the corresponding release operations on write_count
         int count = write_count.load(std::memory_order_acquire);
-        
+
         std::cout << "Total writes: " << count << std::endl;
         std::cout << "Data: ";
+
+        // Only print valid written entries
         for (int i = 0; i < std::min(count, 100); ++i) {
             std::cout << data[i] << " ";
         }
+
         std::cout << std::endl;
     }
 };
@@ -299,23 +338,28 @@ public:
 int main() {
     SharedResource resource;
     std::vector<std::thread> threads;
-    
-    // Launch 10 threads, each writing 3 times
+
+    // Launch multiple writer threads
+    // Each thread performs multiple writes
     for (int i = 0; i < 10; ++i) {
         threads.emplace_back([&resource, i]() {
             for (int j = 0; j < 3; ++j) {
                 resource.write(i);
+
+                // Sleep to increase interleaving and expose concurrency behavior
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         });
     }
-    
+
+    // Wait for all writer threads to finish
     for (auto& t : threads) {
         t.join();
     }
-    
+
+    // Display final state after all writes complete
     resource.display();
-    
+
     return 0;
 }
 ```
