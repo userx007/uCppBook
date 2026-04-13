@@ -203,53 +203,187 @@ int main() {
 #include <iostream>
 #include <cassert>
 
-// Sequential consistency version
+// ============================================================================
+// MEMORY ORDERING DEMO: Sequential Consistency vs Relaxed
+//
+// This file illustrates the most fundamental difference between the two
+// extremes of the C++ memory model:
+//
+//   memory_order_seq_cst  — all threads agree on a single global order
+//                           of all atomic operations. The strongest and
+//                           most expensive ordering.
+//
+//   memory_order_relaxed  — the only guarantee is atomicity (no torn reads
+//                           or writes). Operations may be reordered freely
+//                           by the compiler and CPU. No inter-thread
+//                           synchronisation is implied.
+//
+// The classic test for this is the "store-buffering" litmus pattern below:
+//
+//   Thread 1:  x = 1  ;  r1 = y      Thread 2:  y = 1  ;  r2 = x
+//
+// The question: can both r1 and r2 read 0?  That would mean each thread
+// read before the other's write was visible — i.e. neither thread's store
+// was seen by the other.  Under seq_cst this outcome is forbidden; under
+// relaxed it is a legal result.
+// ============================================================================
+
+
+// ----------------------------------------------------------------------------
+// sequential_example()
+//
+// Demonstrates the "store-buffer" litmus test under seq_cst ordering.
+//
+// seq_cst imposes a single total order over ALL seq_cst operations across
+// ALL threads.  Every thread observes atomic operations in exactly that order.
+// This is equivalent to interleaving the two thread bodies in some serial
+// sequence.
+//
+// The two possible interleavings that produce r1==0 or r2==0:
+//
+//   t1 runs fully first:  x=1, r1=y(→0), y=1, r2=x(→1)   → r1=0, r2=1  ✓
+//   t2 runs fully first:  y=1, r2=x(→0), x=1, r1=y(→1)   → r1=1, r2=0  ✓
+//   stores interleaved:   x=1, y=1, r1=y(→1), r2=x(→1)   → r1=1, r2=1  ✓
+//
+// Every valid interleaving has either x=1 visible to t2 OR y=1 visible to
+// t1 (or both).  There is NO valid seq_cst interleaving that hides BOTH
+// stores, so r1==0 && r2==0 is impossible.
+// ----------------------------------------------------------------------------
 void sequential_example() {
     std::atomic<int> x{0}, y{0};
     int r1 = 0, r2 = 0;
-    
+
     std::thread t1([&]() {
+        // Store 1 into x with seq_cst.
+        // This is placed into the single global total order before any
+        // seq_cst operation that observes x == 0.  The store is immediately
+        // visible to all threads once it appears in that total order.
         x.store(1, std::memory_order_seq_cst);
+
+        // Load y with seq_cst.
+        // Because the store to x already appears in the global order, and
+        // t2's store to y must also appear in that same order, exactly one
+        // of these must come first.  If y.store(1) precedes this load in
+        // the total order, we read 1; otherwise we read 0.  Either way, at
+        // least one of r1 or r2 will be 1 — both cannot be 0.
         r1 = y.load(std::memory_order_seq_cst);
     });
-    
+
     std::thread t2([&]() {
+        // Store 1 into y with seq_cst — symmetric counterpart to x.store above.
         y.store(1, std::memory_order_seq_cst);
+
+        // Load x with seq_cst.
+        // By the same total-order argument: if x.store(1) from t1 precedes
+        // this load in the global order, r2 == 1.  If this load precedes
+        // x.store(1), then r2 == 0 — but then t1's y.load must come *after*
+        // y.store(1) in the total order, forcing r1 == 1.
         r2 = x.load(std::memory_order_seq_cst);
     });
-    
+
     t1.join();
     t2.join();
-    
-    // With seq_cst: r1 == 0 && r2 == 0 is IMPOSSIBLE
-    // At least one thread must see the other's write
+
+    // INVARIANT: r1 == 0 && r2 == 0 is IMPOSSIBLE under seq_cst.
+    //
+    // The total order constraint means we cannot have:
+    //   r1 == 0  (y not yet stored when t1 loaded it)  AND
+    //   r2 == 0  (x not yet stored when t2 loaded it)
+    // simultaneously — that would imply each thread's store happened *after*
+    // the other's load, which is a cycle in the total order: a contradiction.
+    //
+    // On x86 this is enforced "for free" by the TSO (Total Store Order)
+    // memory model.  On ARM/POWER, seq_cst requires explicit barrier
+    // instructions (e.g. DMB ISH) to drain store buffers before loads.
     std::cout << "Sequential: r1=" << r1 << ", r2=" << r2 << std::endl;
 }
 
-// Relaxed ordering version
+
+// ----------------------------------------------------------------------------
+// relaxed_example()
+//
+// Same litmus test, but with memory_order_relaxed on every operation.
+//
+// Relaxed gives only ONE guarantee: each individual atomic read/write is
+// indivisible (no tearing, no word-shredding).  Beyond that:
+//
+//   - The compiler may reorder relaxed operations past each other.
+//   - The CPU may reorder them via out-of-order execution or store buffers.
+//   - Other threads have NO obligation to observe stores in any particular
+//     order, or even at all, until a synchronisation point is reached.
+//
+// Crucially, relaxed does NOT form a happens-before edge between threads.
+// Without happens-before, there is no requirement that t2 ever sees t1's
+// store (or vice versa) before it performs its own load.
+// ----------------------------------------------------------------------------
 void relaxed_example() {
     std::atomic<int> x{0}, y{0};
     int r1 = 0, r2 = 0;
-    
+
     std::thread t1([&]() {
+        // Store 1 into x — relaxed.
+        // The compiler/CPU is free to reorder this store AFTER the load below.
+        // On ARM/POWER, the store may sit in a per-core store buffer and
+        // not reach the coherence point before the thread issues its load.
         x.store(1, std::memory_order_relaxed);
+
+        // Load y — relaxed.
+        // No barrier separates this load from the store above.  The CPU can
+        // speculatively execute this load first, observe y == 0 from its
+        // local cache, and only later flush x = 1 to the cache bus.
         r1 = y.load(std::memory_order_relaxed);
     });
-    
+
     std::thread t2([&]() {
+        // Store 1 into y — relaxed.
+        // Same situation as t1: the store may be delayed in the store buffer.
         y.store(1, std::memory_order_relaxed);
+
+        // Load x — relaxed.
+        // t2 may read x == 0 from its own cache while its y = 1 store is
+        // still buffered and not yet visible to t1.
         r2 = x.load(std::memory_order_relaxed);
     });
-    
+
     t1.join();
     t2.join();
-    
-    // With relaxed: r1 == 0 && r2 == 0 is POSSIBLE!
-    // No ordering guarantees between threads
+
+    // POSSIBLE OUTCOME: r1 == 0 && r2 == 0 ("the forbidden result" for seq_cst)
+    //
+    // Both threads may have read before the other's store propagated:
+    //
+    //   Execution trace (conceptual):
+    //     t1 load y  → 0   (y store from t2 not yet visible)
+    //     t2 load x  → 0   (x store from t1 not yet visible)
+    //     t1 store x → 1   (propagates to memory after the load)
+    //     t2 store y → 1   (propagates to memory after the load)
+    //
+    // This is architecturally legal on ARM, POWER, and RISC-V.
+    // Even on x86 (which has TSO), the compiler alone may reorder
+    // the loads before the stores since there is no barrier obligation.
+    //
+    // How often does r1==0 && r2==0 appear in practice?
+    //   - With optimisation disabled: rarely, but non-zero.
+    //   - With -O2 on ARM: observable within a handful of iterations.
+    //   - On x86 with -O2: the compiler reordering makes it possible;
+    //     TSO hardware alone would not produce it, but LLVM/GCC may.
     std::cout << "Relaxed: r1=" << r1 << ", r2=" << r2 << std::endl;
 }
 
+
 int main() {
+    // Run both examples 5 times.
+    //
+    // The sequential version will always print one of:
+    //   r1=0, r2=1  |  r1=1, r2=0  |  r1=1, r2=1
+    //
+    // The relaxed version may additionally print:
+    //   r1=0, r2=0
+    //
+    // If you want to reliably observe the "both zero" relaxed outcome,
+    // increase the iteration count to ~10,000 and compile with -O2 on
+    // an ARM or POWER machine.  On x86 you may need to look at the
+    // generated assembly to confirm the reordering is happening.
     std::cout << "Running examples multiple times:\n";
     for (int i = 0; i < 5; ++i) {
         sequential_example();
@@ -258,6 +392,15 @@ int main() {
     return 0;
 }
 ```
+
+A few things worth highlighting beyond the comments:
+
+The `r1==0 && r2==0` outcome is sometimes called the "IRIW" (Independent Reads of Independent Writes) or "store-buffering" forbidden result. It's the canonical example used in academic memory model papers to distinguish SC from weaker models.
+
+On x86 specifically, the hardware TSO model alone would not produce this result — x86 stores are always observed in program order. But the C++ abstract machine allows the *compiler* to reorder relaxed operations, so the forbidden outcome becomes reachable once `std::memory_order_relaxed` is in the source, even on TSO hardware. Inspecting the assembly with `-O2 -S` will often show the loads hoisted above the stores.
+
+The fix, if you needed cross-thread visibility without the full cost of `seq_cst`, would be `release`/`acquire` pairs — but that only synchronises *one direction* per pair, not the bidirectional guarantee `seq_cst` provides here.
+
 
 ### Example 5: Multi-threaded Flag Synchronization
 
