@@ -542,17 +542,91 @@ int main() {
 std::atomic<bool> ready{false};
 int data = 0;
 
-// Thread 1
+// Thread 1 — publisher (BROKEN)
+//
+// The intent here is the classic "publication idiom": write some data,
+// then raise a flag so another thread knows the data is ready to read.
+// That idiom requires a happens-before edge from the write to 'data'
+// into the read of 'data' in thread 2.  The only way to establish that
+// edge across threads is through a release/acquire pair on the atomic flag.
+//
+// Using relaxed on the store destroys that edge entirely.
+// memory_order_relaxed makes NO synchronisation promise whatsoever —
+// it only guarantees the store to 'ready' is atomic (not torn).
+// It does NOT prevent the compiler or CPU from reordering the non-atomic
+// write to 'data' to appear AFTER the store to 'ready'.
 data = 42;
 ready.store(true, std::memory_order_relaxed); // WRONG!
+//
+// What the hardware/compiler is allowed to do:
+//
+//   Compiler: 'data = 42' and 'ready.store(true)' have no ordering
+//             constraint between them (relaxed imposes none), so the
+//             compiler may schedule the store to 'ready' first.
+//
+//   CPU (ARM/POWER): the store to 'data' may sit in a write buffer
+//             and not reach the cache coherence bus before the store
+//             to 'ready' does.  Thread 2 can observe ready==true while
+//             the cache line for 'data' still holds 0.
+//
+//   CPU (x86): TSO means stores are observed in program order by *other*
+//             cores, so the hardware alone won't reorder them here.
+//             But the compiler does not know the target is x86 when
+//             lowering relaxed — it may still reorder at the IR level.
+//
+// The result: thread 2 can see ready == true and then read data == 0.
 
-// Thread 2
+// ---
+
+// Thread 2 — consumer (also broken, even though it uses seq_cst)
+//
+// memory_order_seq_cst on the load side is irrelevant here because
+// synchronisation is ALWAYS established by the PAIR of operations:
+//
+//   a release-store on the writer side  +  an acquire-load on the reader side
+//
+// seq_cst implies release on stores and acquire on loads, so a seq_cst
+// load CAN form a happens-before edge — but only with a store that has
+// at least release semantics on the other end.  A relaxed store provides
+// no release, so there is nothing for this seq_cst load to synchronise with.
+//
+// Upgrading one side of the pair without the other is a common mistake.
+// The synchronisation contract is bilateral: both ends must opt in.
 if (ready.load(std::memory_order_seq_cst)) {
-    std::cout << data; // May not see 42!
+    std::cout << data; // May not see 42! (no happens-before from the write)
 }
+
+// THE FIX — use a release/acquire pair:
+//
+//   Thread 1:  data = 42;
+//              ready.store(true, std::memory_order_release);
+//              //  ↑ "release" means: all writes (to any variable) that
+//              //  appear before this store in program order are guaranteed
+//              //  to be visible to any thread that acquires this store.
+//
+//   Thread 2:  if (ready.load(std::memory_order_acquire)) {
+//              //  ↑ "acquire" means: if this load observes the value
+//              //  written by a release-store, then all writes the
+//              //  releasing thread performed before its store are now
+//              //  visible to this thread.
+//                  std::cout << data; // guaranteed to see 42
+//              }
+//
+// The release store "publishes" every preceding write.
+// The acquire load "subscribes" to everything that was published.
+// Together they form a happens-before edge:
+//
+//   data = 42  →hb→  ready.store(release)  →hb→  ready.load(acquire)  →hb→  read data
+//
+// seq_cst would also fix it (seq_cst implies release+acquire), but it
+// carries an extra cost — a full memory barrier on ARM/POWER — that is
+// not needed here.  release/acquire is the minimal correct ordering.
 ```
 
+The root issue is a widespread misconception: people assume that using a stronger ordering on one side compensates for a weaker ordering on the other. It doesn't — `memory_order_release` and `memory_order_acquire` are matched keywords in the C++ memory model, not independent knobs. The standard is explicit: a release operation synchronises-with an acquire operation that reads the value it wrote. A relaxed store cannot synchronise-with anything, regardless of what the other side uses.
+
 **Fix**: Both sides need appropriate ordering (seq_cst or release-acquire pair).
+
 
 ### Pitfall 2: Assuming Non-atomic Variables Are Protected
 
