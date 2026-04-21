@@ -230,6 +230,18 @@
 
 ---
 
+# C++ Subtopics
+
+[501. **Aliases**](docs/Subtopics/Aliases.md)<br>
+[502. **Array_Of_References**](docs/Subtopics/Array_Of_References.md)<br>
+[503. **Iterator**](docs/Subtopics/Iterator.md)<br>
+[504. **Pointer_Reference_Cheatsheet**](docs/Subtopics/Pointer_Reference_Cheatsheet.md)<br>
+[505. **Pointer_Vs_References**](docs/Subtopics/Pointer_Vs_References.md)<br>
+[506. **Resetable_References**](docs/Subtopics/Resetable_References.md)<br>
+[507. **Template_Wrapper_Function**](docs/Subtopics/Template_Wrapper_Function.md)<br>
+
+---
+
 
 # C++ vs. Rust
 
@@ -294,3 +306,5 @@
 [1002. **Mutexes**](docs/Summary/1002_Mutexes.md)<br>
 [1003. **Condition Variables**](docs/Summary/1003_Condition_Variables.md)<br>
 [1004. **Atomics**](docs/Summary/1004_Atomics.md)<br>
+
+
