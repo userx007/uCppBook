@@ -32,6 +32,7 @@ Since `std::vector<bool>` stores bits (not bytes), `operator[]` can't return a `
 ## Real-World Danger: Dangling References
 
 ```cpp
+#include <vector>
 std::vector<bool>& getFlags() {
     static std::vector<bool> flags = {true, false, true};
     return flags;
@@ -61,6 +62,7 @@ bool flag = flags[0];  // ✓ Safe
 
 ```cpp
 #include <deque>
+#include <vector>
 
 // Option A: Use deque (stores actual bools)
 std::deque<bool> flags = {true, false, true};

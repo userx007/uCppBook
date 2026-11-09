@@ -193,7 +193,7 @@ Here's a real-world scenario where recursive mutex helps with method chaining:
 
 class BankAccount {
 private:
-    std::recursive_mutex mtx;
+    mutable std::recursive_mutex mtx;   // mutable: locked inside const member functions
     double balance;
     std::string accountNumber;
 

@@ -103,6 +103,7 @@ continue;               // jump-statement
 
 // PREPROCESSOR DIRECTIVES - NOT expressions
 #include <iostream>
+#include <string>
 #define MAX 100
 #ifdef DEBUG
 #endif

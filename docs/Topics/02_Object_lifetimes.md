@@ -164,7 +164,7 @@ std::vector<int> vec = {1, 2, 3};
 
 Understanding these concepts is crucial for writing safe, leak-free C++ code and avoiding undefined behavior.
 
-Great question! Let's clarify what's happening here:
+Let's clarify what's happening here:
 
 ## What Actually Happens
 

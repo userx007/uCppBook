@@ -100,6 +100,7 @@ SeqLocks excel at tracking frequently-read statistics that are occasionally upda
 #include <thread>
 #include <chrono>
 #include <iomanip>
+#include <iostream>
 
 struct NetworkStats {
     uint64_t bytes_sent = 0;
@@ -189,6 +190,8 @@ Here's a more sophisticated example for tracking 3D positions in a game or simul
 #include <atomic>
 #include <cmath>
 #include <array>
+#include <chrono>
+#include <thread>
 
 struct Position3D {
     double x, y, z;
@@ -279,6 +282,8 @@ Here's a benchmark comparing SeqLock with traditional mutex-based protection:
 #include <chrono>
 #include <vector>
 #include <numeric>
+#include <iostream>
+#include <thread>
 
 // Traditional mutex approach
 class MutexProtected {

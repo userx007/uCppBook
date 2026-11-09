@@ -140,7 +140,7 @@ template<typename T>
 struct GeneratorWithReturn {
     struct promise_type {
         T current_value;
-        std::optional<T> return_value;
+        std::optional<T> result_value;
         
         GeneratorWithReturn get_return_object() {
             return GeneratorWithReturn{
@@ -157,7 +157,7 @@ struct GeneratorWithReturn {
         }
         
         void return_value(T value) {
-            return_value = value;
+            result_value = value;
         }
         
         void unhandled_exception() { std::terminate(); }
@@ -180,7 +180,7 @@ struct GeneratorWithReturn {
     }
     
     std::optional<T> get_return() {
-        return handle.promise().return_value;
+        return handle.promise().result_value;
     }
 };
 

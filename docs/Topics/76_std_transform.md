@@ -183,6 +183,7 @@ Execution policies:
 ### C++20 Ranges
 ```cpp
 #include <ranges>
+#include <vector>
 
 std::vector<int> numbers = {1, 2, 3, 4, 5};
 auto squared = numbers | std::views::transform([](int x) { return x * x; });

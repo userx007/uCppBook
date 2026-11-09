@@ -750,7 +750,7 @@ int main() {
     auto partition_point = std::ranges::partition(
         all_nums, 
         [](int n) { return n % 2 == 0; }
-    );
+    ).begin();  // partition returns a subrange; begin() is the partition point
     
     std::cout << "Evens: ";
     for (auto it = all_nums.begin(); it != partition_point; ++it) {

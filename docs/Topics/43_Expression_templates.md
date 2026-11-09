@@ -65,9 +65,18 @@ Expression templates defer the evaluation of operations until the final assignme
 #include <vector>
 #include <iostream>
 
-// Forward declaration
+// Base class for all expression types
 template<typename E>
-class VecExpression;
+class VecExpression {
+public:
+    double operator[](size_t i) const {
+        return static_cast<const E&>(*this)[i];
+    }
+    
+    size_t size() const {
+        return static_cast<const E&>(*this).size();
+    }
+};
 
 // Actual vector class
 class Vector : public VecExpression<Vector> {
@@ -97,19 +106,6 @@ public:
     }
 };
 
-// Base class for all expression types
-template<typename E>
-class VecExpression {
-public:
-    double operator[](size_t i) const {
-        return static_cast<const E&>(*this)[i];
-    }
-    
-    size_t size() const {
-        return static_cast<const E&>(*this).size();
-    }
-};
-
 // Expression template for addition
 template<typename E1, typename E2>
 class VecSum : public VecExpression<VecSum<E1, E2>> {
@@ -135,6 +131,8 @@ VecSum<E1, E2> operator+(const VecExpression<E1>& u, const VecExpression<E2>& v)
 ### Usage Example
 
 ```cpp
+#include <cstddef>
+#include <iostream>
 int main() {
     Vector a(5), b(5), c(5);
     
@@ -159,6 +157,8 @@ int main() {
 ## More Complex Example: Multiple Operations
 
 ```cpp
+#include <cstddef>
+#include <iostream>
 // Expression template for multiplication
 template<typename E1, typename E2>
 class VecProduct : public VecExpression<VecProduct<E1, E2>> {

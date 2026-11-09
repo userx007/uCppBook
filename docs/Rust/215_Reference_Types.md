@@ -499,5 +499,3 @@ Both languages offer excellent performance with zero-cost abstractions, but Rust
 The fundamental distinction is that C++ trusts developers to manage memory safety manually, while Rust enforces strict borrowing rules at compile time. C++'s approach offers complete flexibility but makes undefined behavior easy to trigger. Rust's borrow checker prevents entire classes of bugs (use-after-free, data races, iterator invalidation) before the code runs.
 
 The summary table provides a quick reference for comparing specific features, showing how Rust's "aliasing XOR mutability" rule (multiple immutable references OR one mutable reference) prevents the data races and memory corruption that require careful manual management in C++.
-
-Would you like me to expand on any particular aspect, such as more complex lifetime scenarios or specific use cases where one language's approach is clearly superior?

@@ -24,6 +24,7 @@ Insert explicit synchronization points to control thread interleaving:
 #include <condition_variable>
 #include <atomic>
 #include <iostream>
+#include <cassert>
 
 class SyncPoint {
     std::mutex mtx;
@@ -91,6 +92,8 @@ Continuously verify invariants during execution:
 ```cpp
 #include <vector>
 #include <algorithm>
+#include <cassert>
+#include <mutex>
 
 class BankAccount {
     mutable std::mutex mtx;
@@ -141,6 +144,8 @@ Create a deterministic scheduler for unit tests:
 #include <queue>
 #include <functional>
 #include <map>
+#include <thread>
+#include <vector>
 
 class MockScheduler {
     std::map<std::thread::id, std::queue<std::function<void()>>> task_queues;
@@ -183,6 +188,11 @@ public:
 ```cpp
 #include <chrono>
 #include <random>
+#include <condition_variable>
+#include <mutex>
+#include <queue>
+#include <cassert>
+#include <iostream>
 
 class ThreadSafeQueue {
     std::queue<int> queue;
@@ -324,6 +334,12 @@ Introduce random delays and failures:
 
 ```cpp
 #include <optional>
+#include <chrono>
+#include <functional>
+#include <random>
+#include <thread>
+#include <cassert>
+#include <iostream>
 
 class ChaosMonkey {
     std::mt19937 rng;
@@ -394,6 +410,10 @@ void chaos_test() {
 
 ```cpp
 #include <chrono>
+#include <atomic>
+#include <iostream>
+#include <mutex>
+#include <thread>
 
 class DeadlockDetector {
     std::chrono::seconds timeout;

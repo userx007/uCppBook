@@ -54,6 +54,7 @@ void buffer_overflow_example() {
 ```cpp
 #include <thread>
 #include <vector>
+#include <iostream>
 
 int shared_counter = 0;
 

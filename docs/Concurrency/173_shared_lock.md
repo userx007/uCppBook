@@ -21,6 +21,7 @@ The underlying mutex tracks both counts. A shared lock is only granted when **no
 #include <shared_mutex>
 #include <thread>
 #include <iostream>
+#include <mutex>
 
 std::shared_mutex rw_mutex;
 int shared_data = 0;
@@ -100,6 +101,7 @@ std::shared_lock<std::shared_mutex> acquire_read(std::shared_mutex& m) {
 #include <unordered_map>
 #include <optional>
 #include <string>
+#include <mutex>
 
 class Cache {
     mutable std::shared_mutex mtx_;
@@ -163,7 +165,7 @@ if (needs_write) {
 - ❌ Don't bother if writes are as frequent as reads — the overhead of the RW mechanism cancels the benefit
 - ❌ Don't use with `std::mutex` — it only works with types satisfying the `SharedMutex` named requirement
 
-Great question — these two interfaces are niche but have legitimate uses. They're easy to confuse, so here's a clear breakdown:
+These two interfaces are niche but have legitimate uses. They are easy to confuse, so here is a clear breakdown:
 
 
 ## Usage of the `mutex()` and `release()` interfaces

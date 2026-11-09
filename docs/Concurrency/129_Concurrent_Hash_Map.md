@@ -150,6 +150,7 @@ Here's how to use the concurrent hash map with multiple threads:
 #include <thread>
 #include <chrono>
 #include <random>
+#include <iostream>
 
 void test_concurrent_hash_map() {
     ConcurrentHashMap<int, std::string> map(50);  // 50 buckets

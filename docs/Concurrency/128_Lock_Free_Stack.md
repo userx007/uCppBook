@@ -203,6 +203,10 @@ public:
 ## Practical Usage Example
 
 ```cpp
+#include <functional>
+#include <thread>
+#include <vector>
+#include <iostream>
 void producer(LockFreeStack<int>& stack, int thread_id, int count) {
     for (int i = 0; i < count; ++i) {
         int value = thread_id * 1000 + i;

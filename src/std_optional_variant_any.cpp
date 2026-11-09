@@ -3,6 +3,7 @@
 #include <variant>
 #include <any>
 #include <string>
+#include <memory>
 #include <vector>
 #include <map>
 

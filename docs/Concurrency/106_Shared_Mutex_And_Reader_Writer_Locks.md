@@ -196,7 +196,7 @@ int main() {
 
 4. **Move semantics**: Variables are moved into closures with `move`, and we clone `Arc` pointers with `Arc::clone()`
 
-5. **Type safety**: Rust's type system ensures thread safety at compile time - you literally cannot compile code that has data races
+5. **Type safety**: Rust's type system ensures thread safety at compile time - safe Rust code that has data races does not compile
 
 The behavior and output will be identical to the C++ version, including the "Not found" messages due to readers racing ahead of the writer!
 
@@ -380,6 +380,7 @@ Here's a more realistic example of a configuration manager where reads vastly ou
 #include <thread>
 #include <chrono>
 #include <optional>
+#include <mutex>
 
 class ConfigManager {
 private:
@@ -442,6 +443,7 @@ Sometimes you need to upgrade from shared to exclusive access (or downgrade). St
 #include <shared_mutex>
 #include <unordered_map>
 #include <string>
+#include <mutex>
 
 class SmartCache {
 private:
@@ -566,6 +568,7 @@ Both shared and exclusive locks support non-blocking variants:
 ```cpp
 #include <shared_mutex>
 #include <iostream>
+#include <mutex>
 
 class Resource {
     mutable std::shared_mutex mutex_;   // mutable: allows locking in const methods without
@@ -621,21 +624,22 @@ int main() {
 
 ## Timed Locks
 
-You can also use timed variants for timeout scenarios:
+Timed operations (`try_lock_for`, `try_lock_shared_for`, …) are provided by `std::shared_timed_mutex` (C++14); the plain `std::shared_mutex` has no timed variants:
 
 ```cpp
 #include <shared_mutex>
 #include <chrono>
 #include <string>
+#include <mutex>
 
 class TimedResource {
-    mutable std::shared_mutex mutex_;
+    mutable std::shared_timed_mutex mutex_;   // timed operations need shared_timed_mutex
     std::string data_;
 
 public:
     bool timed_read(std::string& out, std::chrono::milliseconds timeout) const {
         if (mutex_.try_lock_shared_for(timeout)) {
-            std::shared_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
+            std::shared_lock<std::shared_timed_mutex> lock(mutex_, std::adopt_lock);
             out = data_;
             return true;
         }
@@ -644,7 +648,7 @@ public:
 
     bool timed_write(const std::string& value, std::chrono::milliseconds timeout) {
         if (mutex_.try_lock_for(timeout)) {
-            std::unique_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
+            std::unique_lock<std::shared_timed_mutex> lock(mutex_, std::adopt_lock);
             data_ = value;
             return true;
         }
@@ -778,6 +782,7 @@ A minimal C++ pattern looks like this:
 
 ```cpp
 #include <shared_mutex>
+#include <mutex>
 
 std::shared_mutex mtx;
 SomeData data;
@@ -985,7 +990,7 @@ void foo() {
 
 **Availability**
 
-`std::shared_lock` and `std::shared_mutex` are both C++17. If you're on C++14 you can use `std::shared_timed_mutex` with a backported shared lock, or reach for `boost::shared_mutex`.
+`std::shared_mutex` is C++17. `std::shared_lock` and `std::shared_timed_mutex` are already available in C++14, so on C++14 you can use them together (or `boost::shared_mutex`).
 
 
 ## How does `std::unique_lock` work with `std::shared_mutex` in C++?

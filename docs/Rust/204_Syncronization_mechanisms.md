@@ -140,6 +140,7 @@ fn main() {
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <mutex>
 
 // Shared mutex allowing multiple readers or single writer access
 std::shared_mutex rw_mutex;
@@ -1215,7 +1216,6 @@ fn main() {
 
 **C++ Implementation (using a simple approach):**
 
-```cpp
 ```cpp
 #include <iostream>
 #include <thread>

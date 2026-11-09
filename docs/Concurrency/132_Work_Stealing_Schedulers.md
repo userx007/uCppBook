@@ -330,6 +330,10 @@ T parallel_tree_sum(WorkStealingThreadPool& pool,
 
 ```cpp
 #include <chrono>
+#include <atomic>
+#include <iostream>
+#include <numeric>
+#include <thread>
 
 int main() {
     // Create a work-stealing thread pool

@@ -236,6 +236,8 @@ C++20 provides many standard concepts in `<concepts>`:
 When multiple constraints apply, C++ uses **subsumption** to determine which is more specialized:
 
 ```cpp
+#include <iostream>
+#include <type_traits>
 template<typename T>
 concept Integral = std::is_integral_v<T>;
 

@@ -850,6 +850,7 @@ C++20 introduced **`std::contiguous_iterator_tag`**
 
 ```cpp
 #include <iterator>
+#include <vector>
 
 std::vector<int>::iterator it;
 using Cat = std::iterator_traits<decltype(it)>::iterator_category;

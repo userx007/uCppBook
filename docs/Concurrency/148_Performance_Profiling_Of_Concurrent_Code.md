@@ -142,6 +142,10 @@ void demonstrate_profiling() {
 ```cpp
 #include <atomic>
 #include <array>
+#include <chrono>
+#include <iostream>
+#include <thread>
+#include <vector>
 
 template<typename Mutex>
 class ContentionDetectingMutex {
@@ -222,6 +226,12 @@ void compare_synchronization_methods() {
 
 ```cpp
 #include <map>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
 
 class ScalabilityBenchmark {
 public:
@@ -363,6 +373,12 @@ void test_concurrent_data_structure_scalability() {
 
 ```cpp
 #include <new>
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <iostream>
+#include <thread>
+#include <vector>
 
 // Helper to detect false sharing
 struct alignas(64) CacheAlignedCounter {
@@ -431,6 +447,7 @@ void demonstrate_false_sharing_impact() {
 ### 5. Complete Profiling Example
 
 ```cpp
+#include <iostream>
 int main() {
     std::cout << "=== Concurrent Code Performance Profiling Demo ===\n";
     

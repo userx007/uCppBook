@@ -199,6 +199,10 @@ void basic_usage_example() {
 ```cpp
 #include <string>
 #include <variant>
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <iostream>
 
 struct Event {
     enum class Type { Click, KeyPress, MouseMove };
@@ -256,6 +260,10 @@ void event_processing_example() {
 ```cpp
 #include <vector>
 #include <cmath>
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <iostream>
 
 constexpr size_t SAMPLE_RATE = 48000;
 constexpr size_t BUFFER_SIZE = 4096; // Must be power of 2

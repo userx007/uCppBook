@@ -118,6 +118,7 @@ public:
 ```cpp
 #include <vector>
 #include <random>
+#include <thread>
 
 void producer(ThreadSafeQueue<int>& queue, int id, int count) {
     std::random_device rd;

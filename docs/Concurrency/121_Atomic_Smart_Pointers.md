@@ -105,6 +105,7 @@ int main() {
 ```cpp
 #include <atomic>
 #include <memory>
+#include <iostream>
 
 std::atomic<std::shared_ptr<std::string>> atomic_str;
 
@@ -136,6 +137,7 @@ Compare-and-exchange (CAS) is crucial for implementing lock-free algorithms:
 #include <memory>
 #include <thread>
 #include <vector>
+#include <iostream>
 
 struct Node {
     int value;
@@ -221,6 +223,7 @@ void test_lock_free_stack() {
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <iostream>
 
 std::atomic<std::weak_ptr<int>> atomic_weak;
 

@@ -240,6 +240,7 @@ public:
 ```cpp
 #include <mutex>
 #include <condition_variable>
+#include <iostream>
 
 class Barrier {
 private:

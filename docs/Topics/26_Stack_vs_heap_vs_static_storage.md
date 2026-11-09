@@ -64,6 +64,7 @@ delete[] arr;                     // Must use delete[] for arrays
 
 // Modern C++ (C++11+) - Preferred
 #include <memory>
+#include <vector>
 std::unique_ptr<int> ptr = std::make_unique<int>(42);
 std::shared_ptr<int> shared = std::make_shared<int>(100);
 // Automatic cleanup when smart pointer goes out of scope

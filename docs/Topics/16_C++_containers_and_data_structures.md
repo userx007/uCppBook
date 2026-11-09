@@ -769,6 +769,7 @@ To remove all elements with a specific value:
 
 ```cpp
 #include <algorithm>
+#include <vector>
 
 std::vector<int> v = {1, 2, 3, 2, 4, 2, 5};
 
@@ -782,6 +783,7 @@ To remove elements based on a condition:
 
 ```cpp
 #include <algorithm>
+#include <vector>
 
 std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 

@@ -729,7 +729,7 @@ int main() {
 | --- | --- | --- |
 | [`std::execution`](#stdexecution) | `<execution>` | Structured async model |
 | [`then/when_all/sync_wait`](#thenwhen_allsync_wait) | `<execution>` | Compose async work |
-| [`async_scope`](#async_scope) | `<execution>` | Scoped sender lifetime mgmt |
+| [`counting_scope`](#counting_scope) | `<execution>` | Scoped sender lifetime mgmt |
 | [`std::hazard_pointer`](#stdhazard_pointer) | `<hazard_pointer>` | Per-pointer safe reclamation |
 | [`RCU`](#rcu) | `<rcu>` | Read-cheap safe reclamation |
 
@@ -740,9 +740,9 @@ int main() {
 #include <iostream>
 int main() {
     using namespace std::execution;
-    auto sch = get_system_scheduler(); // some scheduler, e.g. from a thread pool
+    auto sch = get_parallel_scheduler(); // the standard parallel (system) scheduler
     sender auto s = then(schedule(sch), [] { return 42; });
-    auto [result] = this_thread::sync_wait(s).value();
+    auto [result] = std::this_thread::sync_wait(s).value();
     std::cout << result << "\n";
 }
 ```
@@ -755,27 +755,28 @@ int main() {
 #include <execution>
 int main() {
     using namespace std::execution;
-    auto sch = get_system_scheduler();
+    auto sch = get_parallel_scheduler();
     auto combined = when_all(
         then(schedule(sch), [] { return 1; }),
         then(schedule(sch), [] { return 2; })
     );
-    auto [a, b] = this_thread::sync_wait(combined).value();
+    auto [a, b] = std::this_thread::sync_wait(combined).value();
 }
 ```
 
 [↩ back to table](#c26--structured-concurrency)
 
-#### `async_scope`
+#### `counting_scope`
 
 ```cpp
 #include <execution>
 int main() {
     using namespace std::execution;
-    async_scope scope;
-    auto sch = get_system_scheduler();
-    scope.spawn(schedule(sch) | then([]{ /* fire-and-forget work */ }));
-} // scope destructor waits for spawned work to finish
+    counting_scope scope;
+    auto sch = get_parallel_scheduler();
+    spawn(schedule(sch) | then([]{ /* fire-and-forget work */ }), scope.get_token());
+    std::this_thread::sync_wait(scope.join());   // wait for all spawned work to finish
+}
 ```
 
 [↩ back to table](#c26--structured-concurrency)
@@ -800,12 +801,12 @@ int main() {
 ```cpp
 #include <rcu>
 #include <atomic>
-std::rcu_domain domain;
-std::atomic<int*> config = new int(1);
+struct Config : std::rcu_obj_base<Config> { int value = 1; };
+std::atomic<Config*> config = new Config;
 int main() {
-    int* old_cfg = config.exchange(new int(2));
-    domain.rcu_retire(old_cfg); // freed once no reader is mid-critical-section
-}
+    auto* fresh = new Config; fresh->value = 2;
+    Config* old_cfg = config.exchange(fresh);
+    old_cfg->retire(); // freed once no reader is mid-critical-section
 ```
 
 [↩ back to table](#c26--structured-concurrency)

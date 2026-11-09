@@ -155,8 +155,8 @@ struct Data {
 };
 
 int main() {
-    // Valid but potentially confusing
-    Data d1 = {1, 2, .c = 3, .d = 4};
+    // ERROR in C++20: designated and positional initializers cannot be mixed
+    // Data d1 = {1, 2, .c = 3, .d = 4};
     
     // Better: use all designated or all positional
     Data d2 = {.a = 1, .b = 2, .c = 3, .d = 4};

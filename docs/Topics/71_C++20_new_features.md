@@ -597,6 +597,7 @@ Here's a comprehensive example showing various view adaptors:
 #include <vector>
 #include <iostream>
 #include <string>
+#include <map>
 
 int main() {
     std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -1024,6 +1025,7 @@ int main() {
 `co_yield` is perfect for creating sequences of values without computing them all at once:
 
 ```cpp
+#include <iostream>
 Generator<int> fibonacci() {
     int a = 0, b = 1;
     while (true) {
@@ -1140,6 +1142,7 @@ Result<int> compute() {
 ### Practical Example: Range Generator
 
 ```cpp
+#include <iostream>
 Generator<int> range(int start, int end, int step = 1) {
     for (int i = start; i < end; i += step) {
         co_yield i;
@@ -2743,6 +2746,9 @@ int main() {
 #### Replacing Raw Pointers and Size Parameters
 
 ```cpp
+#include <cstddef>
+#include <span>
+#include <vector>
 // Before C++20 - unsafe and verbose
 void process_old(const int* data, size_t size) {
     for (size_t i = 0; i < size; ++i) {
@@ -2809,6 +2815,7 @@ int main() {
 ```cpp
 #include <span>
 #include <iostream>
+#include <vector>
 
 class Matrix {
     std::vector<int> data_;
@@ -3132,8 +3139,9 @@ int main() {
     constexpr int maxVal = computeMax();
     static_assert(maxVal == 81);
     
-    constexpr auto msg = createGreeting("World");
-    static_assert(msg == "Hello, World!");
+    // A constexpr std::string *variable* is ill-formed: its heap storage must be freed before
+    // constant evaluation ends. Use the string inside a larger constant expression instead:
+    static_assert(createGreeting("World") == "Hello, World!");
     return 0;
 }
 ```
@@ -3170,9 +3178,10 @@ int main() {
     constexpr auto wordCount = countWords("The quick brown fox");
     static_assert(wordCount == 4);
     
-    constexpr auto parts = splitString("a,b,c,d", ',');
-    static_assert(parts.size() == 4);
-    static_assert(parts[2] == "c");
+    // The vector itself cannot be stored in a constexpr variable (heap allocation),
+    // but it can be used and inspected inside constant expressions:
+    static_assert(splitString("a,b,c,d", ',').size() == 4);
+    static_assert(splitString("a,b,c,d", ',')[2] == "c");
     return 0;
 }
 ```
@@ -3437,15 +3446,10 @@ auto create_filter_chain(Filters... filters) {
         std::vector<T> result = input;
         
         // Apply each filter in sequence
-        ([&result, &filters]() {
-            result.erase(
-                std::remove_if(result.begin(), result.end(), 
-                    [&filters](const auto& item) { 
-                        return !filters(item); 
-                    }),
-                result.end()
-            );
-        }(), ...);
+        auto apply = [&result](const auto& filter) {
+            std::erase_if(result, [&filter](const auto& item) { return !filter(item); });
+        };
+        (apply(filters), ...);   // fold over the comma operator
         
         return result;
     };
@@ -3535,6 +3539,7 @@ The key insight here is that `std::source_location::current()` is used as a **de
 
 ```cpp
 #include <source_location>
+#include <cstdint>
 
 void demonstrate_members() {
     auto loc = std::source_location::current();
@@ -3977,7 +3982,7 @@ int main() {
     std::cout << "Days in 2024: " << days_diff.count() + 1 << '\n';
     
     // Add months
-    year_month_day next_month = sys_days{start_date} + months{1};
+    year_month_day next_month = start_date + months{1};
     std::cout << "One month later: " << next_month << '\n';
     
     // Find next Monday
@@ -4479,8 +4484,8 @@ void mapIteration() {
 void conditionalProcessing() {
     auto shouldProcess = true;
     
-    for (auto data = std::vector{1, 2, 3}; 
-         shouldProcess && auto val : data) {
+    for (auto data = std::vector{1, 2, 3}; auto val : data) {
+        if (!shouldProcess) break;   // a range-for has no condition clause; test inside the body
         std::cout << val << " ";
         if (val == 2) shouldProcess = false;
     }

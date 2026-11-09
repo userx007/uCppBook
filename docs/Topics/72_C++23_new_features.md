@@ -883,6 +883,7 @@ std::println("Name: {}, Age: {}", name, age);
 #include <expected>
 #include <string>
 #include <cmath>
+#include <print>
 
 enum class MathError {
     DivisionByZero,
@@ -1137,16 +1138,9 @@ constexpr T safe_get(const std::array<T, N>& arr, size_t index) {
     }
 }
 
-// Example 4: Different allocation strategies
-constexpr auto create_buffer(size_t size) {
-    if consteval {
-        // Compile-time: use std::array
-        return std::array<int, 100>{};  // Fixed size
-    } else {
-        // Runtime: could use std::vector or dynamic allocation
-        return std::vector<int>(size);
-    }
-}
+// Note: with a deduced return type, both branches of `if consteval` must return the SAME type,
+// so choosing between std::array and std::vector this way is ill-formed. Use a common type
+// (or separate overloads) instead.
 
 int main() {
     // Compile-time evaluation
@@ -1261,6 +1255,7 @@ int main() {
 
 **Example 2: Simplified CRTP (Curiously Recurring Template Pattern)**
 ```cpp
+#include <print>
 // Old CRTP - Complex boilerplate
 template<typename Derived>
 struct OldBase {
@@ -2671,6 +2666,7 @@ A key optimization is constructing flat containers from already-sorted data usin
 #include <flat_map>
 #include <vector>
 #include <algorithm>
+#include <flat_set>
 
 int main() {
     // Pre-sorted data
@@ -2832,6 +2828,7 @@ public:
 
 ```cpp
 #include <generator>
+#include <iostream>
 
 std::generator<int> simple_generator() {
     co_yield 1;
@@ -2884,6 +2881,7 @@ Generating prime numbers lazily:
 ```cpp
 #include <generator>
 #include <cmath>
+#include <iostream>
 
 bool is_prime(int n) {
     if (n < 2) return false;
@@ -2922,6 +2920,7 @@ Creating custom ranges with parameters:
 
 ```cpp
 #include <generator>
+#include <iostream>
 
 std::generator<int> range(int start, int end, int step = 1) {
     for (int i = start; i < end; i += step) {
@@ -2946,6 +2945,7 @@ Lazy traversal of data structures:
 #include <generator>
 #include <memory>
 #include <string>
+#include <iostream>
 
 struct TreeNode {
     int value;
@@ -3001,6 +3001,7 @@ Lazy tokenization of input:
 #include <generator>
 #include <string>
 #include <string_view>
+#include <iostream>
 
 std::generator<std::string_view> tokenize(std::string_view str, char delimiter) {
     size_t start = 0;
@@ -3038,6 +3039,7 @@ Chaining multiple generators:
 
 ```cpp
 #include <generator>
+#include <iostream>
 
 std::generator<int> take(std::generator<int> gen, int n) {
     int count = 0;
@@ -3080,6 +3082,7 @@ Generators shine when dealing with large datasets:
 #include <generator>
 #include <fstream>
 #include <string>
+#include <iostream>
 
 // Read file line-by-line without loading entire file into memory
 std::generator<std::string> read_lines(const std::string& filename) {
@@ -3138,6 +3141,8 @@ for (auto fib : gen) {
 #### Exception Handling
 
 ```cpp
+#include <generator>
+#include <iostream>
 std::generator<int> may_throw() {
     co_yield 1;
     throw std::runtime_error("Error!");
@@ -3245,9 +3250,9 @@ int main() {
     std::cout << std::format("{:n}\n", values);
     // Output: 10, 20, 30, 40 (no brackets)
     
-    // Nested formatting with precision for floats
+    // Element format specs go after a second colon: {:<range-spec>:<element-spec>}
     std::vector<double> decimals = {1.234567, 2.345678, 3.456789};
-    std::cout << std::format("{:.2f}\n", decimals);
+    std::cout << std::format("{::.2f}\n", decimals);
     // Output: [1.23, 2.35, 3.46]
 }
 ```
@@ -3287,6 +3292,7 @@ C++23 allows formatting of nested containers (containers of containers) without 
 #include <format>
 #include <vector>
 #include <iostream>
+#include <list>
 
 int main() {
     // 2D vector
@@ -3354,12 +3360,12 @@ int main() {
     };
     
     // Apply precision to all nested elements
-    std::cout << std::format("{:.2f}\n", data);
+    std::cout << std::format("{:::.2f}\n", data);   // one colon per nesting level
     // Output: [[1.23, 2.35, 3.46], [4.57, 5.68, 6.79]]
     
     // Width and alignment for nested elements
     std::vector<std::vector<int>> grid = {{1, 22, 333}, {4, 55, 666}};
-    std::cout << std::format("{:>4}\n", grid);
+    std::cout << std::format("{:::>4}\n", grid);
     // Output: [[   1,   22,  333], [   4,   55,  666]]
 }
 ```
@@ -3430,15 +3436,18 @@ int main() {
         "with\"quotes\""
     };
     
-    // Normal formatting
+    // Strings inside ranges are printed as quoted, escaped debug strings by default
     std::cout << std::format("{}\n", strings);
-    // Output: ["normal", "with
-    //          newline", "with    tab", "with"quotes""]
-    
-    // Escaped formatting
-    std::cout << std::format("{:?}\n", strings);
     // Output: ["normal", "with\nnewline", "with\ttab", "with\"quotes\""]
-    
+
+    // Request the escaped presentation for the elements explicitly: {::?}
+    std::cout << std::format("{::?}\n", strings);
+    // Output: ["normal", "with\nnewline", "with\ttab", "with\"quotes\""]
+
+    // For a single string, {:?} gives the escaped form ({} would print it raw)
+    std::cout << std::format("{:?}\n", strings[1]);
+    // Output: "with\nnewline"
+
     // Useful for debugging and logging
 }
 ```
@@ -3497,7 +3506,7 @@ int main() {
         
         for (const auto& entry : entries) {
             std::cout << std::format("  Message: {:?}\n", entry.message);
-            std::cout << std::format("  Tags: {:?}\n", entry.tags);
+            std::cout << std::format("  Tags: {}\n", entry.tags);
         }
     }
     
@@ -4061,8 +4070,9 @@ constexpr std::string reverse_string(std::string_view input) {
 }
 
 // Use at compile-time
-constexpr auto reversed = reverse_string("Hello, C++23!");
-// reversed is computed entirely at compile-time
+static_assert(reverse_string("Hello, C++23!") == "!32++C ,olleH");
+// computed entirely at compile-time (the std::string temporary is destroyed before evaluation ends,
+// so it cannot be stored in a constexpr variable)
 
 // Compile-time integer filtering
 constexpr std::vector<int> get_evens(std::vector<int> nums) {
@@ -4075,8 +4085,7 @@ constexpr std::vector<int> get_evens(std::vector<int> nums) {
     return evens;
 }
 
-constexpr auto even_numbers = get_evens({1, 2, 3, 4, 5, 6, 7, 8});
-// even_numbers = {2, 4, 6, 8} computed at compile-time
+static_assert(get_evens({1, 2, 3, 4, 5, 6, 7, 8}).size() == 4);   // {2, 4, 6, 8} computed at compile-time
 ```
 
 #### Example: Compile-Time Configuration Parser
@@ -4172,6 +4181,7 @@ auto value = StaticLookup<int>{}[2]; // Returns 30
 
 ```cpp
 #include <ranges>
+#include <vector>
 
 struct Multiplier {
     static int operator()(int x) {

@@ -96,6 +96,9 @@ private:
 public:
     using value_type = T;
 
+    template<typename U>
+    struct rebind { using other = PoolAllocator<U, PoolSize>; };  // required: allocator has a non-type template parameter
+
     PoolAllocator() noexcept : free_list(nullptr), allocated_count(0) {
         // Initialize free list
         for (size_t i = 0; i < PoolSize; ++i) {
@@ -176,38 +179,38 @@ bool operator!=(const PoolAllocator<T, PoolSize>&, const PoolAllocator<U, PoolSi
 // Allocates from a fixed buffer, deallocates all at once
 // =============================================================================
 
+struct ArenaStorage {  // shared by every ArenaAllocator<U> (must not depend on T)
+    char* buffer;
+    size_t size;
+    size_t offset;
+
+    ArenaStorage(size_t sz) : size(sz), offset(0) {
+        buffer = static_cast<char*>(std::malloc(sz));
+        if (!buffer) throw std::bad_alloc();
+        std::cout << "[Arena] Created arena of " << sz << " bytes" << std::endl;
+    }
+
+    ~ArenaStorage() {
+        std::free(buffer);
+        std::cout << "[Arena] Destroyed arena" << std::endl;
+    }
+
+    void reset() {
+        offset = 0;
+        std::cout << "[Arena] Reset arena" << std::endl;
+    }
+};
+
 template<typename T>
 class ArenaAllocator {
 private:
-    struct Arena {
-        char* buffer;
-        size_t size;
-        size_t offset;
-
-        Arena(size_t sz) : size(sz), offset(0) {
-            buffer = static_cast<char*>(std::malloc(sz));
-            if (!buffer) throw std::bad_alloc();
-            std::cout << "[Arena] Created arena of " << sz << " bytes" << std::endl;
-        }
-
-        ~Arena() {
-            std::free(buffer);
-            std::cout << "[Arena] Destroyed arena" << std::endl;
-        }
-
-        void reset() {
-            offset = 0;
-            std::cout << "[Arena] Reset arena" << std::endl;
-        }
-    };
-
-    std::shared_ptr<Arena> arena;
+    std::shared_ptr<ArenaStorage> arena;
 
 public:
     using value_type = T;
 
     explicit ArenaAllocator(size_t arena_size = 1024 * 1024) // 1MB default
-        : arena(std::make_shared<Arena>(arena_size)) {}
+        : arena(std::make_shared<ArenaStorage>(arena_size)) {}
 
     template<typename U>
     ArenaAllocator(const ArenaAllocator<U>& other) noexcept

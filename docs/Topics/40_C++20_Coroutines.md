@@ -220,6 +220,8 @@ The comments explain:
 
 
 ```cpp
+#include <coroutine>
+#include <iostream>
 // ============================================================================
 // EXAMPLE 2: FIBONACCI GENERATOR - Infinite Sequence
 // ============================================================================

@@ -528,6 +528,7 @@ decltype((x)) b = x;    // b has type int& (parenthesized x is an lvalue express
 ```cpp
 #include <vector>
 #include <map>
+#include <string>
 
 std::vector<int> vec = {1, 2, 3};
 decltype(vec)::iterator it = vec.begin();  // iterator type

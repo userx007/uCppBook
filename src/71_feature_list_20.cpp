@@ -8,6 +8,7 @@
 #include <span>
 #include <bit>
 #include <numbers>
+#include <algorithm>
 
 // ============================================================================
 // 1. CONCEPTS - Type constraints for template parameters
@@ -203,9 +204,14 @@ void demonstrateLambdas() {
     std::cout << "Lambda: " << add(5, 3) << "\n";
     std::cout << "Lambda: " << add(2.5, 1.5) << "\n";
     
-    // Capture [=, this] allowed
-    int x = 10;
-    auto lambda = [=, this]() { return x; };
+    // Capture [=, this] is allowed (implicit capture of `this` through [=] is deprecated in C++20).
+    // `this` only exists inside a member function:
+    struct Counter {
+        int value = 10;
+        auto make() { return [=, this]() { return value; }; }
+    };
+    auto lambda = Counter{}.make();
+    std::cout << "Lambda with [=, this]: " << lambda() << "\n";
 }
 
 // ============================================================================

@@ -1,4 +1,4 @@
-I've created a comprehensive guide on low-level memory manipulation in C++ covering both `memcpy` and placement new. The document includes:
+This chapter covers low-level memory manipulation in C++ with both `memcpy` and placement new. It includes:
 
 **For `memcpy`:**
 - Basic description and function signature

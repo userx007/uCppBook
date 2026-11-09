@@ -101,7 +101,8 @@ fn main() {
     //drop(node1);
 
     // Same weak upgrade logic
-    if let Some(node1_rc) = node2.borrow().prev.as_ref().and_then(|w| w.upgrade()) {
+    let prev = node2.borrow().prev.as_ref().and_then(|w| w.upgrade()); // end the RefCell borrow here
+    if let Some(node1_rc) = prev {
         println!("node1 is still alive");
         println!("strong count = {}", Rc::strong_count(&node1_rc));
         println!("weak count   = {}", Rc::weak_count(&node1_rc));

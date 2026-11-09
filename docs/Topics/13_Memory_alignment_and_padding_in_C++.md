@@ -18,7 +18,7 @@ Padding is extra unused bytes that the compiler inserts between structure member
 
 ## How It Works in Practice
 
-Let me show you with concrete examples:
+Concrete examples:
 
 ```cpp
 struct Example1 {

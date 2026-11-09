@@ -89,7 +89,7 @@ A single consolidated reference showing every concurrency-related element added 
 | --- | --- | --- | --- |
 | `std::execution` (schedulers, senders, receivers) | `<execution>` | Async foundation | Structured, composable async/parallel execution model |
 | `then`, `when_all`, `let_value`, `sync_wait`, etc. | `<execution>` | Async foundation | Core sender algorithms for composing async work |
-| `async_scope` | `<execution>` | Structured concurrency | Lifetime-scoped management of groups of senders |
+| `counting_scope` | `<execution>` | Structured concurrency | Lifetime-scoped management of groups of senders |
 | System execution context / parallel scheduler | `<execution>` | Async foundation | Ready-to-use standard schedulers (general + CPU-parallel) |
 | `std::hazard_pointer` | `<hazard_pointer>` | Lock-free reclamation | Per-pointer safe memory reclamation |
 | RCU (`std::rcu_domain`, `rcu_retire`, ...) | `<rcu>` | Lock-free reclamation | Read-side-cheap safe memory reclamation |
@@ -109,7 +109,7 @@ A different cut of the same data — everything available *as of* a given standa
 | **Shared (reader/writer) locking** | — | `shared_timed_mutex`, `shared_lock` | `shared_mutex` | — | — | — |
 | **Condition/signaling** | `condition_variable`, `condition_variable_any` | — | — | `latch`, `barrier`, `counting_semaphore`, `binary_semaphore`, atomic `wait`/`notify` | — | — |
 | **Atomics & memory model** | `atomic<T>`, `atomic_flag`, memory orders | — | `is_always_lock_free` | `atomic_ref`, `atomic<shared_ptr>`, `atomic_flag::test()` | `<stdatomic.h>` interop | — |
-| **Async results / tasks** | `promise`, `future`, `async`, `packaged_task`, `shared_future` | — | — | coroutines | `generator` | `std::execution` (senders/receivers, `async_scope`) |
+| **Async results / tasks** | `promise`, `future`, `async`, `packaged_task`, `shared_future` | — | — | coroutines | `generator` | `std::execution` (senders/receivers, `counting_scope`) |
 | **Parallel algorithms** | — | — | execution policies (`seq`/`par`/`par_unseq`) | — | — | parallel scheduler (via `std::execution`) |
 | **Lock-free memory reclamation** | — | — | — | — | — | `hazard_pointer`, RCU |
 | **Performance/interop helpers** | — | `chrono` literals | interference-size constants | `osyncstream` | `move_only_function` | — |

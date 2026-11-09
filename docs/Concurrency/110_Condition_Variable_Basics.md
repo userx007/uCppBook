@@ -443,6 +443,7 @@ Full example:
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <memory>
 #include <chrono>
 #include <string>
 
@@ -489,15 +490,15 @@ void worker_func(Worker& w) {
 // Signal a specific worker by index
 // -------------------------------------------------------
 
-void signal_worker(std::vector<Worker>& workers, int index) {
+void signal_worker(std::vector<std::unique_ptr<Worker>>& workers, int index) {
     log("\n[Main] Signalling worker " + std::to_string(index) + " specifically...");
 
     {
-        std::unique_lock lk(workers[index].mtx);
-        workers[index].ready = true;
+        std::unique_lock lk(workers[index]->mtx);
+        workers[index]->ready = true;
     } // Unlock BEFORE notify — best practice to avoid immediate re-block
 
-    workers[index].cv.notify_one();  // Only worker[index] listens on this cv
+    workers[index]->cv.notify_one();  // Only worker[index] listens on this cv
 }
 
 // -------------------------------------------------------

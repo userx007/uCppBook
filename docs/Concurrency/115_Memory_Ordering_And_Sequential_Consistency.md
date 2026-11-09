@@ -34,7 +34,7 @@ Memory ordering defines the rules for how memory operations (reads and writes) f
 
 The C++ memory model provides six memory ordering options:
 - `memory_order_relaxed`
-- `memory_order_consume` (deprecated)
+- `memory_order_consume` (discouraged since C++17; deprecated in C++26 — compilers treat it as `acquire`)
 - `memory_order_acquire`
 - `memory_order_release`
 - `memory_order_acq_rel`

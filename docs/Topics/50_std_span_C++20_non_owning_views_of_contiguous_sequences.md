@@ -10,7 +10,9 @@
 - **Zero-overhead**: No runtime cost compared to pointer arithmetic
 - **Can have static or dynamic extent**: Size can be known at compile-time or runtime
 
-Let me provide comprehensive examples covering all major use cases:## Detailed Explanation
+The following examples cover all major use cases.
+
+## Detailed Explanation
 
 ### What is std::span?
 

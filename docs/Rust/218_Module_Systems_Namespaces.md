@@ -94,6 +94,7 @@ namespace Internal {
 
 **main.cpp**
 ```cpp
+#include <iostream>
 import math_utils;
 import std;
 

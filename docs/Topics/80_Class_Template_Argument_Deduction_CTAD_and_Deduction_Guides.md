@@ -5,6 +5,7 @@ This is about **Class Template Argument Deduction (CTAD)**, introduced in C++17,
 ## The Problem Before C++17
 
 ```cpp
+#include <cstddef>
 template<typename T>
 class MyVector {
     T* data;
@@ -33,6 +34,7 @@ int main() {
 ## The Solution: CTAD with Deduction Guides
 
 ```cpp
+#include <cstddef>
 template<typename T>
 class MyVector {
     T* data;

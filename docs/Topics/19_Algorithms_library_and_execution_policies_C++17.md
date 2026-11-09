@@ -173,6 +173,7 @@ C++17 execution policies provide a **simple, declarative way** to request parall
 #include <vector>
 #include <iostream>
 #include <string>
+#include <random>
 
 // ============================================================================
 // SORTING ALGORITHMS

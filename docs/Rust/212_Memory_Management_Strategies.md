@@ -61,6 +61,7 @@ RAII is C++'s primary idiom for automatic resource management, where resources a
 #include <memory>
 #include <fstream>
 #include <vector>
+#include <iostream>
 
 // RAII with smart pointers
 void raiiSmartPointerExample() {

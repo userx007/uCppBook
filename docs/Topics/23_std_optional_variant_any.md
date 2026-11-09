@@ -97,6 +97,7 @@ These types are fundamental to modern C++ and enable safer, more expressive code
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 /*
 ============================================================================
@@ -669,8 +670,8 @@ std::variant<int, double, std::string> v6(std::in_place_type<std::string>, 5, 'x
 std::variant<int, double, std::string> v7(std::in_place_index<2>, "test");  // index 2 is string
 
 // Copy and move construction
-std::variant<int, double> v8 = v2;
-std::variant<int, double> v9 = std::move(v3);
+std::variant<int, double, std::string> v8 = v2;
+std::variant<int, double, std::string> v9 = std::move(v3);
 ```
 
 ## Querying the Active Type
@@ -1030,6 +1031,7 @@ if (!empty.has_value()) {
 ```cpp
 #include <iostream>
 #include <typeinfo>
+#include <any>
 
 std::any a = 42;
 

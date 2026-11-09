@@ -333,10 +333,10 @@ int main() {
 | **Thread Creation** | `std::thread` with function/lambda | `thread::spawn` with closure | Rust requires `move` for capturing, enforcing ownership transfer |
 | **Mutex** | `std::mutex` with separate data | `Mutex<T>` wraps data | Rust's mutex owns the data it protects, preventing unsynchronized access |
 | **Lock Management** | `lock_guard`/`unique_lock` (RAII) | Automatic via `MutexGuard` | Both use RAII, but Rust enforces it at type level |
-| **Shared Ownership** | `std::shared_ptr` (not thread-safe by default) | `Arc<T>` (atomic, always thread-safe) | Rust's `Arc` is explicitly for threading; C++ requires `atomic` operations |
+| **Shared Ownership** | `std::shared_ptr` (reference count is atomic; the pointed-to object is not synchronized) | `Arc<T>` (atomic, always thread-safe) | Rust's `Arc` is explicitly for threading; C++ uses atomic reference counts too, but nothing stops you from sharing the pointee unsafely |
 | **Condition Variables** | `std::condition_variable` | `Condvar` | Similar functionality, both require mutex |
 | **Message Passing** | No standard channels (use libraries) | Built-in `mpsc::channel` | Rust emphasizes message passing as primary pattern |
-| **Thread Safety** | Runtime checks, undefined behavior on errors | Compile-time checks via Send/Sync | **Rust prevents data races at compile time** |
+| **Thread Safety** | No compile-time checks; data races are undefined behavior (detectable at run time with tools such as TSan) | Compile-time checks via Send/Sync | **Rust prevents data races at compile time** |
 | **Data Race Prevention** | Developer responsibility, tools help | **Compiler guarantees** (via borrow checker) | Rust's killer feature: impossible to compile code with data races |
 | **Performance Overhead** | Minimal when used correctly | Minimal, zero-cost abstractions | Comparable performance, Rust adds no runtime overhead for safety |
 | **Learning Curve** | Moderate, easy to misuse | Steep initially, but prevents common errors | Rust's compiler teaches safe concurrency patterns |

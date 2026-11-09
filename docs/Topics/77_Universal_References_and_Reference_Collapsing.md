@@ -127,6 +127,8 @@ auto&& u3 = cx;
 This mechanism enables **perfect forwarding**:
 
 ```cpp
+#include <iostream>
+#include <utility>
 template<typename T>
 void wrapper(T&& arg) {  // Universal reference
     // arg can be lvalue or rvalue

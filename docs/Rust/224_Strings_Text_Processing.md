@@ -98,8 +98,9 @@ C++ doesn't guarantee UTF-8 encoding, and handling it requires care:
 #include <codecvt>
 
 void demonstrateUTF8Issues() {
-    // UTF-8 string literal (C++11)
-    std::string utf8_str = u8"Hello, 世界! 🌍";
+    // Narrow string literal holding UTF-8 bytes (source file encoded as UTF-8).
+    // Note: since C++20, u8"..." literals have type const char8_t[] and do not convert to std::string.
+    std::string utf8_str = "Hello, 世界! 🌍";
     
     // PROBLEM: Length is in bytes, not characters
     std::cout << "Byte length: " << utf8_str.length() << std::endl;
@@ -135,7 +136,7 @@ size_t utf8_length(const std::string& str) {
 }
 
 void utf8Processing() {
-    std::string text = u8"Hello, 世界!";
+    std::string text = "Hello, 世界!";   // (u8"..." is char8_t since C++20 and does not convert to std::string)
     std::cout << "Byte length: " << text.length() << std::endl;
     std::cout << "Character length: " << utf8_length(text) << std::endl;
     

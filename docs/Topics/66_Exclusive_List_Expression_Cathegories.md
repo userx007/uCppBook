@@ -222,8 +222,8 @@ const char* categorize(T&&) {
     }
 }
 
-#define CHECK(expr) \
-    std::cout << #expr << " → " << categorize(expr) << '\n'
+#define CHECK(...) \
+    std::cout << #__VA_ARGS__ << " → " << categorize(__VA_ARGS__) << '\n'
 
 int main() {
     int x = 5;

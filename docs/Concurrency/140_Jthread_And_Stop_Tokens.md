@@ -269,8 +269,9 @@ class FileProcessor {
     
 public:
     void start(std::vector<std::string> files) {
-        worker_thread = std::jthread(&FileProcessor::process_files, this, 
-                                     std::placeholders::_1, std::move(files));
+        worker_thread = std::jthread([this, files = std::move(files)](std::stop_token stoken) {
+            process_files(stoken, files);
+        });
     }
     
     void cancel() {

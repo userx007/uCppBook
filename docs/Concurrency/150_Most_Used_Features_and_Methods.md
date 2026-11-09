@@ -360,6 +360,7 @@ Allows multiple readers or a single writer.
 #include <thread>
 #include <shared_mutex>
 #include <vector>
+#include <mutex>
 
 std::shared_mutex sharedMtx;
 int sharedResource = 0;

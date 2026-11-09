@@ -798,6 +798,8 @@ static_assert(std::is_volatile_v<volatile int>);  // true
 ## Practical Example: Perfect Forwarding Preserves CV-Qualifiers
 
 ```cpp
+#include <iostream>
+#include <utility>
 void process(int& x) {
     std::cout << "non-const lvalue\n";
 }

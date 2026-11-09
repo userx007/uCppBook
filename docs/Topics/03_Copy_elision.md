@@ -175,6 +175,7 @@ const Widget makeWidget() {  // Prevents move!
 
 ### Testing Pattern
 ```cpp
+#include <iostream>
 struct Tracker {
     Tracker() { std::cout << "ctor\n"; }
     Tracker(const Tracker&) { std::cout << "copy\n"; }

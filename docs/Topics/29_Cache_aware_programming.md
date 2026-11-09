@@ -20,7 +20,13 @@ Accessing memory locations close together in address space.### 2. **Temporal Loc
 
 Reusing recently accessed data while it's still in cache.### 3. **Cache Line Alignment and Padding**
 
-Avoiding false sharing in multithreaded code:### 4. **Prefetching and Sequential Access**### 5. **Cache-Oblivious Algorithms and Practical Tips**## Key Cache-Aware Programming Strategies
+Avoiding false sharing in multithreaded code:
+
+### 4. **Prefetching and Sequential Access**
+
+### 5. **Cache-Oblivious Algorithms and Practical Tips**
+
+## Key Cache-Aware Programming Strategies
 
 ### **Loop Optimization Techniques**
 

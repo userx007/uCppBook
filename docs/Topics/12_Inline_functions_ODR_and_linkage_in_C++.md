@@ -1,5 +1,3 @@
-I'll give you a comprehensive explanation of these interconnected C++ concepts.
-
 ## **Inline Functions**
 
 ### What are inline functions?

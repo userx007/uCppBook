@@ -141,19 +141,20 @@ for (int val : result) {
 #include <ranges>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 std::vector<std::string> words = {
     "hello", "world", "this", "is", "C++", "ranges"
 };
 
 auto long_uppercase = words
-    | views::filter([](const auto& s) { return s.length() > 3; })
-    | views::transform([](const auto& s) {
+    | std::views::filter([](const auto& s) { return s.length() > 3; })
+    | std::views::transform([](const auto& s) {
           std::string upper = s;
           std::ranges::transform(upper, upper.begin(), ::toupper);
           return upper;
       })
-    | views::reverse;
+    | std::views::reverse;
 
 // Result: "RANGES", "WORLD", "HELLO"
 ```

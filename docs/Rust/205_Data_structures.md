@@ -708,12 +708,12 @@ fn main() {
     // for fruit in fruits.into_iter() { }      // Consumes the set, takes ownership
     
     // Set operations - HashSet provides rich set algebra methods
-    let vegetables: HashSet<_> = ["carrot", "lettuce"].iter().cloned().collect();
+    let vegetables: HashSet<String> = ["carrot", "lettuce"].iter().map(|s| s.to_string()).collect();
     
     // Union - combines all elements from both sets
     let union: HashSet<_> = fruits.union(&vegetables).collect();
     // Alternative: union returns references, use cloned() if needed
-    // let union: HashSet<&str> = fruits.union(&vegetables).cloned().collect();
+    // let union: HashSet<String> = fruits.union(&vegetables).cloned().collect();
     
     // Other set operations:
     // let intersection: HashSet<_> = fruits.intersection(&vegetables).collect(); // Common elements

@@ -7,6 +7,7 @@ SFINAE is a core C++ principle: when the compiler substitutes template parameter
 ```cpp
 #include <iostream>
 #include <type_traits>
+#include <vector>
 
 // This overload is only considered if T has a size() method
 template<typename T>
@@ -122,7 +123,7 @@ void advance(Iter& it, int n) {
     using category = typename std::iterator_traits<Iter>::iterator_category;
 
     // Select tag based on iterator type
-    using tag = std::conditional_t
+    using tag = std::conditional_t<
         std::is_same_v<category, std::random_access_iterator_tag>,
         random_access_tag,
         bidirectional_tag
@@ -164,7 +165,7 @@ void printImpl(const std::string& value, string_tag) {
 // Dispatcher
 template<typename T>
 void print(const T& value) {
-    using tag = std::conditional_t
+    using tag = std::conditional_t<
         std::is_integral_v<T>,
         int_tag,
         string_tag

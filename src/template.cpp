@@ -122,7 +122,7 @@ public:
 
 // Partial specialization - for pointer types
 template<typename T>
-class SmartContainer<T*> {
+class Stack<T*> {
 private:
     std::vector<T*> pointers;
 
@@ -131,7 +131,7 @@ public:
         pointers.push_back(ptr);
     }
 
-    ~SmartContainer() {
+    ~Stack() {
         // Clean up all pointers
         for (auto ptr : pointers) {
             delete ptr;
@@ -213,7 +213,7 @@ int main() {
     std::cout << "max(10, 20) = " << max(10, 20) << "\n";
     std::cout << "max(3.14, 2.71) = " << max(3.14, 2.71) << "\n";
     std::cout << "max(std::string(\"apple\"), std::string(\"banana\")) = "
-              << max(std::string("apple"), std::string("banana")) << "\n\n";
+              << ::max(std::string("apple"), std::string("banana")) << "\n\n";  // ::max: avoid ADL finding std::max
 
     // Multiple parameters
     std::cout << "multiply(5, 3.5) = " << multiply(5, 3.5) << "\n\n";

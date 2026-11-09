@@ -359,7 +359,7 @@ C++17 introduced `std::variant` to approximate algebraic data types.
 #include <vector>
 
 // Defining a variant (like Rust enum)
-using Message = std::variant
+using Message = std::variant<
     std::monostate,                        // Quit
     std::pair<int, int>,                   // Move
     std::string,                           // Write
@@ -491,7 +491,7 @@ fn handle_response(response: ApiResponse<String>) {
 #include <iostream>
 
 template<typename T>
-using ApiResponse = std::variant
+using ApiResponse = std::variant<
     T,                  // Success
     std::monostate,     // NotFound (using first monostate)
     std::string,        // ServerError

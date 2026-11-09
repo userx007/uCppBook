@@ -269,6 +269,8 @@ int main() {
 ```cpp
 #include <functional>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 using Task = std::function<void()>;
 
@@ -324,6 +326,8 @@ int main() {
 
 ```cpp
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 void bounded_producer(ThreadSafeQueue<int>& queue, int id) {
     for (int i = 0; i < 20; ++i) {

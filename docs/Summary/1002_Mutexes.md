@@ -547,6 +547,7 @@ int main() {
 #include <shared_mutex>
 #include <unordered_map>
 #include <string>
+#include <mutex>
 
 class SmartCache {
 private:
@@ -586,6 +587,7 @@ public:
 ```cpp
 #include <shared_mutex>
 #include <iostream>
+#include <mutex>
 
 class Resource {
     mutable std::shared_mutex mutex_;   // mutable: allows locking in const methods without
@@ -640,21 +642,22 @@ int main() {
 ```
 
 
-***Timed Locks***
+***Timed Locks*** (timed operations require `std::shared_timed_mutex`)
 
 ```cpp
 #include <shared_mutex>
 #include <chrono>
 #include <string>
+#include <mutex>
 
 class TimedResource {
-    mutable std::shared_mutex mutex_;
+    mutable std::shared_timed_mutex mutex_;   // timed operations need shared_timed_mutex
     std::string data_;
 
 public:
     bool timed_read(std::string& out, std::chrono::milliseconds timeout) const {
         if (mutex_.try_lock_shared_for(timeout)) {
-            std::shared_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
+            std::shared_lock<std::shared_timed_mutex> lock(mutex_, std::adopt_lock);
             out = data_;
             return true;
         }
@@ -663,7 +666,7 @@ public:
 
     bool timed_write(const std::string& value, std::chrono::milliseconds timeout) {
         if (mutex_.try_lock_for(timeout)) {
-            std::unique_lock<std::shared_mutex> lock(mutex_, std::adopt_lock);
+            std::unique_lock<std::shared_timed_mutex> lock(mutex_, std::adopt_lock);
             data_ = value;
             return true;
         }

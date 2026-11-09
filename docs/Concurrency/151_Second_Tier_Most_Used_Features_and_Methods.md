@@ -77,6 +77,7 @@ Works with `std::shared_mutex` to acquire shared (read) locks.
 #include <map>
 #include <string>
 #include <chrono>
+#include <mutex>
 
 class ThreadSafeCache {
 private:

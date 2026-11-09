@@ -102,6 +102,7 @@ Allows the same thread to lock the mutex multiple times.
 ```cpp
 #include <mutex>
 #include <thread>
+#include <iostream>
 
 std::recursive_mutex rec_mtx;
 
@@ -123,6 +124,7 @@ Allows attempting to acquire a lock with a timeout.
 #include <mutex>
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 std::timed_mutex t_mtx;
 
@@ -145,6 +147,7 @@ Allows multiple readers or one writer (readers-writer lock).
 #include <shared_mutex>
 #include <thread>
 #include <vector>
+#include <iostream>
 
 std::shared_mutex sh_mtx;
 int shared_data = 0;
@@ -239,6 +242,8 @@ RAII wrapper for shared (read) access with `shared_mutex`.
 #include <shared_mutex>
 #include <thread>
 #include <string>
+#include <iostream>
+#include <mutex>
 
 std::shared_mutex sh_mtx;
 std::string shared_string = "initial";
@@ -406,6 +411,7 @@ Control the synchronization guarantees of atomic operations.
 ```cpp
 #include <atomic>
 #include <thread>
+#include <cassert>
 
 std::atomic<bool> ready(false);
 int data = 0;

@@ -240,9 +240,9 @@ void func(T&& arg) {
     std::cout << '\n';
 }
 
-#define CALL(expr) \
-    std::cout << #expr << " → "; \
-    func(expr)
+#define CALL(...) \
+    std::cout << #__VA_ARGS__ << " → "; \
+    func(__VA_ARGS__)
 
 int main() {
     int x = 5, y = 10;

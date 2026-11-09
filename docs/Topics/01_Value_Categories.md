@@ -161,7 +161,7 @@ Understanding these categories is crucial for:
 
 # xvalue in the context of glvalue
 
-Let me show you how **xvalue** fits into **glvalue** with concrete examples that demonstrate the "has identity" property.
+The following examples show how **xvalue** fits into **glvalue** and demonstrate the "has identity" property.
 
 ## Understanding the Relationship
 
@@ -301,10 +301,12 @@ int main() {
 
     // Member access on xvalue (glvalue) - still works because it has identity!
     std::move(d2).print();           // Can call methods on xvalue
-    std::move(d2).x = 200;           // Can access members of xvalue
+    int moved_x = std::move(d2).x;   // Member access on an xvalue is itself an xvalue (reading is fine;
+                                     // assigning to a scalar xvalue such as `std::move(d2).x = 200` is ill-formed)
+    (void)moved_x;
 
     // The xvalue still refers to the actual object
-    std::cout << "d2.x after xvalue access: " << d2.x << '\n';  // 200
+    std::cout << "d2.x after xvalue access: " << d2.x << '\n';  // 99 (std::move only casts; nothing was modified)
 }
 ```
 
@@ -1502,7 +1504,7 @@ Rvalue references give us **performance** + **safety** + **convenience** - somet
 
 # Detailed Explanation: Member Access on Rvalue Objects
 
-Let me break down each case step-by-step to show exactly what's happening.
+Here is each case, step by step.
 
 ## Understanding the Types Involved
 
@@ -2049,7 +2051,7 @@ Both cases call the move constructor because:
 
 ## Detailed Breakdown: `std::move(getWidget()).name`
 
-Let me trace through this step-by-step:
+Tracing through this step by step:
 
 ```cpp
 struct Widget {

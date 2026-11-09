@@ -108,6 +108,10 @@ using T9 = std::conditional<false, int, double>::type; // double
 You can create your own type traits using template specialization:
 
 ```cpp
+#include <type_traits>
+#include <vector>
+#include <string>
+
 // Check if a type has a specific member function
 template<typename T, typename = void>
 struct has_size : std::false_type {};
@@ -117,9 +121,6 @@ struct has_size<T, std::void_t<decltype(std::declval<T>().size())>>
     : std::true_type {};
 
 // Usage
-#include <vector>
-#include <string>
-
 static_assert(has_size<std::vector<int>>::value, "vector has size()");
 static_assert(has_size<std::string>::value, "string has size()");
 static_assert(!has_size<int>::value, "int doesn't have size()");

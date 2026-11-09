@@ -14,7 +14,9 @@ Additional benefits include:
 
 ## Basic Implementation
 
-Let me show you the pattern with a practical example:## Key Implementation Details
+The pattern is shown below with a practical example.
+
+## Key Implementation Details
 
 **Why the destructor must be declared:** When using `std::unique_ptr<Impl>`, the compiler needs to see the complete definition of `Impl` to call its destructor. By declaring the destructor in the header and defining it in the .cpp file (where `Impl` is fully defined), you avoid compilation errors.
 

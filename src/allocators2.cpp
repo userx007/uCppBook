@@ -21,6 +21,9 @@ class AlignedAllocator {
 public:
     using value_type = T;
 
+    template<typename U>
+    struct rebind { using other = AlignedAllocator<U, Alignment>; };  // required: allocator has a non-type template parameter
+
     static_assert(Alignment >= alignof(T),
                   "Alignment must be at least as strict as T's natural alignment");
     static_assert((Alignment & (Alignment - 1)) == 0,

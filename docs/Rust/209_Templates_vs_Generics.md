@@ -11,6 +11,7 @@ C++ templates are a powerful metaprogramming facility that allows code generatio
 ### Basic Template Syntax
 
 ```cpp
+#include <string>
 // Function template
 template<typename T>
 T max(T a, T b) {
@@ -332,7 +333,7 @@ trait FromPair {
     
     fn from_pair<T>(pair: Pair<T>) -> Self::Output
     where
-        T: Add<Output = T> + Copy;
+        T: Add<Output = T> + Copy + Into<i32>;
 }
 
 struct SumResult;

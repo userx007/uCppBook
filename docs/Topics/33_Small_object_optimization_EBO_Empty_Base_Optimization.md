@@ -14,7 +14,9 @@ These are two important optimization techniques in C++ that reduce memory overhe
 
 ### Common Example: std::string
 
-Most `std::string` implementations use SOO. Short strings (typically 15-23 characters) are stored directly in the string object rather than on the heap.## Empty Base Optimization (EBO)
+Most `std::string` implementations use SOO. Short strings (typically 15-23 characters) are stored directly in the string object rather than on the heap.
+
+## Empty Base Optimization (EBO)
 
 **Empty Base Optimization** is a compiler optimization that allows empty base classes to occupy zero bytes when used as a base class (though they still cannot have zero size when standalone).
 
@@ -26,7 +28,9 @@ Most `std::string` implementations use SOO. Short strings (typically 15-23 chara
 
 ### The Problem Without EBO
 
-In C++, no object can have size 0 (to ensure distinct addresses). Empty classes have size ≥ 1:## Key Differences and Trade-offs
+In C++, no object can have size 0 (to ensure distinct addresses). Empty classes have size ≥ 1:
+
+## Key Differences and Trade-offs
 
 ### Small Object Optimization
 **Advantages:**
